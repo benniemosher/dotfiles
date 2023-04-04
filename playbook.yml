@@ -8,5 +8,8 @@
     # Color Schemes
     - { role: colors, tags: "colors" }
 
+    # Fonts
+    - { role: fonts, tags: "fonts" }
+
     # Dotfiles
     - { role: stow, tags: "stow" }
