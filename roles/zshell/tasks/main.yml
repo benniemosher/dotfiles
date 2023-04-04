@@ -1,5 +1,4 @@
 ---
-
 - name: Clone oh-my-zsh
   git:
     repo: "{{ github }}robbyrussell/oh-my-zsh.git"
@@ -27,8 +26,7 @@
     repo: "{{ github }}{{ item.value }}/{{ item.key }}.git"
     dest: "{{ omzsh_plugins_dir }}/{{ item.key }}"
     accept_hostkey: yes
-  with_dict:
-    "{{ omzsh_plugins }}"
+  with_dict: "{{ omzsh_plugins }}"
 
 - name: Checking for original .zshrc
   stat:
@@ -50,3 +48,9 @@
   template:
     src: .zprofile.j2
     dest: "{{ user.home }}/.zprofile"
+
+- name: Install artii gem
+  become: true
+  community.general.gem:
+    name: artii
+    state: latest
