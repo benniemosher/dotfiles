@@ -9,4 +9,4 @@
     - { role: colors, tags: "colors" }
 
     # Dotfiles
-    # - { role: stow, tags: "stow" }
+    - { role: stow, tags: "stow" }

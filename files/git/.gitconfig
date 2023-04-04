@@ -1,0 +1,37 @@
+[user]
+	name = Bennie Mosher
+	; email = 337539+benniemosher@users.noreply.github.com
+    email = bmosher@researchinnovations.com
+	signingkey = /Users/bmosher/.ssh/id_ed25519.pub
+[alias]
+	s = status
+	co = checkout
+	cp = cherry-pick
+	change-commits = "!f() { VAR=$1; OLD=$2; NEW=$3; shift 3; git filter-branch --env-filter \"if [[ \\\"$`echo $VAR`\\\" = '$OLD' ]]; then export $VAR='$NEW'; fi\" $@; }; f"
+[credential]
+	helper = cache --timeout=3600
+[core]
+	editor = vim
+	excludesfile = ~/.gitignore_global
+	ignorecase = false
+[commit]
+	gpgsign = true
+[push]
+	default = current
+[pull]
+	default = current
+	ff = only
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[gpg]
+	program = gpg
+	format = ssh
+[init]
+	defaultBranch = main
+[safe]
+	directory = /opt/homebrew
+[includeIf "gitdir:/Users/bmosher/Code/rii"]
+    path = /Users/bmosher/Code/rii/.gitconfig

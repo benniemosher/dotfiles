@@ -20,6 +20,7 @@ export EDITOR='nvim'
 
 # Set custom PATH
 export PATH=$PATH:$HOME/bin
+export PATH="/usr/local/sbin:$PATH"
 
 # =====================================================================================================================
 # Oh my zsh settings
@@ -68,3 +69,28 @@ bindkey '^[[B' history-substring-search-down
 # Autosuggestions + Substring search config
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS=("${(@)ZSH_AUTOSUGGEST_CLEAR_WIDGETS:#(up|down)-line-or-history}")
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
+
+# =====================================================================================================================
+# Additional aliases
+# =====================================================================================================================
+alias be='bundle exec'
+alias brew-update='brew update; brew outdated; brew upgrade; brew cu --all --cleanup --yes; brew cleanup; brew doctor;'
+alias doco='docker-compose'
+alias ll='ls -al'
+alias tf='terraform'
+
+# =====================================================================================================================
+# MOTD
+# =====================================================================================================================
+sh $HOME/Code/dotfiles/bin/motd.sh
+
+
+# =====================================================================================================================
+# Import local settings not meant to be checked into Git
+# =====================================================================================================================
+
+if [ -f ~/.zshrc.local ]; then
+    source ~/.zshrc.local
+else
+    print "404: ~/.zshrc.local not found."
+fi

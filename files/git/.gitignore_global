@@ -1,0 +1,10 @@
+.DS_Store
+.pluralith
+.terraform
+.vscode
+generated
+node_modules
+vendor/bundle
+*.pem
+.infracost
+*.crt
