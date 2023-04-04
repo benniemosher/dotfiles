@@ -3,3 +3,5 @@ playbook.retry
 Brewfile.lock.json
 *.itermcolors
 *.terminal
+files/ssh/
+!files/ssh/.ssh/config

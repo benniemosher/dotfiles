@@ -9,3 +9,5 @@ brew bundle
 
 # Run ansible tasks
 ansible-playbook playbook.yml
+
+gh auth login
