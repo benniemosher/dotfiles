@@ -50,7 +50,6 @@
     dest: "{{ user.home }}/.zprofile"
 
 - name: Install artii gem
-  become: true
   community.general.gem:
     name: artii
     state: latest

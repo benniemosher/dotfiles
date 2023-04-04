@@ -1,0 +1,9 @@
+---
+
+- name: Set sidebar icon size to small
+  become: true
+  community.general.osx_defaults:
+    domain: NSGlobalDomain
+    key: NSTableViewDefaultSizeMode
+    type: int
+    value: 1
