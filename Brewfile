@@ -1,2 +1,5 @@
+tap "homebrew/bundle"
 brew "ansible"
 brew "ansible-lint"
+brew "stow"
+cask "visual-studio-code"

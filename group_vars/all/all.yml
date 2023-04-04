@@ -4,4 +4,4 @@ user:
   home: "{{ lookup('env', 'HOME') }}"
 
 github: "https://github.com/"
-dotfiles: "{{ user.home }}/Code/.dotfiles"
+dotfiles: "{{ user.home }}/Code/dotfiles/files"

@@ -5,8 +5,8 @@
     # Shell
     - { role: zshell, tags: "zshell" }
 
-    # Editors
-    # - { role: neovim, tags: "neovim" }
-    
+    # Color Schemes
+    - { role: colors, tags: "colors" }
+
     # Dotfiles
     # - { role: stow, tags: "stow" }
