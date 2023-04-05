@@ -2,6 +2,7 @@
 # Assumes brew bundle has finished and installed all of the software
 
 - hosts: localhost
+  name: Deploy dotfiles
   roles:
     # Shell
     - { role: zshell, tags: "zshell" }
