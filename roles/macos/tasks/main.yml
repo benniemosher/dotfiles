@@ -8,5 +8,7 @@
     value: "{{ item.value }}"
     host: "{{ item.host | default('null') }}"
     state: "{{ item.state | default('present') }}"
-  with_items:
-    "{{ settings }}"
+  with_items: "{{ settings }}"
+- name: Change OSX defaults not supported by Ansible... yet...
+  ansible.builtin.command: "{{ item.cmd }}"
+  with_items: "{{ unsupported_settings }}"

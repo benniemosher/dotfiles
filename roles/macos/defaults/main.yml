@@ -32,13 +32,6 @@ settings:
   - { key: "com.apple.KeyRepeat", type: int, value: 2 }
   - { key: "initialkeyrepeat", type: int, value: 10 }
   # Set language and text formats
-  # - {
-  #     key: "AppleLanguages",
-  #     type: array,
-  #     value:
-  #       - en
-  #       - nl
-  #   }
   - { key: "AppleLocale", type: string, value: "en_US@currency=USD" }
   - { key: "AppleMeasurementUnits", type: string, value: "Inches" }
   - { key: "AppleMetricUnits", type: bool, value: false }
@@ -122,10 +115,6 @@ settings:
   - { domain: "com.apple.dock", key: "enable-spring-load-actions-on-all-items", type: bool, value: true }
   # Show indicator lights for open applications in the Dock
   - { domain: "com.apple.dock", key: "show-process-indicators", type: bool, value: true }
-  # Wipe all (default) app icons from the Dock
-  # This is only really useful when setting up a new Mac, or if you don’t use
-  # the Dock to launch apps.
-  # - { domain: "com.apple.dock", key: "persistent-apps", type: array, state: absent }
   # Show only open applications in the Dock
   - { domain: "com.apple.dock", key: "static-only", type: bool, value: true }
   # Disable Dashboard
@@ -168,8 +157,6 @@ settings:
   - { domain: "com.apple.Safari", key: "DebugSnapshotsUpdatePolicy", type: int, value: 2 }
   # Enable Safari’s debug menu
   - { domain: "com.apple.Safari", key: "IncludeInternalDebugMenu", type: bool, value: true }
-  # Remove useless icons from Safari’s bookmarks bar
-  # defaults write com.apple.Safari ProxiesInBookmarksBar "()"
   # Enable the Develop menu and the Web Inspector in Safari
   - { domain: "com.apple.Safari", key: "IncludeDevelopMenu", type: bool, value: true }
   - { domain: "com.apple.Safari", key: "WebKitDeveloperExtrasEnabledPreferenceKey", type: bool, value: true }
@@ -208,25 +195,10 @@ settings:
   - { domain: "com.apple.mail", key: "DisableSendAnimations", type: bool, value: true }
   # Copy email addresses as `foo@example.com` instead of `Foo Bar <foo@example.com>` in Mail.app
   - { domain: "com.apple.mail", key: "AddressesIncludeNameOnPasteboard", type: bool, value: false }
-  # Add the keyboard shortcut ⌘ + Enter to send an email in Mail.app
-  # - { domain: "com.apple.mail", key: "NSUserKeyEquivalents", type: dict-add "Send", value: "@\U21a9" }
-  # Display emails in threaded mode, sorted by date (oldest at the top)
-  # defaults write com.apple.mail DraftsViewerAttributes -dict-add "DisplayInThreadedMode" -string "yes"
-  # defaults write com.apple.mail DraftsViewerAttributes -dict-add "SortedDescending" -string "yes"
-  # defaults write com.apple.mail DraftsViewerAttributes -dict-add "SortOrder" -string "received-date"
   # Enable inline attachments (just show the icons)
   - { domain: "com.apple.mail", key: "DisableInlineAttachmentViewing", type: bool, value: false }
   # Disable automatic spell checking
   - { domain: "com.apple.mail", key: "SpellCheckingBehavior", type: string, value: "NoSpellCheckingEnabled" }
-  # - {
-  #     domain: "/.Spotlight-V100/VolumeConfiguration",
-  #     key: "Exclusions",
-  #     type: array,
-  #     value:
-  #       - "/Volumes"
-  #   }
-  # Only use UTF-8 in Terminal.app
-  # defaults write com.apple.terminal StringEncodings -array 4
   # Enable Secure Keyboard Entry in Terminal.app
   # See: https://security.stackexchange.com/a/47786/8918
   - { domain: "com.apple.terminal", key: "SecureKeyboardEntry", type: bool, value: true }
@@ -250,9 +222,31 @@ settings:
   - { domain: "com.apple.commerce", key: "AutoUpdateRestartRequired", type: bool, value: true }
   # Prevent Photos from opening automatically when devices are plugged in
   - { domain: "com.apple.ImageCapture", key: "disableHotPlug", type: bool, value: true, host: currentHost }
+unsupported_settings:
+  # Set language and text formats
+  - { cmd: 'defaults write NSGlobalDomain AppleLanguages -array "en" "nl"' }
+  # Wipe all (default) app icons from the Dock
+  # This is only really useful when setting up a new Mac, or if you don’t use
+  # the Dock to launch apps.
+  - { cmd: 'defaults write com.apple.dock persistent-apps -array' }
+  # Remove useless icons from Safari’s bookmarks bar
+  - { cmd: 'defaults write com.apple.Safari ProxiesInBookmarksBar "()"' }
+  # Add the keyboard shortcut ⌘ + Enter to send an email in Mail.app
+  - { cmd: 'defaults write com.apple.mail NSUserKeyEquivalents -dict-add "Send" "@\U21a9"' }
+  # Display emails in threaded mode, sorted by date (oldest at the top)
+  - { cmd: 'defaults write com.apple.mail DraftsViewerAttributes -dict-add "DisplayInThreadedMode" -string "yes"' }
+  - { cmd: 'defaults write com.apple.mail DraftsViewerAttributes -dict-add "SortedDescending" -string "yes"' }
+  - { cmd: 'defaults write com.apple.mail DraftsViewerAttributes -dict-add "SortOrder" -string "received-date"' }
+  # Hide Spotlight tray-icon (and subsequent helper)
+  # - { cmd: 'sudo chmod 600 /System/Library/CoreServices/Search.bundle/Contents/MacOS/Search', become: true }
+  # Disable Spotlight indexing for any volume that gets mounted and has not yet
+  # been indexed before.
+  # - { cmd: 'sudo defaults write /.Spotlight-V100/VolumeConfiguration Exclusions -array "/Volumes"', become: true }
+  # Only use UTF-8 in Terminal.app
+  - { cmd: 'defaults write com.apple.terminal StringEncodings -array 4' }
   # Disable automatic emoji substitution (i.e. use plain text smileys)
-  # defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticEmojiSubstitutionEnablediMessage" -bool false
+  - { cmd: 'defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticEmojiSubstitutionEnablediMessage" -bool false' }
   # Disable smart quotes as it’s annoying for messages that contain code
-  # defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticQuoteSubstitutionEnabled" -bool false
+  - { cmd: 'defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "automaticQuoteSubstitutionEnabled" -bool false' }
   # Disable continuous spell checking
-  # defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "continuousSpellCheckingEnabled" -bool false
+  - { cmd: 'defaults write com.apple.messageshelper.MessageController SOInputLineSettings -dict-add "continuousSpellCheckingEnabled" -bool false' }
