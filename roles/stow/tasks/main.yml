@@ -1,4 +1,9 @@
 ---
+- name: Create directory for Terraform plugin cache
+  ansible.builtin.file:
+    path: "{{ user.home }}/.terraform.d/plugin-cache"
+    state: directory
+    mode: '0755'
 
 - name: Symlink configs
   command: "stow -d {{ dotfiles }} -S {{ item }} -t {{ user.home }}"
