@@ -1,3 +1,4 @@
+tap "buo/cask-upgrade"
 tap "homebrew/bundle"
 brew "ansible"
 brew "ansible-lint"
