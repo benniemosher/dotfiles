@@ -5,3 +5,7 @@ Brewfile.lock.json
 *.terminal
 files/ssh/
 !files/ssh/.ssh/config
+
+files/gnupg/.gnupg
+!files/gnupg/.gnupg/gpg-agent.conf
+!files/gnupg/.gnupg/gpg.conf
