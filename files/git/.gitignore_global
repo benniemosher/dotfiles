@@ -8,3 +8,9 @@ vendor/bundle
 *.pem
 .infracost
 *.crt
+*.tfstate
+
+*.cer
+*.csr
+*.key
+*.p7b
