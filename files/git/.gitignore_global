@@ -15,3 +15,6 @@ vendor/bundle
 *.key
 *.p7b
 id_rsa
+*.lock.json
+
+.infracost

@@ -60,7 +60,7 @@ let g:airline_theme='nord'
 syntax on
 filetype plugin indent on
 
-set guifont=DroidSansMono\ Nerd\ Font:h11
+set guifont=InconsolataGo\ Nerd\ Font\ Mono:h11
 
 let g:terraform_align=1
 let g:terraform_fmt_on_save = 1
@@ -96,4 +96,4 @@ call plug#begin()
   Plug 'fatih/vim-go'
 call plug#end()
 
-" colorscheme nord
+colorscheme nord
