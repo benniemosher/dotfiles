@@ -84,7 +84,7 @@ if empty(glob('~/.vim/autoload/plug.vim'))
 endif
 
 call plug#begin()
-  Plug 'arcticicestudio/nord-vim', { 'as': 'nord' }
+  Plug 'arcticicestudio/nord-vim'
   Plug 'ctrlpvim/ctrlp.vim'
   Plug 'tpope/vim-surround'
   Plug 'tpope/vim-repeat'
