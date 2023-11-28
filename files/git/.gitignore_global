@@ -14,7 +14,9 @@ vendor/bundle
 *.csr
 *.key
 *.p7b
-id_rsa
+id_*
 *.lock.json
 
 .infracost
+
+inventory/
