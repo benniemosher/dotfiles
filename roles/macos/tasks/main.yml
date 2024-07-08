@@ -10,5 +10,6 @@
     state: "{{ item.state | default('present') }}"
   with_items: "{{ settings }}"
 - name: Change OSX defaults not supported by Ansible... yet...
+  become: true
   ansible.builtin.command: "{{ item.cmd }}"
   with_items: "{{ unsupported_settings }}"

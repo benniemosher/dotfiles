@@ -1,8 +1,8 @@
 ---
 # Assumes brew bundle has finished and installed all of the software
 
-- hosts: localhost
-  name: Deploy dotfiles
+- name: Deploy dotfiles
+  hosts: localhost
   roles:
     # Shell
     - { role: zshell, tags: "zshell" }
@@ -15,7 +15,8 @@
 
     # Dotfiles
     - { role: stow, tags: "stow" }
-    - { role: keybase, tags: "keybase" }
+    # - { role: keybase, tags: "keybase" }
+    - { role: aws-azure-login, tags: "aws-azure-login" }
 
     # MacOS Defaults
     - { role: macos, tags: "macos" }

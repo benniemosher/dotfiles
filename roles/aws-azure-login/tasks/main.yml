@@ -1,0 +1,7 @@
+---
+- name: Get aws-azure-login
+  become: true
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/aws-azure-login/aws-azure-login/main/docker-launch.sh
+    dest: /usr/local/bin/aws-azure-login
+    mode: "o+x"
