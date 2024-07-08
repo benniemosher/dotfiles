@@ -37,3 +37,5 @@
 [credential "https://gist.github.com"]
 	helper =
 	helper = !/opt/homebrew/bin/gh auth git-credential
+[includeIf "gitdir:/Users/bmosher/Code/dotfiles"]
+	path = /Users/bmosher/Code/.gitconfig-dotfiles
