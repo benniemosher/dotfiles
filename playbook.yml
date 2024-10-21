@@ -15,6 +15,7 @@
 
     # Dotfiles
     - { role: stow, tags: "stow" }
+
     # - { role: keybase, tags: "keybase" }
     - { role: aws-azure-login, tags: "aws-azure-login" }
 

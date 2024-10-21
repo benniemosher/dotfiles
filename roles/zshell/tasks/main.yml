@@ -1,53 +1,56 @@
 ---
 - name: Clone oh-my-zsh
-  git:
+  ansible.builtin.git:
     repo: "{{ github }}robbyrussell/oh-my-zsh.git"
     dest: "{{ omzsh_dir }}"
-    accept_hostkey: yes
-    update: no
+    accept_hostkey: true
+    update: false
 
 - name: Check if omzsh is installed
-  stat:
+  ansible.builtin.stat:
     path: "{{ omzsh_dir }}"
   register: omzsh
 
 - name: Install oh-my-zsh
-  shell: "{{ omzsh_dir }}/tools/install.sh"
+  ansible.builtin.shell: "{{ omzsh_dir }}/tools/install.sh"
   when: not omzsh.stat.exists
+  changed_when: omzsh.stat.exists
 
 - name: Clone powerlevel10k theme
-  git:
+  ansible.builtin.git:
     repo: "{{ github }}romkatv/powerlevel10k.git"
     dest: "{{ omzsh_themes_dir }}/powerlevel10k"
-    accept_hostkey: yes
+    accept_hostkey: true
 
 - name: Cloning custom plugins
-  git:
+  ansible.builtin.git:
     repo: "{{ github }}{{ item.value }}/{{ item.key }}.git"
     dest: "{{ omzsh_plugins_dir }}/{{ item.key }}"
-    accept_hostkey: yes
+    accept_hostkey: true
   with_dict: "{{ omzsh_plugins }}"
 
 - name: Checking for original .zshrc
-  stat:
+  ansible.builtin.stat:
     path: "{{ user.home }}/.zshrc"
   register: stat_zshrc
 
 - name: Backing up .zshrc file
-  command: "mv {{ user.home }}/.zshrc {{ user.home }}/.zshrc.bak"
+  ansible.builtin.command: "mv {{ user.home }}/.zshrc {{ user.home }}/.zshrc.bak"
   args:
     creates: "{{ user.home }}/.zshrc.bak"
   when: stat_zshrc.stat.exists
 
 - name: Create .zshrc
-  template:
+  ansible.builtin.template:
     src: .zshrc.j2
     dest: "{{ user.home }}/.zshrc"
+    mode: "0644"
 
 - name: Create .zprofile
-  template:
+  ansible.builtin.template:
     src: .zprofile.j2
     dest: "{{ user.home }}/.zprofile"
+    mode: "0644"
 
 - name: Install artii gem
   community.general.gem:
