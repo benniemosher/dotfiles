@@ -1,6 +1,0 @@
-editorconfig
-git
-gnupg
-ssh
-terraform
-vim
