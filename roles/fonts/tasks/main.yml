@@ -1,7 +1,7 @@
 ---
 
 - name: Get Inconsolata Nerd font
-  get_url:
+  ansible.builtin.get_url:
     url: '{{ item }}'
     dest: '/Users/{{ ansible_user_id }}/Library/Fonts'
   with_items:
@@ -11,3 +11,4 @@
     - https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Inconsolata/InconsolataNerdFontMono-Regular.ttf
     - https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Inconsolata/InconsolataNerdFontPropo-Bold.ttf
     - https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/Inconsolata/InconsolataNerdFontPropo-Regular.ttf
+  mode: "0644"

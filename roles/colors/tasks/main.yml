@@ -1,13 +1,16 @@
 ---
 - name: Get Nord for Terminal
-  get_url:
+  ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/arcticicestudio/nord-terminal-app/master/src/xml/Nord.terminal
     dest: "{{ playbook_dir }}"
+    mode: "0644"
 - name: Get Nord for iTerm
-  get_url:
+  ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/arcticicestudio/nord-iterm2/master/src/xml/Nord.itermcolors
     dest: "{{ playbook_dir }}"
+    mode: "0644"
 - name: Get Vim colors
-  get_url:
+  ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/nordtheme/vim/main/colors/nord.vim
     dest: "~/.vim/colors"
+    mode: "0644"

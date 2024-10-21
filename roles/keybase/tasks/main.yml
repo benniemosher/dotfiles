@@ -15,7 +15,7 @@
 - name: Import PGP Key
   ansible.builtin.shell:
     cmd: 'keybase pgp export -q "{{ keybase_key_id }}" | gpg --import'
-  # changed_when: true
+    # changed_when: true
 
 - name: Import PGP Private Key
   ansible.builtin.shell:
