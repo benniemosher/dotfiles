@@ -18,3 +18,5 @@ export KEYBASE_KEY_ID="<ENTER_KEY_ID>"
 chezmoi apply
 osascript -e 'quit app "Terminal"'
 ```
+
+Update iTerm2.app to pull the plist from `$HOME/.local/share/chezmoi/preferences`.
