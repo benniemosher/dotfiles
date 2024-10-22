@@ -7,6 +7,7 @@ eval "$(/usr/local/bin/brew shellenv)"
 
 # Preferred editor
 export EDITOR='vim'
+export TEST='bennie'
 
 # ==================================================================================================================
 # Additional aliases
@@ -17,8 +18,9 @@ alias ll='ls -al'
 # Import local settings not meant to be checked into Git
 # ==================================================================================================================
 
-if [ -f ~/.profile.local ]; then
-    source ~/.profile.local
+local-profile="~/.zshrc.local"
+if [ -f $local-profile ]; then
+    source $local-profile 
 else
-    print "404: ~/.profile.local not found."
+    print "404: $local-profile not found."
 fi
