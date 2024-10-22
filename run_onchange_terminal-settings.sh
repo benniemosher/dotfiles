@@ -1,0 +1,27 @@
+#!/bin/sh
+
+color_directory="$HOME/.colors"
+profile="tokyo-night"
+url="https://raw.githubusercontent.com/tboltondev/tokyo-night.terminal/refs/heads/main/tokyo-night.terminal"
+
+if [ "$color_directory" != "" ] ; then
+  # Make dir if doesn't exist
+  [ -d $color_directory ] || mkdir $color_directory 
+
+  if [ "$profile" != "" ] ; then
+    # Download the color profile
+    curl -s -o $color_directory/$profile.terminal $url
+    # TODO: Make this not open a new window
+    open --hide $color_directory/$profile.terminal
+
+    # Set the current window to profile
+    osascript -e "tell application \"Terminal\" to set current settings of first window to settings set \"${profile}\""
+    echo "Current Terminal profile set to: $profile"
+
+    # Set default and startup windows to profile
+    defaults write com.apple.terminal "Default Window Settings" -string $profile 
+    defaults write com.apple.Terminal "Startup Window Settings" -string $profile
+    echo "Default and Startup profile set to: $profile"
+  fi
+fi
+
