@@ -1,1 +1,4 @@
-preferences/com.googlecode.iterm2.plist
+preferences
+Brewfile
+Brewfile.lock.json
+README.md
