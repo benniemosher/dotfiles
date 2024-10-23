@@ -1,6 +1,7 @@
 tap "homebrew/bundle"
 tap "homebrew/services"
 brew "chezmoi"
+brew "defaultbrowser"
 brew "gh"
 brew "pinentry"
 brew "gnupg"
