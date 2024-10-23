@@ -1,6 +1,7 @@
 [user]
 	name = Bennie Mosher
   	email = benniemosher@gmail.com
+	signingkey = a37b25176bc1b3b9
 [alias]
 	s = status
 	co = checkout
@@ -12,6 +13,8 @@
 	editor = vim
 	excludesfile = ~/.gitignore_global
 	ignorecase = false
+[commit]
+	gpgsign = true
 [push]
 	default = current
 [pull]
@@ -22,6 +25,8 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+[gpg]
+	program = gpg
 [init]
 	defaultBranch = main
 [safe]
@@ -32,5 +37,3 @@
 [credential "https://gist.github.com"]
 	helper =
 	helper = !/opt/homebrew/bin/gh auth git-credential
-[includeIf "gitdir:/Users/bmosher/Code/dotfiles"]
-	path = /Users/bmosher/Code/.gitconfig-dotfiles

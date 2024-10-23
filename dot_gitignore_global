@@ -1,0 +1,17 @@
+.DS_Store
+.pluralith
+.terraform
+.vscode
+generated
+node_modules
+vendor/bundle
+*.pem
+*.crt
+*.tfstate
+
+*.cer
+*.csr
+*.key
+*.p7b
+id_*
+*.lock.json
