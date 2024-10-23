@@ -23,7 +23,7 @@ alias e='nvim'
 
 local_profile="$HOME/.zshrc.local"
 if [ -f $local_profile ]; then
-    source $local_profile 
+    source $local_profile
 else
     print "404: $local_profile not found."
 fi

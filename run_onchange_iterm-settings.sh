@@ -6,7 +6,7 @@ url="https://raw.githubusercontent.com/tokyo-night/tokyo-night-vscode-theme/refs
 
 if [ "$color_directory" != "" ] ; then
   # Make dir if doesn't exist
-  [ -d $color_directory ] || mkdir $color_directory 
+  [ -d $color_directory ] || mkdir $color_directory
 
   if [ "$profile" != "" ] ; then
     # Download the color profile
@@ -15,4 +15,3 @@ if [ "$color_directory" != "" ] ; then
     open --hide $color_directory/$profile.itermcolors
   fi
 fi
-

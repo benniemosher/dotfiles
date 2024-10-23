@@ -6,7 +6,7 @@ url="https://raw.githubusercontent.com/tboltondev/tokyo-night.terminal/refs/head
 
 if [ "$color_directory" != "" ] ; then
   # Make dir if doesn't exist
-  [ -d $color_directory ] || mkdir $color_directory 
+  [ -d $color_directory ] || mkdir $color_directory
 
   if [ "$profile" != "" ] ; then
     # Download the color profile
@@ -19,9 +19,8 @@ if [ "$color_directory" != "" ] ; then
     echo "Current Terminal profile set to: $profile"
 
     # Set default and startup windows to profile
-    defaults write com.apple.terminal "Default Window Settings" -string $profile 
+    defaults write com.apple.terminal "Default Window Settings" -string $profile
     defaults write com.apple.Terminal "Startup Window Settings" -string $profile
     echo "Default and Startup profile set to: $profile"
   fi
 fi
-
