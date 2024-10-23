@@ -28,3 +28,5 @@ else
 fi
 
 eval "$(starship init zsh)"
+
+(figlet -f doom $(hostname -s); fortune | cowthink -f stegosaurus) | lolcat
