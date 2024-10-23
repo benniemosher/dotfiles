@@ -9,6 +9,7 @@ brew "gh"
 brew "pinentry"
 brew "gnupg"
 brew "lolcat"
+brew "mas"
 brew "pinentry-mac"
 brew "starship"
 cask "1password"
@@ -17,3 +18,5 @@ cask "brave-browser"
 cask "grammarly-desktop"
 cask "iterm2"
 cask "keybase"
+mas "1Password for Safari", id: 1569813296
+mas "Amphetamine", id: 937984704
