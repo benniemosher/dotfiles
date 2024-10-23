@@ -1,4 +1,5 @@
 preferences
 Brewfile
 Brewfile.lock.json
-README.md
+**/README.md
+**/LICENSE
