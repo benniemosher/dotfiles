@@ -5,7 +5,7 @@ eval "$(/usr/local/bin/brew shellenv)"
 # Exports
 # =================================================================================================================
 # Preferred editor
-export EDITOR='e'
+export EDITOR='nvim'
 
 # GPG vars
 export LANG=en_US.UTF-8
@@ -16,6 +16,7 @@ export GPG_TTY=$(tty)
 # =================================================================================================================
 alias ll='ls -al'
 alias e='nvim'
+alias tf='terraform'
 
 # =================================================================================================================
 # Import local settings not meant to be checked into Git
