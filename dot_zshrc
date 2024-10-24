@@ -17,6 +17,7 @@ export GPG_TTY=$(tty)
 alias ll='ls -al'
 alias e='nvim'
 alias tf='terraform'
+alias brew-update='brew update; brew outdated; brew upgrade; brew cleanup; brew doctor;'
 
 # =================================================================================================================
 # Import local settings not meant to be checked into Git
