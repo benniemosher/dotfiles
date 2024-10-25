@@ -26,9 +26,11 @@ brew "cowsay-org/cowsay/cowsay-org"
 cask "1password"
 cask "amethyst"
 cask "brave-browser"
+cask "docker"
 cask "grammarly-desktop"
 cask "iterm2"
 cask "keybase"
 cask "yubico-yubikey-manager"
+cask "zoom"
 mas "1Password for Safari", id: 1569813296
 mas "Amphetamine", id: 937984704
