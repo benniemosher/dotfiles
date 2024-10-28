@@ -14,11 +14,12 @@ export GPG_TTY=$(tty)
 # =================================================================================================================
 # Additional aliases
 # =================================================================================================================
-alias ll='ls -al'
-alias e='nvim'
-alias tf='terraform'
 alias brew-update='brew update; brew outdated; brew upgrade; brew cleanup; brew doctor;'
 alias doco='docker-compose'
+alias e='nvim'
+alias ll='ls -al'
+alias tf='terraform'
+alias yamllint='docker run --rm -it -v $(pwd):/data cytopia/yamllint'
 
 # =================================================================================================================
 # Import local settings not meant to be checked into Git
@@ -32,5 +33,6 @@ else
 fi
 
 eval "$(starship init zsh)"
+eval "$(/usr/local/bin/mise activate zsh)"
 
 (figlet -f doom $(hostname -s); fortune | cowthink -f stegosaurus) | lolcat
