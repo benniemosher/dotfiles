@@ -14,6 +14,7 @@ export GPG_TTY=$(tty)
 # =================================================================================================================
 # Additional aliases
 # =================================================================================================================
+alias be='bundle exec'
 alias brew-update='brew update; brew outdated; brew upgrade; brew cleanup; brew doctor;'
 alias doco='docker-compose'
 alias e='nvim'
