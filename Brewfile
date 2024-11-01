@@ -35,6 +35,7 @@ cask "docker"
 cask "grammarly-desktop"
 cask "iterm2"
 cask "keybase"
+cask "meld"
 cask "yubico-yubikey-manager"
 cask "zoom"
 mas "1Password for Safari", id: 1569813296
