@@ -8,7 +8,7 @@ if [ -f "$GNUPG_HOME" ]; then
 fi
 
 HOSTNAME=$(hostname -s)
-keybase --pinentry=none login $KEYBASE_USERNAME --paperkey "$KEYBASE_PAPERKEY" --devicename "$HOSTNAME"
+keybase --pinentry=none login $KEYBASE_USERNAME --paperkey "$KEYBASE_PAPERKEY" --devicename "$HOST"
 
 gpgconf --kill gpg-agent
 
