@@ -1,0 +1,5 @@
+settings:
+  darwin:
+    defaults:
+      - name: AppleInterfaceStyle
+        value: "Dark"
