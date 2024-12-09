@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # Node
-msie install node
-msie use node
+mise install node
+mise use node
 
 # Python
-msie install python
-msie use python
+mise install python
+mise use python
