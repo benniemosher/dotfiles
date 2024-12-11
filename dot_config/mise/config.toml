@@ -1,4 +1,10 @@
 [tools]
+cosign = "latest"
+infracost = "latest"
 node = "latest"
+python = "latest"
 ruby = "latest"
 terraform = "latest"
+terraform-docs = "latest"
+terrascan = "latest"
+tflint = "latest"
