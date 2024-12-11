@@ -1,5 +1,5 @@
 # Load homebrew
-eval "$(/opt/homebrew/bin/brew shellenv)"
+eval "$(/usr/local/bin/brew shellenv)"
 
 # =================================================================================================================
 # Exports
@@ -34,7 +34,7 @@ else
 fi
 
 eval "$(starship init zsh)"
-eval "$(/opt/homebrew/bin/mise activate zsh)"
+eval "$(/usr/local/bin/mise activate zsh)"
 
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
