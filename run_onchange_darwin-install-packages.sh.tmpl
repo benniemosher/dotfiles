@@ -1,6 +1,6 @@
-{{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 
+{{ if eq .chezmoi.os "darwin" -}}
 echo -e "\033[1;32m>>> Installing packages...\033[0m"
 
 brew bundle --no-lock --file=/dev/stdin <<EOF

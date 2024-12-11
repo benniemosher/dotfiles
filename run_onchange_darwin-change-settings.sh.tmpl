@@ -1,6 +1,6 @@
-{{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 
+{{ if eq .chezmoi.os "darwin" -}}
 echo -e "\033[1;32m>>> Configuring MacOS Settings...\033[0m"
 
 osascript -e 'tell app "System Events" to tell appearance preferences to set dark mode to true'
