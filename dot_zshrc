@@ -39,4 +39,4 @@ eval "$(/usr/local/bin/mise activate zsh)"
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-(figlet -f doom $(hostname -s); fortune | cowthink -f stegosaurus) | lolcat
+(figlet -w 100 -f doom $(hostname -s); fortune | cowthink -f stegosaurus) | lolcat
