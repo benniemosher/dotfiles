@@ -15,3 +15,5 @@ vendor/bundle
 *.p7b
 id_*
 *.lock.json
+
+lazy-lock.json
