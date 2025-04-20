@@ -1,6 +1,7 @@
 packages:
   darwin:
     brews:
+      - "act"
       - "alexnabokikh/tfsort/tfsort"
       - "awscli"
       - "checkov"
@@ -28,5 +29,6 @@ packages:
       - "grammarly-desktop"
       - "iterm2"
       - "keybase"
+      - "slack"
       - "yubico-yubikey-manager"
       - "zoom"

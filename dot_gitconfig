@@ -1,39 +1,41 @@
 [user]
-	name = Bennie Mosher
-  	email = benniemosher@gmail.com
-	signingkey = a37b25176bc1b3b9
+  name = Bennie Mosher
+  email = benniemosher@gmail.com
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHiLyzXgt7jnveA00YXLH5euotmhiTJPLsxcLMbL1Qk/
 [alias]
-	s = status
-	co = checkout
-	cp = cherry-pick
-	change-commits = "!f() { VAR=$1; OLD=$2; NEW=$3; shift 3; git filter-branch --env-filter \"if [[ \\\"$`echo $VAR`\\\" = '$OLD' ]]; then export $VAR='$NEW'; fi\" $@; }; f"
+  s = status
+  co = checkout
+  cp = cherry-pick
+  change-commits = "!f() { VAR=$1; OLD=$2; NEW=$3; shift 3; git filter-branch --env-filter \"if [[ \\\"$`echo $VAR`\\\" = '$OLD' ]]; then export $VAR='$NEW'; fi\" $@; }; f"
 [credential]
-	helper = cache --timeout=3600
+  helper = cache --timeout=3600
 [core]
-	editor = vim
-	excludesfile = ~/.gitignore_global
-	ignorecase = false
+  editor = vim
+  excludesfile = ~/.gitignore_global
+  ignorecase = false
 [commit]
-	gpgsign = true
+  gpgsign = true
 [push]
-	default = current
+  default = current
 [pull]
-	default = current
-	ff = only
+  default = current
+  ff = only
 [filter "lfs"]
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
-	required = true
+  clean = git-lfs clean -- %f
+  smudge = git-lfs smudge -- %f
+  process = git-lfs filter-process
+  required = true
 [gpg]
-	program = gpg
+  format = ssh
+[gpg "ssh"]
+  program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
 [init]
-	defaultBranch = main
+  defaultBranch = main
 [safe]
-	directory = /opt/homebrew
+  directory = /opt/homebrew
 [credential "https://github.com"]
-	helper =
-	helper = !$(brew --prefix)/bin/gh auth git-credential
+  helper =
+  helper = !$(brew --prefix)/bin/gh auth git-credential
 [credential "https://gist.github.com"]
-	helper =
-	helper = !$(brew --prefix)/bin/gh auth git-credential
+  helper =
+  helper = !$(brew --prefix)/bin/gh auth git-credential

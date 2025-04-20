@@ -36,6 +36,10 @@ fi
 eval "$(starship init zsh)"
 eval "$(/opt/homebrew/bin/mise activate zsh)"
 
+export PATH=$HOME/.local/bin:$PATH
+export SSH_AUTH_SOCK=$HOME/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+export KUBECONFIG=$HOME/k3s.yaml
+
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
