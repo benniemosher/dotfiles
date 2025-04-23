@@ -32,3 +32,14 @@ packages:
       - "slack"
       - "yubico-yubikey-manager"
       - "zoom"
+  linux:
+    apts:
+      - "build-essential"
+      - "ca-certificates"
+      - "curl"
+      - "gcc"
+      - "gh"
+      - "git"
+      - "gnupg"
+      - "keybase"
+      - "lsb-release"

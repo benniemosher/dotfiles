@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo -e "\033[1;32m>>> Installing packages...\033[0m"
+
+{{ if eq .chezmoi.os "darwin" -}}
+	brew bundle --no-lock --file=/dev/stdin <<EOF
+	{{ range .packages.darwin.brews -}}
+	brew {{ . | quote }}
+	{{ end -}}
+	{{ range .packages.darwin.casks -}}
+	cask {{ . | quote }}
+	{{ end -}}
+	EOF
+{{ else if eq .chezmoi.os "linux" -}}
+	{{ range .packages.linux.apts -}}
+	sudo apt install {{ . | quote }}
+	{{ end -}}
+	{{ range .packages.darwin.snaps -}}
+	sudo snap install {{ . | quote }}
+	{{ end -}}
+{{ end -}}
