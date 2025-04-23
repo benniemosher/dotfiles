@@ -1,0 +1,7 @@
+#!/bin/sh
+
+{{- if eq .chezmoi.os "darwin" -}}
+ssh-add --apple-use-keychain $HOME/.ssh/id_ed25519
+{{- else if eq .chezmoi.os "linux" -}}
+ssh-add $HOME/.ssh/id_ed25519
+{{- end -}}

@@ -1,5 +1,15 @@
 preferences
-Brewfile
-Brewfile.lock.json
 **/README.md
 **/LICENSE
+.pre-commit-config.yaml
+.gitignore
+.github
+.git
+
+{{- if ne .chezmoi.os "darwin" }}
+Brewfile
+Brewfile.lock.json
+
+private_Library/
+private_dot_gnupg/gpg-agent.conf
+{{- end }}

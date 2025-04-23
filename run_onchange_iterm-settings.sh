@@ -1,5 +1,6 @@
 #!/bin/sh
 
+{{- if eq .chezmoi.os "darwin" -}}
 color_directory="$HOME/.colors"
 profile="tokyo-night"
 url="https://raw.githubusercontent.com/tokyo-night/tokyo-night-vscode-theme/refs/heads/master/tokyo-night.itermcolors"
@@ -15,3 +16,4 @@ if [ "$color_directory" != "" ] ; then
     open --hide $color_directory/$profile.itermcolors
   fi
 fi
+{{- end -}}
