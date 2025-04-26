@@ -1,21 +1,21 @@
 #!/bin/bash
 
 {{ if eq .chezmoi.os "darwin" -}}
-	brew bundle --no-lock --file=/dev/stdin <<EOF
-	{{ range .packages.darwin.brews -}}
-	brew {{ . | quote }}
-	{{ end -}}
-	{{ range .packages.darwin.casks -}}
-	cask {{ . | quote }}
-	{{ end -}}
-	EOF
+  brew bundle --no-lock --file=/dev/stdin <<EOF
+    {{ range .packages.darwin.brews -}}
+      brew {{ . | quote }}
+    {{ end -}}
+    {{ range .packages.darwin.casks -}}
+      cask {{ . | quote }}
+    {{ end -}}
+  EOF
 {{ else if eq .chezmoi.os "linux" -}}
-	sudo snap set system experimental.user-daemons=true
+  sudo snap set system experimental.user-daemons=true
 
-	{{ range .packages.linux.apts -}}
-	sudo apt install {{ . | quote }}
-	{{ end }}
-	{{ range .packages.linux.snaps -}}
-	sudo snap install {{ . | quote }}
-	{{ end }}
+  {{ range .packages.linux.apts -}}
+    sudo apt install {{ . | quote }}
+  {{ end }}
+  {{ range .packages.linux.snaps -}}
+    sudo snap install {{ . }}
+  {{ end }}
 {{ end -}}
