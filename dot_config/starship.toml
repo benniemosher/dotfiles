@@ -10,3 +10,7 @@ success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set
 
 [container]
 disabled = true
+
+
+[kubernetes]
+disabled = false

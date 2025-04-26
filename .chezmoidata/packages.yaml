@@ -40,6 +40,7 @@ packages:
       - "curl"
       - "figlet"
       - "fortune"
+      - "fzf"
       - "gcc"
       - "gh"
       - "git"
@@ -56,7 +57,7 @@ packages:
       - "pre-commit"
       - "slack"
       - "wget"
-      - "zlib1g-dev" 
+      - "zlib1g-dev"
       - "zsh-autosuggestions"
     snaps:
       - "1password"
