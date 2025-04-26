@@ -12,4 +12,5 @@ Brewfile.lock.json
 
 private_Library/
 private_dot_gnupg/gpg-agent.conf
+run_onchange_install-gpg-keys.sh
 {{- end }}

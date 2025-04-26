@@ -35,8 +35,6 @@ else
     print "404: $local_profile not found."
 fi
 
-eval "$(/usr/local/bin/mise activate zsh)"
-
 export PATH=$HOME/.local/bin:$PATH
 export KUBECONFIG=$HOME/k3s.yaml
 
@@ -45,10 +43,16 @@ source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 (figlet -w 100 -f doom $(hostname -s); fortune | cowthink -f stegosaurus) | lolcat
 
-{{- if eq .chezmoi.os "darwin" -}}
+{{ if eq .chezmoi.os "darwin" -}}
 export SSH_AUTH_SOCK=$HOME/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
-{{- else if eq .chezmoi.os "linux" -}}
+{{ else if eq .chezmoi.os "linux" -}}
 export SSH_AUTH_SOCK=~/.1password/agent.sock
-{{- end -}}
+{{ end -}}
+
+{{ if eq .chezmoi.os "darwin" }}
+eval "$(/usr/local/bin/mise activate zsh)"
+{{ else if eq .chezmoi.os "linux" }}
+eval "$(mise activate zsh)"
+{{ end }}
 
 eval "$(starship init zsh)"

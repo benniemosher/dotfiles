@@ -1,4 +1,6 @@
 [tools]
+awscli = "latest"
+checkov = "latest"
 cosign = "latest"
 golang = "latest"
 helm = "latest"
@@ -14,3 +16,6 @@ terrascan = "latest"
 tflint = "latest"
 tfupdate = "latest"
 trivy = "latest"
+
+[settings]
+idiomatic_version_file_enable_tools = ["terraform"]

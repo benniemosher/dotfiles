@@ -1,7 +1,5 @@
 #!/bin/bash
 
-echo -e "\033[1;32m>>> Installing packages...\033[0m"
-
 {{ if eq .chezmoi.os "darwin" -}}
 	brew bundle --no-lock --file=/dev/stdin <<EOF
 	{{ range .packages.darwin.brews -}}
@@ -12,10 +10,12 @@ echo -e "\033[1;32m>>> Installing packages...\033[0m"
 	{{ end -}}
 	EOF
 {{ else if eq .chezmoi.os "linux" -}}
+	sudo snap set system experimental.user-daemons=true
+
 	{{ range .packages.linux.apts -}}
 	sudo apt install {{ . | quote }}
-	{{ end -}}
-	{{ range .packages.darwin.snaps -}}
+	{{ end }}
+	{{ range .packages.linux.snaps -}}
 	sudo snap install {{ . | quote }}
-	{{ end -}}
+	{{ end }}
 {{ end -}}
