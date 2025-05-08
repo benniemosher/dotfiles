@@ -1,4 +1,5 @@
 [tools]
+
 awscli = "latest"
 checkov = "latest"
 cosign = "latest"

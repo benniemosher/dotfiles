@@ -1,9 +1,11 @@
 [user]
   name = Bennie Mosher
   email = benniemosher@gmail.com
-{{- if eq .chezmoi.os "darwin" -}}
+
+{{ if eq .chezmoi.os "darwin" }}
   signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHiLyzXgt7jnveA00YXLH5euotmhiTJPLsxcLMbL1Qk/
-{{- end }}
+{{ end }}
+
 [alias]
   s = status
   co = checkout
@@ -15,10 +17,12 @@
   editor = vim
   excludesfile = ~/.gitignore_global
   ignorecase = false
-{{- if eq .chezmoi.os "darwin" -}}
+
+{{ if eq .chezmoi.os "darwin" }}
 [commit]
   gpgsign = true
-{{- end }}
+{{ end }}
+
 [push]
   default = current
 [pull]
@@ -29,27 +33,31 @@
   smudge = git-lfs smudge -- %f
   process = git-lfs filter-process
   required = true
-{{- if eq .chezmoi.os "darwin" -}}
+
+{{ if eq .chezmoi.os "darwin" }}
 [gpg]
   format = ssh
 [gpg "ssh"]
   program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
-{{- end }}
+{{ end }}
+
 [init]
   defaultBranch = main
-{{- if eq .chezmoi.os "darwin" -}}
+
+{{ if eq .chezmoi.os "darwin" }}
 [safe]
   directory = /opt/homebrew
-{{- end }}
+{{ end }}
+
 [credential "https://github.com"]
-  {{- if eq .chezmoi.os "darwin" -}}
+  {{ if eq .chezmoi.os "darwin" }}
   helper = !$(brew --prefix)/bin/gh auth git-credential
-  {{- else if eq .chezmoi.os "linux" -}}
+  {{ else if eq .chezmoi.os "linux" }}
   helper = !$(which gh) auth git-credential
-  {{- end }}
+  {{ end }}
 [credential "https://gist.github.com"]
-  {{- if eq .chezmoi.os "darwin" -}}
+  {{ if eq .chezmoi.os "darwin" }}
   helper = !$(brew --prefix)/bin/gh auth git-credential
-  {{- else if eq .chezmoi.os "linux" -}}
+  {{ else if eq .chezmoi.os "linux" }}
   helper = !$(which gh) auth git-credential
-  {{- end }}
+  {{ end }}

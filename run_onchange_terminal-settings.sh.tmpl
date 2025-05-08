@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-{{- if eq .chezmoi.os "darwin" -}}
+{{ if eq .chezmoi.os "darwin" -}}
 color_directory="$HOME/.colors"
 profile="tokyo-night"
 url="https://raw.githubusercontent.com/tboltondev/tokyo-night.terminal/refs/heads/main/tokyo-night.terminal"
@@ -25,4 +25,4 @@ if [ "$color_directory" != "" ] ; then
     echo "Default and Startup profile set to: $profile"
   fi
 fi
-{{- end -}}
+{{ end -}}

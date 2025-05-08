@@ -1,2 +1,5 @@
 #!/bin/bash
+
+{{ if eq .chezmoi.os "linux" -}}
 sudo snap install starship --edge
+{{ end -}}

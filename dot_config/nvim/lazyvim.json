@@ -18,4 +18,8 @@
     "lazyvim.plugins.extras.test.core",
     "lazyvim.plugins.extras.util.octo"
   ],
+  "news": {
+    "NEWS.md": "10960"
+  },
+  "version": 8
 }
