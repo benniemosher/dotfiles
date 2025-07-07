@@ -17,3 +17,5 @@ id_*
 *.lock.json
 
 lazy-lock.json
+.infisical.json
+*auto.tfvars
