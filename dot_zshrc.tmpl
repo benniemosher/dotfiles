@@ -13,6 +13,10 @@ export EDITOR='nvim'
 export LANG=en_US.UTF-8
 export GPG_TTY=$(tty)
 
+# Attempt to have infinite scrollback
+export HISTSIZE=1000000
+export SAVEHIST=1000000
+
 # =================================================================================================================
 # Additional aliases
 # =================================================================================================================
@@ -23,6 +27,7 @@ alias e='nvim'
 alias ll='ls -al'
 alias tf='terraform'
 alias yamllint='docker run --rm -it -v $(pwd):/data cytopia/yamllint'
+alias flushdns="sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder"
 
 # =================================================================================================================
 # Import local settings not meant to be checked into Git
@@ -37,6 +42,8 @@ fi
 
 export PATH=$HOME/.local/bin:$PATH
 export KUBECONFIG=$HOME/k3s.yaml
+export GH_PACKAGES_PAT=$( gh auth token )
+export PATH=$HOME/bin:$PATH
 
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

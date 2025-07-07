@@ -1,10 +1,10 @@
-preferences
-**/README.md
 **/LICENSE
-.pre-commit-config.yaml
-.gitignore
-.github
+**/README.md
 .git
+.github
+.gitignore
+.pre-commit-config.yaml
+preferences
 
 {{- if ne .chezmoi.os "darwin" }}
 Brewfile

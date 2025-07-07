@@ -1,7 +1,6 @@
 packages:
   darwin:
     brews:
-      - "act"
       - "alexnabokikh/tfsort/tfsort"
       - "awscli"
       - "checkov"
@@ -21,6 +20,7 @@ packages:
       - "pre-commit"
       - "starship"
       - "tmux"
+      - "yq"
     casks:
       - "1password"
       - "amethyst"
@@ -28,7 +28,6 @@ packages:
       - "diffmerge"
       - "docker"
       - "grammarly-desktop"
-      - "iterm2"
       - "keybase"
       - "slack"
       - "yubico-yubikey-manager"
