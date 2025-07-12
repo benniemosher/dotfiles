@@ -5,6 +5,7 @@ packages:
       - "awscli"
       - "checkov"
       - "chezmoi"
+      - "cloudflared"
       - "cowsay"
       - "defaultbrowser"
       - "figlet"
