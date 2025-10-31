@@ -27,6 +27,7 @@ packages:
       - "1password"
       - "amethyst"
       - "brave-browser"
+      - "claude-code"
       - "diffmerge"
       - "docker-desktop"
       - "grammarly-desktop"
