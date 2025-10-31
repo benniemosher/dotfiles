@@ -7,7 +7,7 @@ eval "$(/usr/local/bin/brew shellenv)"
 # Exports
 # =================================================================================================================
 # Preferred editor
-export EDITOR='nvim'
+export EDITOR="nvim"
 
 # GPG vars
 export LANG=en_US.UTF-8
@@ -20,15 +20,17 @@ export SAVEHIST=1000000
 # =================================================================================================================
 # Additional aliases
 # =================================================================================================================
-alias be='bundle exec'
-alias brew-update='brew update; brew outdated; brew upgrade; brew cleanup; brew doctor;'
-alias doco='docker-compose'
-alias e='nvim'
-alias ll='ls -al'
-alias tf='terraform'
-alias yamllint='docker run --rm -it -v $(pwd):/data cytopia/yamllint'
+alias be="bundle exec"
+alias brew-update="brew update; brew outdated; brew upgrade; brew cleanup; brew doctor;"
+alias mise-update="mise upgrade; mise reshim;"
+alias doco="docker-compose"
+alias e="nvim"
+alias ll="ls -al"
+alias tf="terraform"
+alias yamllint="docker run --rm -it -v $(pwd):/data cytopia/yamllint"
 alias flushdns="sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder"
 alias pinentryprogram="$(which pinentry-mac)"
+alias ups="brew-update; mise-update"
 
 # =================================================================================================================
 # Import local settings not meant to be checked into Git
