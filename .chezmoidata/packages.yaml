@@ -2,6 +2,7 @@ packages:
   darwin:
     brews:
       - "alexnabokikh/tfsort/tfsort"
+      - "argocd"
       - "awscli"
       - "checkov"
       - "chezmoi"
@@ -13,6 +14,9 @@ packages:
       - "fzf"
       - "gh"
       - "gnupg"
+      - "kubernetes-cli"
+      - "kubectx"
+      - "kustomize"
       - "lolcat"
       - "mas"
       - "mise"
@@ -21,6 +25,7 @@ packages:
       - "pinentry-mac"
       - "pre-commit"
       - "starship"
+      - "stern"
       - "tmux"
       - "yq"
     casks:
