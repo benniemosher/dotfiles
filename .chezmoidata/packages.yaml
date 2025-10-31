@@ -31,8 +31,6 @@ packages:
       - "grammarly-desktop"
       - "keybase"
       - "slack"
-      - "yubico-yubikey-manager"
-      - "zoom"
   linux:
     apts:
       - "build-essential"
