@@ -44,9 +44,11 @@ else
 fi
 
 export PATH=$HOME/.local/bin:$PATH
+export PATH=$HOME/bin:$PATH
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
 export KUBECONFIG=$HOME/k3s.yaml
 export GH_PACKAGES_PAT=$( gh auth token )
-export PATH=$HOME/bin:$PATH
 
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
