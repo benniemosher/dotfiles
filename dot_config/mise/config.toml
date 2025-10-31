@@ -1,7 +1,6 @@
 [tools]
 awscli = "latest"
 checkov = "latest"
-cosign = "latest"
 golang = "latest"
 helm = "latest"
 infracost = "latest"
