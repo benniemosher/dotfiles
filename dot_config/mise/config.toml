@@ -16,6 +16,8 @@ terrascan = "latest"
 tflint = "latest"
 tfupdate = "latest"
 trivy = "latest"
+"pipx:ansible" = "latest"
+"pipx:ansible-core" = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["terraform"]
