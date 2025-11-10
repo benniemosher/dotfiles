@@ -17,6 +17,7 @@ packages:
       - "krew"
       - "kubernetes-cli"
       - "kubectx"
+      - "kubeseal"
       - "kustomize"
       - "lolcat"
       - "mas"
