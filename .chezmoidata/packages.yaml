@@ -28,6 +28,7 @@ packages:
       - "starship"
       - "stern"
       - "tmux"
+      - "tree"
       - "yq"
     casks:
       - "1password"
