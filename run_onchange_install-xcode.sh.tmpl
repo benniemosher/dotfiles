@@ -1,30 +1,5 @@
 #!/bin/bash
 
 {{ if eq .chezmoi.os "darwin" -}}
-echo -e "\033[1;32m>>> Installing Xcode...\033[0m"
-
-# Install xcodes CLI if not present
-if ! command -v xcodes &> /dev/null; then
-  curl -sL https://github.com/XcodesOrg/xcodes/releases/latest/download/xcodes.zip -o /tmp/xcodes.zip
-  unzip -o /tmp/xcodes.zip -d /tmp
-  sudo mv /tmp/xcodes /usr/local/bin/
-fi
-
-# Get the latest Xcode version
-LATEST_VERSION=$(xcodes list | grep -v "Beta" | tail -1 | awk '{print $1}')
-echo "Latest Xcode version: $LATEST_VERSION"
-
-# Install the latest version
-xcodes install "$LATEST_VERSION" --experimental-unxip
-
-# Select the installed version
-sudo xcodes select "$LATEST_VERSION"
-
-# Rename to Xcode.app for easier searching
-if [ -d "/Applications/Xcode-${LATEST_VERSION}.app" ] && [ ! -d "/Applications/Xcode.app" ]; then
-  sudo mv "/Applications/Xcode-${LATEST_VERSION}.app" "/Applications/Xcode.app"
-  echo "Renamed to Xcode.app"
-fi
-
-echo "Xcode $LATEST_VERSION installed and selected"
+$HOME/bin/xcode-update
 {{ end -}}
