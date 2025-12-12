@@ -31,7 +31,12 @@ alias pinentryprogram="$(which pinentry-mac)"
 
 alias brew-update="brew update; brew outdated; brew upgrade; brew cleanup; brew doctor;"
 alias mise-update="mise upgrade --bump; mise reshim;"
+{{ if eq .chezmoi.os "darwin" -}}
+alias xcode-update='LATEST=$(xcodes list | grep -v "Beta" | tail -1 | awk "{print \$1}"); xcodes install "$LATEST" --experimental-unxip; sudo xcodes select "$LATEST"; [ -d "/Applications/Xcode-${LATEST}.app" ] && [ ! -d "/Applications/Xcode.app" ] && sudo mv "/Applications/Xcode-${LATEST}.app" "/Applications/Xcode.app"'
+alias ups="brew-update; mise-update; xcode-update"
+{{ else -}}
 alias ups="brew-update; mise-update"
+{{ end -}}
 
 alias k=kubectl
 alias kgp='kubectl get pods'
