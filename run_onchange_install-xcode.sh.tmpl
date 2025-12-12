@@ -1,0 +1,9 @@
+#!/bin/bash
+
+{{ if eq .chezmoi.os "darwin" -}}
+curl -sL https://github.com/XcodesOrg/xcodes/releases/latest/download/xcodes.zip -o /tmp/xcodes.zip
+unzip /tmp/xcodes.zip -d /tmp
+sudo mv /tmp/xcodes /usr/local/bin/
+
+xcodes install --latest --experimental-unxip
+{{ end -}}

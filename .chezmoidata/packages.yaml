@@ -3,6 +3,7 @@ packages:
     brews:
       - "alexnabokikh/tfsort/tfsort"
       - "argocd"
+      - "aria2"
       - "awscli"
       - "checkov"
       - "chezmoi"
