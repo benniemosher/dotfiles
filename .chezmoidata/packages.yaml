@@ -1,5 +1,7 @@
 packages:
   darwin:
+    taps:
+      - "supabase/tap"
     brews:
       - "alexnabokikh/tfsort/tfsort"
       - "argocd"
@@ -30,6 +32,7 @@ packages:
       - "pydantic"
       - "starship"
       - "stern"
+      - "supabase"
       - "tmux"
       - "tree"
       - "yq"
