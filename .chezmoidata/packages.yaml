@@ -34,6 +34,7 @@ packages:
       - "yq"
     casks:
       - "1password"
+      - "1password-cli"
       - "amethyst"
       - "brave-browser"
       - "claude-code"
@@ -42,6 +43,7 @@ packages:
       - "keybase"
       - "notion"
       - "slack"
+      - "wezterm"
   linux:
     apts:
       - "build-essential"
