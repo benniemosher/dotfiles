@@ -1,6 +1,7 @@
 [tools]
 awscli = "latest"
 checkov = "latest"
+deno = "latest"
 golang = "latest"
 helm = "latest"
 infracost = "latest"
@@ -16,6 +17,7 @@ terrascan = "latest"
 tflint = "latest"
 tfupdate = "latest"
 trivy = "latest"
+"npm:wrangler" = "latest"
 "pipx:ansible" = "latest"
 "pipx:ansible-core" = "latest"
 
