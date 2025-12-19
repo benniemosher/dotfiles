@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Install npm global packages
+{{ range .packages.npm -}}
+npm install -g {{ . | quote }}
+{{ end }}
+
 {{ if eq .chezmoi.os "darwin" -}}
 brew bundle --file=/dev/stdin <<EOF
 {{ range .packages.darwin.taps -}}

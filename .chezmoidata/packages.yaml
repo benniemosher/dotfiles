@@ -1,4 +1,6 @@
 packages:
+  npm:
+    - "eas-cli"
   darwin:
     taps:
       - "supabase/tap"
