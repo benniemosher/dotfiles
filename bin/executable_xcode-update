@@ -12,8 +12,8 @@ if ! command -v xcodes &>/dev/null; then
   sudo mv /tmp/xcodes /usr/local/bin/
 fi
 
-# Get the latest Xcode version (non-beta)
-LATEST_VERSION=$(xcodes list | grep -v "Beta" | tail -1 | awk '{print $1}')
+# Get the latest stable Xcode version (non-beta, non-RC)
+LATEST_VERSION=$(xcodes list | grep -v -E "(Beta|Release Candidate)" | grep -E "^[0-9]+\.[0-9]+" | tail -1 | awk '{print $1}')
 echo "Latest Xcode version: $LATEST_VERSION"
 
 # Install the latest version
@@ -28,7 +28,10 @@ if [ -d "/Applications/Xcode-${LATEST_VERSION}.app" ] && [ ! -d "/Applications/X
   echo "Renamed to Xcode.app"
 fi
 
-echo "Installing $LATEST_IOS runtime..."
-xcodebuild -downloadPlatform iOS
-
-echo -e "\033[1;32m>>> Xcode $LATEST_VERSION and $LATEST_IOS installed and selected\033[0m"
+# Download iOS runtime (only if xcodebuild works)
+echo "Installing iOS runtime..."
+if xcodebuild -downloadPlatform iOS; then
+  echo -e "\033[1;32m>>> Xcode $LATEST_VERSION installed, selected, and iOS runtime downloaded\033[0m"
+else
+  echo -e "\033[1;33m>>> Xcode $LATEST_VERSION installed and selected (iOS runtime download skipped due to error)\033[0m"
+fi
