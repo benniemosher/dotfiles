@@ -2,6 +2,15 @@
 
 set -e
 
+ARCH=$(uname -m)
+
+# Xcode 26.1.1 is the last version with Intel support
+# Skip updates entirely on Intel Macs
+if [ "$ARCH" = "x86_64" ]; then
+  echo -e "\033[1;33m>>> Skipping Xcode update (Intel Mac - Xcode 26.1.1 is the last supported version)\033[0m"
+  exit 0
+fi
+
 echo -e "\033[1;32m>>> Updating Xcode...\033[0m"
 
 # Install xcodes CLI if not present
@@ -14,9 +23,10 @@ fi
 
 # Get the latest stable Xcode version (non-beta, non-RC)
 LATEST_VERSION=$(xcodes list | grep -v -E "(Beta|Release Candidate)" | grep -E "^[0-9]+\.[0-9]+" | tail -1 | awk '{print $1}')
-echo "Latest Xcode version: $LATEST_VERSION"
 
-# Install the latest version
+echo "Target Xcode version: $LATEST_VERSION"
+
+# Install the target version
 xcodes install "$LATEST_VERSION" --experimental-unxip
 
 # Select the installed version
