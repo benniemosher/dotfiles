@@ -1,7 +1,12 @@
 #!/bin/bash
 # Install npm global packages
-{{ range .packages.npm -}}
+{{ range .packages.npm.work -}}
 npm install -g {{ . | quote }}
+{{ end }}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.npm.personal -}}
+npm install -g {{ . | quote }}
+{{ end }}
 {{ end }}
 {{ if eq .chezmoi.os "darwin" -}}
 brew bundle --file=/dev/stdin <<'EOF'

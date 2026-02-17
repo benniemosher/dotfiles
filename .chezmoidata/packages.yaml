@@ -1,6 +1,8 @@
 packages:
   npm:
-    - "eas-cli"
+    work:
+    personal:
+      - "eas-cli"
   darwin:
     taps:
       work:
