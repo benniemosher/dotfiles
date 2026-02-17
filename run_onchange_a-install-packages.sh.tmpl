@@ -2,21 +2,24 @@
 
 # Install npm global packages
 {{ range .packages.npm -}}
-npm install -g {{ . | quote }}
+  npm install -g {{ . | quote }}
 {{ end }}
 
 {{ if eq .chezmoi.os "darwin" -}}
-brew bundle --file=/dev/stdin <<EOF
-{{ range .packages.darwin.taps -}}
-tap {{ . | quote }}
-{{ end -}}
-{{ range .packages.darwin.brews -}}
-brew {{ . | quote }}
-{{ end -}}
-{{ range .packages.darwin.casks -}}
-cask {{ . | quote }}
-{{ end -}}
-EOF
+  brew bundle --file=/dev/stdin <<EOF
+    {{ range .packages.darwin.taps -}}
+      tap {{ .work | quote }}
+      {{ if ne "WORK_PROFILE" 1 }}
+        tap {{ .personal | quote }}
+      {{ end -}}
+    {{ end -}}
+    {{ range .packages.darwin.brews -}}
+      brew {{ . | quote }}
+    {{ end -}}
+    {{ range .packages.darwin.casks -}}
+      cask {{ . | quote }}
+    {{ end -}}
+  EOF
 {{ else if eq .chezmoi.os "linux" -}}
   sudo snap set system experimental.user-daemons=true
 
