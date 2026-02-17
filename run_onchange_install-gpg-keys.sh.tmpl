@@ -19,13 +19,19 @@ keybase --pinentry=none pgp export -q "$KEYBASE_KEY_ID" --secret | gpg --allow-s
 
 # Generate a GPG key for work if one doesn't already exist
 if ! gpg --list-secret-keys | grep -q "@"; then
-  gpg --batch --gen-key <<EOF
-Key-Type: ED25519
+  gpg --batch \
+      --pinentry-mode loopback \
+      --passphrase "" \
+      --gen-key <<EOF
+Key-Type: default
+Key-Curve: ed25519
 Key-Usage: sign
+Subkey-Type: default
+Subkey-Curve: ed25519
+Subkey-Usage: auth
 Name-Real: Bennie Mosher
 Name-Email: c-bennie.mosher@charter.com
 Expire-Date: 1y
-%no-passphrase
 %commit
 EOF
 fi
