@@ -47,12 +47,12 @@ packages:
         - "1password"
         - "1password-cli"
         - "amethyst"
-        - "docker-desktop"
         - "notion"
         - "wezterm"
       personal:
         - "brave-browser"
         - "claude-code"
+        - "docker-desktop"
         - "grammarly-desktop"
         - "keybase"
         - "slack"
