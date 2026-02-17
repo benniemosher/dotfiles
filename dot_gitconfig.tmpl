@@ -2,8 +2,10 @@
   name = Bennie Mosher
   email = benniemosher@gmail.com
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
   signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHiLyzXgt7jnveA00YXLH5euotmhiTJPLsxcLMbL1Qk/
+{{ else if eq .chezmoi.os "darwin" }}
+  signingkey = $HOME/.ssh/id_ed25519.pub
 {{ end }}
 
 [alias]
@@ -16,7 +18,7 @@
   excludesfile = ~/.gitignore_global
   ignorecase = false
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
 [commit]
   gpgsign = true
 {{ end }}
@@ -32,7 +34,7 @@
   process = git-lfs filter-process
   required = true
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
 [gpg]
   format = ssh
 [gpg "ssh"]
