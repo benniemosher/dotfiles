@@ -68,7 +68,7 @@ source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 (figlet -w 100 -f doom $(hostname -s); fortune | cowthink -f stegosaurus) | lolcat
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
 export SSH_AUTH_SOCK=$HOME/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 {{ else if eq .chezmoi.os "linux" }}
 export SSH_AUTH_SOCK=~/.1password/agent.sock

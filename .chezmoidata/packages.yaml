@@ -44,12 +44,12 @@ packages:
         - "tmux"
     casks:
       work:
-        - "1password"
-        - "1password-cli"
         - "amethyst"
         - "notion"
         - "wezterm"
       personal:
+        - "1password"
+        - "1password-cli"
         - "brave-browser"
         - "claude-code"
         - "docker-desktop"
