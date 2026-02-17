@@ -5,6 +5,7 @@
 .gitignore
 .pre-commit-config.yaml
 preferences
+renovate.json
 
 {{- if ne .chezmoi.os "darwin" }}
 Brewfile
