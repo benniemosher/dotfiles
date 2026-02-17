@@ -22,6 +22,7 @@ packages:
         - "fortune"
         - "fzf"
         - "gh"
+        - "glab"
         - "gnupg"
         - "krew"
         - "kubernetes-cli"
