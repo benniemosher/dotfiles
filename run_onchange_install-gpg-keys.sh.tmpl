@@ -1,19 +1,33 @@
-{{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
 #!/bin/sh
+{{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
 
 GNUPG_HOME="$HOME/.gnupg"
 if [ -f "$GNUPG_HOME" ]; then
-    if [ "$(stat -c %a "$GNUPG_HOME")" != "700" ] ; then
-        chmod 700 "$GNUPG_HOME"
-    fi
+  if [ "$(stat -c %a "$GNUPG_HOME")" != "700" ]; then
+    chmod 700 "$GNUPG_HOME"
+  fi
 fi
 
-HOSTNAME=$(hostname -s)
 keybase --pinentry=none login $KEYBASE_USERNAME --paperkey "$KEYBASE_PAPERKEY" --devicename "$HOST"
 
 gpgconf --kill gpg-agent
 
 keybase pgp export -q "$KEYBASE_KEY_ID" | gpg --import
-
 keybase --pinentry=none pgp export -q "$KEYBASE_KEY_ID" --secret | gpg --allow-secret-key-import --import
+
+{{ else if and (eq .chezmoi.os "darwin") (index . "work_platform") -}}
+
+# Generate a GPG key for work if one doesn't already exist
+if ! gpg --list-secret-keys | grep -q "@"; then
+  gpg --batch --gen-key <<EOF
+Key-Type: ED25519
+Key-Usage: sign
+Name-Real: Bennie Mosher
+Name-Email: c-bennie.mosher@charter.com
+Expire-Date: 1y
+%no-passphrase
+%commit
+EOF
+fi
+
 {{ end -}}
