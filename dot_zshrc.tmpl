@@ -1,6 +1,6 @@
 {{ if eq .chezmoi.os "darwin" }}
 # Load homebrew
-eval "$(/usr/local/bin/brew shellenv)"
+eval "$(/opt/homebrew/bin/brew shellenv)"
 {{ end }}
 
 # =================================================================================================================
@@ -75,7 +75,7 @@ export SSH_AUTH_SOCK=~/.1password/agent.sock
 {{ end }}
 
 {{ if eq .chezmoi.os "darwin" }}
-eval "$(/usr/local/bin/mise activate zsh)"
+eval "$(/opt/homebrew/bin/mise activate zsh)"
 {{ else if eq .chezmoi.os "linux" }}
 eval "$(mise activate zsh)"
 {{ end }}
