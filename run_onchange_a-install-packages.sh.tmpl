@@ -8,7 +8,7 @@ brew bundle --file=/dev/stdin <<'EOF'
 {{ range .packages.darwin.taps.work -}}
 tap {{ . | quote }}
 {{ end -}}
-{{ if ne (env "WORK_PLATFORM") "1" -}}
+{{ if not (index . "work_platform") -}}
 {{ range .packages.darwin.taps.personal -}}
 tap {{ . | quote }}
 {{ end -}}
@@ -16,7 +16,7 @@ tap {{ . | quote }}
 {{ range .packages.darwin.brews.work -}}
 brew {{ . | quote }}
 {{ end -}}
-{{ if ne (env "WORK_PLATFORM") "1" -}}
+{{ if not (index . "work_platform") -}}
 {{ range .packages.darwin.brews.personal -}}
 brew {{ . | quote }}
 {{ end -}}
@@ -24,7 +24,7 @@ brew {{ . | quote }}
 {{ range .packages.darwin.casks.work -}}
 cask {{ . | quote }}
 {{ end -}}
-{{ if ne (env "WORK_PLATFORM") "1" -}}
+{{ if not (index . "work_platform") -}}
 {{ range .packages.darwin.casks.personal -}}
 cask {{ . | quote }}
 {{ end -}}
