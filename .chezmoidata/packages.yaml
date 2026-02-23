@@ -48,7 +48,10 @@ packages:
     casks:
       work:
         - "amethyst"
+        - "kiro"
+        - "kiro-cli"
         - "notion"
+        - "sequel-ace"
         - "wezterm"
       personal:
         - "1password"
