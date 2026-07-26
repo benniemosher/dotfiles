@@ -7,6 +7,7 @@ packages:
     taps:
       work:
         - "alexnabokikh/tfsort"
+        - "hashicorp/tap"
       personal:
         - "supabase/tap"
     brews:
@@ -36,8 +37,10 @@ packages:
         - "pinentry"
         - "pinentry-mac"
         - "pre-commit"
+        - "shellcheck"
         - "starship"
         - "stern"
+        - "terraform-ls"
         - "tree"
         - "yq"
       personal:
@@ -52,6 +55,7 @@ packages:
         - "kiro-cli"
         - "notion"
         - "sequel-ace"
+        - "sourcetree"
         - "wezterm"
       personal:
         - "1password"
@@ -62,6 +66,7 @@ packages:
         - "grammarly-desktop"
         - "keybase"
         - "slack"
+        - "sourcetree"
   linux:
     apts:
       - "build-essential"

@@ -1,5 +1,10 @@
 {{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
 Host *
   IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/s.sock"
+{{- else if and (eq .chezmoi.os "darwin") (index . "work_platform") -}}
+Host *
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/id_ed25519
 {{- else if eq .chezmoi.os "linux" -}}
 {{- end -}}

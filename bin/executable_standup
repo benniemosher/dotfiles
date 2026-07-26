@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# standup — Add a quick entry to today's standup notes
+#
+# Auto-detects workspace from current directory (~/Code/<workspace>/).
+# Falls back to $WORKSPACE env var if not in a workspace directory.
+#
+# Usage:
+#   standup "TICKET-123: Fixed the flaky test"
+#   standup                    # opens today's file in $EDITOR
+#   WORKSPACE=mywork standup "PROJ-999: something"
+
+# --- Detect workspace ---
+detect_workspace() {
+  local cwd="$PWD"
+  local code_dir="$HOME/Code"
+
+  if [[ "$cwd" == "$code_dir/"* ]]; then
+    # Extract first directory component after ~/Code/
+    local relative="${cwd#$code_dir/}"
+    echo "${relative%%/*}"
+  elif [[ -n "${WORKSPACE:-}" ]]; then
+    echo "$WORKSPACE"
+  else
+    echo ""
+  fi
+}
+
+WORKSPACE_NAME=$(detect_workspace)
+
+if [[ -z "$WORKSPACE_NAME" ]]; then
+  echo "Error: Could not detect workspace. Either cd into ~/Code/<workspace>/ or set WORKSPACE env var."
+  exit 1
+fi
+
+STANDUP_DIR="$HOME/Code/$WORKSPACE_NAME/notes/standups"
+TODAY=$(date +%Y-%m-%d)
+STANDUP_FILE="$STANDUP_DIR/$TODAY.md"
+
+# --- Ensure directory exists ---
+mkdir -p "$STANDUP_DIR"
+
+# --- Create file from template if it doesn't exist ---
+if [[ ! -f "$STANDUP_FILE" ]]; then
+  TEMPLATE="$HOME/.config/ai/templates/standup-daily.md"
+  if [[ -f "$TEMPLATE" ]]; then
+    sed "s/{{date}}/$TODAY/g" "$TEMPLATE" > "$STANDUP_FILE"
+  else
+    cat > "$STANDUP_FILE" <<EOF
+---
+date: $TODAY
+tags: [standup]
+---
+
+# Standup - $TODAY
+
+## Summary (for standup)
+
+## Plan for tomorrow
+-
+
+---
+
+## Log
+EOF
+  fi
+fi
+
+# --- Add entry or open file ---
+if [[ $# -gt 0 ]]; then
+  TIMESTAMP=$(date +%H:%M)
+  echo "- [$TIMESTAMP] $*" >> "$STANDUP_FILE"
+  echo "✓ Added to $STANDUP_FILE"
+else
+  ${EDITOR:-vim} "$STANDUP_FILE"
+fi

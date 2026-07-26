@@ -9,6 +9,10 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 # Preferred editor
 export EDITOR="nvim"
 
+# Terraform plugin cache
+export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+mkdir -p "$TF_PLUGIN_CACHE_DIR" 2>/dev/null
+
 # GPG vars
 export LANG=en_US.UTF-8
 export GPG_TTY=$(tty)
@@ -60,7 +64,9 @@ export PATH=$HOME/.local/bin:$PATH
 export PATH=$HOME/bin:$PATH
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
+{{ if not (env "WORK_WORKSPACE") -}}
 export KUBECONFIG=$HOME/k3s.yaml
+{{ end -}}
 export GH_PACKAGES_PAT=$( gh auth token )
 
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh

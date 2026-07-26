@@ -1,2 +1,7 @@
 [data]
-work_platform = true
+git_email = "benniemosher@gmail.com"
+
+# To override on work machines, add these to ~/.zshrc.local:
+#   export GIT_EMAIL="you@work.com"
+#   export WORK_PLATFORM="true"
+#   export WORK_WORKSPACE="mycompany"

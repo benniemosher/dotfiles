@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# workspace-init — Bootstrap a new workspace under ~/Code/
+#
+# Creates the standard directory structure and context files.
+#
+# Usage:
+#   workspace-init homelab
+#   workspace-init mycompany
+
+WORKSPACE_NAME="${1:-}"
+
+if [[ -z "$WORKSPACE_NAME" ]]; then
+  echo "Usage: workspace-init <workspace-name>"
+  echo ""
+  echo "Creates ~/Code/<workspace-name>/ with standard structure:"
+  echo "  notes/standups/     — daily standup notes"
+  echo "  notes/learnings/    — captured knowledge"
+  echo "  notes/.obsidian/    — Obsidian vault config"
+  echo "  context.md          — AI workspace context"
+  echo "  .workspace.yaml     — workspace metadata"
+  exit 1
+fi
+
+BASE_DIR="$HOME/Code/$WORKSPACE_NAME"
+
+if [[ -d "$BASE_DIR/notes" ]]; then
+  echo "Workspace '$WORKSPACE_NAME' already has notes/ directory. Skipping creation."
+  echo "To reinitialize, remove $BASE_DIR/notes first."
+  exit 0
+fi
+
+echo "Creating workspace: $BASE_DIR"
+
+# --- Create directory structure ---
+mkdir -p "$BASE_DIR/notes/standups"
+mkdir -p "$BASE_DIR/notes/learnings"
+mkdir -p "$BASE_DIR/notes/.obsidian"
+mkdir -p "$BASE_DIR/tmp"
+
+# --- Create .workspace.yaml ---
+cat > "$BASE_DIR/.workspace.yaml" <<EOF
+name: $WORKSPACE_NAME
+created: $(date +%Y-%m-%d)
+# Add workspace-specific metadata below:
+# org: my-company
+# jira_prefix: PROJ
+# git_host: github.com
+EOF
+
+# --- Create context.md from template ---
+TEMPLATE="$HOME/.config/ai/templates/workspace-context.md"
+if [[ -f "$TEMPLATE" ]]; then
+  sed "s/{{workspace}}/$WORKSPACE_NAME/g" "$TEMPLATE" > "$BASE_DIR/context.md"
+else
+  cat > "$BASE_DIR/context.md" <<EOF
+# $WORKSPACE_NAME Workspace Context
+
+## Team
+- (fill in)
+
+## Repos & Locations
+| Repo | Local Path | Default Branch |
+|------|-----------|----------------|
+| | ~/Code/$WORKSPACE_NAME/ | main |
+
+## Conventions
+- (fill in workspace-specific conventions)
+EOF
+fi
+
+# --- Create Obsidian vault config ---
+cat > "$BASE_DIR/notes/.obsidian/app.json" <<EOF
+{
+  "showLineNumber": true,
+  "strictLineBreaks": false,
+  "useMarkdownLinks": false,
+  "newLinkFormat": "shortest"
+}
+EOF
+
+# --- Create .gitignore for notes (if you git init the notes dir) ---
+cat > "$BASE_DIR/notes/.gitignore" <<EOF
+# Obsidian workspace (machine-specific, not content)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/plugins/
+.obsidian/community-plugins.json
+
+# OS files
+.DS_Store
+Thumbs.db
+EOF
+
+echo ""
+echo "✓ Workspace '$WORKSPACE_NAME' initialized at $BASE_DIR"
+echo ""
+echo "Next steps:"
+echo "  1. Edit $BASE_DIR/context.md with your workspace-specific details"
+echo "  2. Edit $BASE_DIR/.workspace.yaml with metadata"
+echo "  3. (Optional) cd $BASE_DIR/notes && git init for disaster recovery"
+echo "  4. Open $BASE_DIR/notes/ in Obsidian as a vault"

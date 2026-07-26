@@ -1,5 +1,5 @@
 [tools]
-awscli = "latest"
+# awscli = "latest"
 checkov = "latest"
 # deno = "latest"
 # golang = "latest"
@@ -7,21 +7,22 @@ helm = "latest"
 infracost = "latest"
 java = "latest"
 k9s = "latest"
-node = "16"
+node = ["16", "26"]
 pipx = "latest"
-python = "latest"
+# python = "3.13"
 # ruby = "latest"
 # rust = "latest"
-terraform = "latest"
+terraform = ["1.13.4", "1.15.8"]
 terraform-docs = "latest"
 terrascan = "latest"
 tflint = "latest"
 tfupdate = "latest"
 trivy = "latest"
-yarn = "1"
+yarn = ["1", "4"]
 "npm:wrangler" = "latest"
 "pipx:ansible" = "latest"
 "pipx:ansible-core" = "latest"
+"pipx:datadog" = "latest"
 
 [settings]
-idiomatic_version_file_enable_tools = ["terraform", "ruby"]
+idiomatic_version_file_enable_tools = ["terraform", "ruby", "node"]

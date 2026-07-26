@@ -30,7 +30,7 @@ Subkey-Type: default
 Subkey-Curve: ed25519
 Subkey-Usage: auth
 Name-Real: Bennie Mosher
-Name-Email: c-bennie.mosher@charter.com
+Name-Email: {{ if env "GIT_EMAIL" }}{{ env "GIT_EMAIL" }}{{ else }}{{ .git_email }}{{ end }}
 Expire-Date: 1y
 %commit
 EOF

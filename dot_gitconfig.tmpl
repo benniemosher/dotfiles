@@ -1,10 +1,6 @@
 [user]
   name = Bennie Mosher
-{{ if index . "work_platform" -}}
-  email = your-work-email@company.com
-{{ else -}}
-  email = benniemosher@gmail.com
-{{ end -}}
+  email = {{ if env "GIT_EMAIL" }}{{ env "GIT_EMAIL" }}{{ else }}{{ .git_email }}{{ end }}
 
 {{ if eq .chezmoi.os "darwin" -}}
 {{ if index . "work_platform" -}}
@@ -53,6 +49,15 @@
 
 [init]
   defaultBranch = main
+
+{{ if eq .chezmoi.os "darwin" -}}
+[difftool "sourcetree"]
+  cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+  path =
+[mergetool "sourcetree"]
+  cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+  trustExitCode = true
+{{ end -}}
 
 {{ if eq .chezmoi.os "darwin" -}}
 [safe]
