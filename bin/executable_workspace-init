@@ -20,6 +20,7 @@ if [[ -z "$WORKSPACE_NAME" ]]; then
   echo "  notes/.obsidian/    — Obsidian vault config"
   echo "  context.md          — AI workspace context"
   echo "  .workspace.yaml     — workspace metadata"
+  echo "  .mise.toml          — workspace-pinned runtime versions"
   exit 1
 fi
 
@@ -69,6 +70,17 @@ else
 - (fill in workspace-specific conventions)
 EOF
 fi
+
+# --- Create .mise.toml for workspace-pinned versions ---
+cat > "$BASE_DIR/.mise.toml" <<EOF
+[tools]
+# Pin versions used by this workspace. Global ~/.config/mise/config.toml
+# provides "latest" defaults; entries here override for everything under
+# ~/Code/$WORKSPACE_NAME/. Run "mise install" after editing.
+# node = "20"
+# terraform = "1.13.4"
+# python = "3.12"
+EOF
 
 # --- Create Obsidian vault config ---
 cat > "$BASE_DIR/notes/.obsidian/app.json" <<EOF

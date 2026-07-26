@@ -36,6 +36,17 @@ description: Copy this to ~/Code/<workspace>/context.md and fill in business-spe
 - Learnings: ~/Code/{{workspace}}/notes/learnings/
 - Tmp working docs: ~/Code/{{workspace}}/tmp/
 
+## Runtime Versions
+
+Workspace-level `.mise.toml` at `~/Code/{{workspace}}/.mise.toml` — pins versions for everything under this workspace. Edit to match what the team actually uses:
+
+```toml
+[tools]
+node = "20"
+# terraform = "1.13.4"
+# python = "3.12"
+```
+
 ## AI-Specific Notes
 - (Any preferences specific to this workspace that override the globals)
 - (e.g., "Use internal-dd.example.com not app.datadoghq.com")

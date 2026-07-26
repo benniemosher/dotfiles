@@ -16,6 +16,7 @@ Read and follow the instructions in these files (they are the canonical source o
 - `~/.config/ai/standards/kubernetes.md` — K8s standards
 - `~/.config/ai/standards/ci-cd.md` — CI/CD patterns
 - `~/.config/ai/standards/observability.md` — monitoring/alerting
+- `~/.config/ai/standards/tooling.md` — mise runtime version management
 
 ## Workspace Detection
 
