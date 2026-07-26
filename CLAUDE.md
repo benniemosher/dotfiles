@@ -235,6 +235,26 @@ Defined in `.chezmoiexternal.toml`:
 - LazyVim configuration (pulled from GitHub)
 - Other external configs as needed
 
+### Zsh History Configuration
+
+Unlike oh-my-zsh (which sets history options automatically), this minimal zsh setup requires explicit `setopt` configuration in `dot_zshrc.tmpl`:
+
+```zsh
+export HISTFILE=~/.zsh_history
+export HISTSIZE=1000000
+export SAVEHIST=1000000
+
+setopt APPEND_HISTORY    # Append to history file instead of overwriting
+setopt SHARE_HISTORY     # Share history across all sessions
+setopt HIST_IGNORE_DUPS  # Don't record duplicate commands
+setopt HIST_IGNORE_SPACE # Don't record commands starting with space
+setopt HIST_REDUCE_BLANKS # Remove superfluous blanks from history
+```
+
+**Common Issue:** If `history` only shows ~10 lines, it's likely because `APPEND_HISTORY` or `SHARE_HISTORY` are not set. Without these, zsh overwrites the history file on exit instead of appending to it.
+
+**Note:** Starship only customizes the prompt appearance and does NOT manage shell history - that remains a core zsh function.
+
 ## Important Notes
 
 ### Platform-Specific Code
@@ -273,7 +293,7 @@ Use chezmoi templating for platform differences:
 
 ---
 
-**Last Updated:** 2025-12-12
+**Last Updated:** 2026-04-18
 
 This file should be updated whenever:
 
