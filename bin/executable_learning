@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# learning — Add a quick learning entry
+#
+# Auto-detects workspace from current directory.
+#
+# Usage:
+#   learning "terraform" "for_each requires map or set, not list of objects"
+#   learning                   # opens today's learning file in $EDITOR
+#
+# First argument is the tag/topic, rest is the content.
+
+# --- Detect workspace ---
+detect_workspace() {
+  local cwd="$PWD"
+  local code_dir="$HOME/Code"
+
+  if [[ "$cwd" == "$code_dir/"* ]]; then
+    local relative="${cwd#$code_dir/}"
+    echo "${relative%%/*}"
+  elif [[ -n "${WORKSPACE:-}" ]]; then
+    echo "$WORKSPACE"
+  else
+    echo ""
+  fi
+}
+
+WORKSPACE_NAME=$(detect_workspace)
+
+if [[ -z "$WORKSPACE_NAME" ]]; then
+  echo "Error: Could not detect workspace. Either cd into ~/Code/<workspace>/ or set WORKSPACE env var."
+  exit 1
+fi
+
+LEARNING_DIR="$HOME/Code/$WORKSPACE_NAME/notes/learnings"
+TODAY=$(date +%Y-%m-%d)
+LEARNING_FILE="$LEARNING_DIR/$TODAY.md"
+
+# --- Ensure directory exists ---
+mkdir -p "$LEARNING_DIR"
+
+# --- Create file from template if it doesn't exist ---
+if [[ ! -f "$LEARNING_FILE" ]]; then
+  cat > "$LEARNING_FILE" <<EOF
+---
+date: $TODAY
+tags: []
+---
+
+# Learnings - $TODAY
+EOF
+fi
+
+# --- Add entry or open file ---
+if [[ $# -ge 2 ]]; then
+  TAG="$1"
+  shift
+  CONTENT="$*"
+  TIMESTAMP=$(date +%H:%M)
+
+  # Add tag to frontmatter if not already there
+  if ! grep -q "$TAG" "$LEARNING_FILE" 2>/dev/null; then
+    sed -i '' "s/^tags: \[/tags: [$TAG, /" "$LEARNING_FILE"
+    # Clean up empty leading comma if tags was empty
+    sed -i '' 's/tags: \[, /tags: [/' "$LEARNING_FILE"
+  fi
+
+  # Append the learning
+  cat >> "$LEARNING_FILE" <<EOF
+
+## $CONTENT
+
+_Captured at $TIMESTAMP. Topic: $TAG._
+
+### Context
+(fill in)
+
+### Solution
+(fill in)
+EOF
+  echo "✓ Added learning to $LEARNING_FILE (tag: $TAG)"
+elif [[ $# -eq 1 ]]; then
+  echo "Usage: learning <tag> <description>"
+  echo "       learning                    # open in editor"
+  exit 1
+else
+  ${EDITOR:-vim} "$LEARNING_FILE"
+fi

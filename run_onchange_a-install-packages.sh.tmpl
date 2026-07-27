@@ -1,29 +1,54 @@
 #!/bin/bash
-
-# Install npm global packages
-{{ range .packages.npm -}}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.npm.personal -}}
 npm install -g {{ . | quote }}
 {{ end }}
-
+{{ end }}
 {{ if eq .chezmoi.os "darwin" -}}
-brew bundle --file=/dev/stdin <<EOF
-{{ range .packages.darwin.taps -}}
+# Add and trust third-party taps before installing packages
+{{ range .packages.darwin.taps.work -}}
+brew tap {{ . }} 2>/dev/null || true
+brew trust {{ . | quote }} 2>/dev/null || true
+{{ end -}}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.darwin.taps.personal -}}
+brew tap {{ . }} 2>/dev/null || true
+brew trust {{ . | quote }} 2>/dev/null || true
+{{ end -}}
+{{ end -}}
+
+brew bundle --file=/dev/stdin <<'EOF'
+{{ range .packages.darwin.taps.work -}}
 tap {{ . | quote }}
 {{ end -}}
-{{ range .packages.darwin.brews -}}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.darwin.taps.personal -}}
+tap {{ . | quote }}
+{{ end -}}
+{{ end -}}
+{{ range .packages.darwin.brews.work -}}
 brew {{ . | quote }}
 {{ end -}}
-{{ range .packages.darwin.casks -}}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.darwin.brews.personal -}}
+brew {{ . | quote }}
+{{ end -}}
+{{ end -}}
+{{ range .packages.darwin.casks.work -}}
 cask {{ . | quote }}
+{{ end -}}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.darwin.casks.personal -}}
+cask {{ . | quote }}
+{{ end -}}
 {{ end -}}
 EOF
 {{ else if eq .chezmoi.os "linux" -}}
-  sudo snap set system experimental.user-daemons=true
-
-  {{ range .packages.linux.apts -}}
-    sudo apt install {{ . | quote }}
-  {{ end }}
-  {{ range .packages.linux.snaps -}}
-    sudo snap install {{ . }}
-  {{ end }}
+sudo snap set system experimental.user-daemons=true
+{{ range .packages.linux.apts -}}
+sudo apt install {{ . | quote }}
+{{ end }}
+{{ range .packages.linux.snaps -}}
+sudo snap install {{ . }}
+{{ end }}
 {{ end -}}

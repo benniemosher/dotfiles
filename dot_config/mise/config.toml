@@ -5,6 +5,7 @@ deno = "latest"
 golang = "latest"
 helm = "latest"
 infracost = "latest"
+java = "latest"
 k9s = "latest"
 node = "latest"
 pipx = "latest"
@@ -17,9 +18,12 @@ terrascan = "latest"
 tflint = "latest"
 tfupdate = "latest"
 trivy = "latest"
+yarn = "latest"
 "npm:wrangler" = "latest"
 "pipx:ansible" = "latest"
 "pipx:ansible-core" = "latest"
+"pipx:datadog" = "latest"
 
 [settings]
-idiomatic_version_file_enable_tools = ["terraform", "ruby"]
+idiomatic_version_file_enable_tools = ["terraform", "ruby", "node"]
+ruby.compile = false

@@ -1,0 +1,11 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+mkdir -p "${HOME}/Library/Application Support/k9s/skins"
+curl -fsSL https://raw.githubusercontent.com/derailed/k9s/master/skins/nord.yaml -o "${HOME}/Library/Application Support/k9s/skins/nord.yaml"
+
+# Set nord skin in k9s config if not already set
+CONFIG="${HOME}/Library/Application Support/k9s/config.yaml"
+if [ -f "$CONFIG" ] && ! grep -q "skin: nord" "$CONFIG"; then
+  sed -i '' 's/^  ui:/  ui:\n    skin: nord/' "$CONFIG"
+fi
+{{ end -}}

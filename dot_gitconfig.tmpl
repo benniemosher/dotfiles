@@ -1,10 +1,14 @@
 [user]
   name = Bennie Mosher
-  email = benniemosher@gmail.com
+  email = {{ if env "GIT_EMAIL" }}{{ env "GIT_EMAIL" }}{{ else }}{{ .git_email }}{{ end }}
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if eq .chezmoi.os "darwin" -}}
+{{ if index . "work_platform" -}}
+  signingkey = {{ output "bash" "-c" "gpg --list-secret-keys --keyid-format LONG 2>/dev/null | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2" | trim }}
+{{ else -}}
   signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHiLyzXgt7jnveA00YXLH5euotmhiTJPLsxcLMbL1Qk/
-{{ end }}
+{{ end -}}
+{{ end -}}
 
 [alias]
   s = status
@@ -16,10 +20,10 @@
   excludesfile = ~/.gitignore_global
   ignorecase = false
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if eq .chezmoi.os "darwin" -}}
 [commit]
   gpgsign = true
-{{ end }}
+{{ end -}}
 
 [push]
   default = current
@@ -32,30 +36,43 @@
   process = git-lfs filter-process
   required = true
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if eq .chezmoi.os "darwin" -}}
 [gpg]
+{{ if index . "work_platform" -}}
+  format = openpgp
+{{ else -}}
   format = ssh
 [gpg "ssh"]
   program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
-{{ end }}
+{{ end -}}
+{{ end -}}
 
 [init]
   defaultBranch = main
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if eq .chezmoi.os "darwin" -}}
+[difftool "sourcetree"]
+  cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+  path =
+[mergetool "sourcetree"]
+  cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+  trustExitCode = true
+{{ end -}}
+
+{{ if eq .chezmoi.os "darwin" -}}
 [safe]
   directory = /opt/homebrew
-{{ end }}
+{{ end -}}
 
 [credential "https://github.com"]
-  {{ if eq .chezmoi.os "darwin" }}
-  helper = !$(brew --prefix)/bin/gh auth git-credential
-  {{ else if eq .chezmoi.os "linux" }}
-  helper = !$(which gh) auth git-credential
-  {{ end }}
+{{ if eq .chezmoi.os "darwin" -}}
+  helper = !/opt/homebrew/bin/gh auth git-credential
+{{ else if eq .chezmoi.os "linux" -}}
+  helper = !/usr/bin/gh auth git-credential
+{{ end -}}
 [credential "https://gist.github.com"]
-  {{ if eq .chezmoi.os "darwin" }}
-  helper = !$(brew --prefix)/bin/gh auth git-credential
-  {{ else if eq .chezmoi.os "linux" }}
-  helper = !$(which gh) auth git-credential
-  {{ end }}
+{{ if eq .chezmoi.os "darwin" -}}
+  helper = !/opt/homebrew/bin/gh auth git-credential
+{{ else if eq .chezmoi.os "linux" -}}
+  helper = !/usr/bin/gh auth git-credential
+{{ end -}}

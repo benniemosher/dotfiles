@@ -1,0 +1,46 @@
+#!/bin/bash
+# Sets up the AI config symlinks after chezmoi deploys ai/ to ~/ai/.
+# Creates ~/.config/ai → ~/ai/ so XDG-aware tools can find it.
+# On work machines (WORK_WORKSPACE set), symlinks ~/.kiro/context.md.
+
+set -euo pipefail
+
+AI_DEPLOYED="$HOME/ai"
+AI_XDG="$HOME/.config/ai"
+
+# Create ~/.config if needed
+mkdir -p "$HOME/.config"
+
+# Create XDG symlink: ~/.config/ai → ~/ai
+if [[ -d "$AI_DEPLOYED" ]]; then
+  if [[ -L "$AI_XDG" ]]; then
+    CURRENT=$(readlink "$AI_XDG")
+    if [[ "$CURRENT" != "$AI_DEPLOYED" ]]; then
+      rm "$AI_XDG"
+      ln -s "$AI_DEPLOYED" "$AI_XDG"
+      echo "Updated ~/.config/ai symlink → $AI_DEPLOYED"
+    fi
+  elif [[ -d "$AI_XDG" ]]; then
+    echo "WARNING: ~/.config/ai is a directory, not a symlink. Remove it manually:"
+    echo "  rm -rf ~/.config/ai && chezmoi apply"
+  elif [[ ! -e "$AI_XDG" ]]; then
+    ln -s "$AI_DEPLOYED" "$AI_XDG"
+    echo "Created ~/.config/ai → ~/ai"
+  fi
+fi
+
+# Ensure Claude config directory exists
+mkdir -p "$HOME/.claude"
+
+# Work machine: symlink ~/.kiro/context.md to workspace context
+{{ if env "WORK_WORKSPACE" -}}
+WORKSPACE_CONTEXT="$HOME/Code/{{ env "WORK_WORKSPACE" }}/context.md"
+KIRO_CONTEXT="$HOME/.kiro/context.md"
+if [[ -f "$WORKSPACE_CONTEXT" ]] && [[ ! -L "$KIRO_CONTEXT" ]]; then
+  rm -f "$KIRO_CONTEXT"
+  ln -s "$WORKSPACE_CONTEXT" "$KIRO_CONTEXT"
+  echo "Linked ~/.kiro/context.md → workspace context"
+fi
+{{ end -}}
+
+echo "✓ AI config setup complete"

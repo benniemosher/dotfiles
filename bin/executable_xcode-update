@@ -2,6 +2,13 @@
 
 set -e
 
+SKIP_IOS_RUNTIME=false
+for arg in "$@"; do
+  case "$arg" in
+    --skip-ios-runtime) SKIP_IOS_RUNTIME=true ;;
+  esac
+done
+
 ARCH=$(uname -m)
 
 # Xcode 26.1.1 is the last version with Intel support
@@ -38,10 +45,14 @@ if [ -d "/Applications/Xcode-${LATEST_VERSION}.app" ] && [ ! -d "/Applications/X
   echo "Renamed to Xcode.app"
 fi
 
-# Download iOS runtime (only if xcodebuild works)
-echo "Installing iOS runtime..."
-if xcodebuild -downloadPlatform iOS; then
-  echo -e "\033[1;32m>>> Xcode $LATEST_VERSION installed, selected, and iOS runtime downloaded\033[0m"
+# Download iOS runtime (only if xcodebuild works and not skipped)
+if [ "$SKIP_IOS_RUNTIME" = true ]; then
+  echo -e "\033[1;32m>>> Xcode $LATEST_VERSION installed and selected (iOS runtime skipped)\033[0m"
 else
-  echo -e "\033[1;33m>>> Xcode $LATEST_VERSION installed and selected (iOS runtime download skipped due to error)\033[0m"
+  echo "Installing iOS runtime..."
+  if xcodebuild -downloadPlatform iOS; then
+    echo -e "\033[1;32m>>> Xcode $LATEST_VERSION installed, selected, and iOS runtime downloaded\033[0m"
+  else
+    echo -e "\033[1;33m>>> Xcode $LATEST_VERSION installed and selected (iOS runtime download skipped due to error)\033[0m"
+  fi
 fi

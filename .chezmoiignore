@@ -5,6 +5,27 @@
 .gitignore
 .pre-commit-config.yaml
 preferences
+renovate.json
+CLAUDE.md
+
+# Kiro local data (sessions, settings, extensions — machine-specific)
+.kiro/sessions
+.kiro/settings
+.kiro/extensions
+.kiro/skills
+.kiro/powers
+.kiro/.cli_bash_history
+.kiro/argv.json
+.kiro/context.md
+.kiro/context
+.kiro/steering
+
+# Claude local data
+.claude/settings.json
+.claude/credentials.json
+
+# Chezmoi's own config (machine-specific, has work_workspace/git_email overrides)
+.config/chezmoi/chezmoi.toml
 
 {{- if ne .chezmoi.os "darwin" }}
 Brewfile
