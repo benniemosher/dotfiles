@@ -8,7 +8,12 @@ if [ -f "$GNUPG_HOME" ]; then
   fi
 fi
 
-keybase --pinentry=none login $KEYBASE_USERNAME --paperkey "$KEYBASE_PAPERKEY" --devicename "$HOST"
+if [ -z "${KEYBASE_USERNAME:-}" ] || [ -z "${KEYBASE_PAPERKEY:-}" ] || [ -z "${KEYBASE_KEY_ID:-}" ]; then
+  echo "Skipping GPG import: KEYBASE_USERNAME, KEYBASE_PAPERKEY, or KEYBASE_KEY_ID not set."
+  exit 0
+fi
+
+keybase --pinentry=none login "$KEYBASE_USERNAME" --paperkey "$KEYBASE_PAPERKEY" --devicename "$HOST"
 
 gpgconf --kill gpg-agent
 
