@@ -1,7 +1,7 @@
 # Dotfiles - Project Memory
 
-This file contains persistent context for Claude Code sessions on this project.
-It will be automatically loaded at the start of every session.
+This file contains persistent context for Claude Code sessions working ON this dotfiles repo.
+For the global AI agent instructions deployed to all machines, see `ai/AGENT.md`.
 
 ## Project Overview
 
@@ -22,25 +22,76 @@ comprehensive macOS/Linux configuration automation.
 
 ```text
 dotfiles/
+├── ai/                        # Universal AI agent context (tool-agnostic)
+│   ├── AGENT.md               # Master personality/preferences for any AI tool
+│   ├── workflows/             # Reusable methodology
+│   │   ├── standup-notes.md   # How to keep daily standups
+│   │   ├── learnings.md       # How to capture knowledge
+│   │   ├── merge-requests.md  # MR creation standards
+│   │   └── pre-commit.md      # Pre-commit workflow
+│   ├── standards/             # Technical standards (portable)
+│   │   ├── terraform.md       # TF patterns, state, modules
+│   │   ├── kubernetes.md      # Right-sizing, probes, deployments
+│   │   ├── git.md             # Branch naming, commits, safety
+│   │   ├── ci-cd.md           # Pipeline patterns, caching
+│   │   └── observability.md   # Monitoring, APM, dashboards
+│   └── templates/             # File templates
+│       ├── standup-daily.md   # Daily standup template
+│       ├── learning-entry.md  # Learning capture template
+│       └── workspace-context.md # New workspace context template
 ├── .chezmoidata/              # Data files for templates
 │   ├── packages.yaml          # Homebrew/apt/snap packages
 │   └── macos-settings.yaml    # macOS defaults settings
 ├── .chezmoiexternal.toml      # External dependencies (LazyVim, etc.)
 ├── .chezmoiignore             # Files to ignore during apply
+├── bin/                       # Custom scripts
+│   ├── standup                # Quick standup entry (workspace-aware)
+│   ├── learning               # Quick learning capture (workspace-aware)
+│   └── workspace-init         # Bootstrap new workspace
+├── dot_claude/                # Claude Code global config
+│   └── CLAUDE.md             # Points to ai/ standards
 ├── dot_config/                # ~/.config files
 │   ├── 1Password/             # 1Password SSH agent config
 │   ├── mise/                  # mise version manager config
 │   ├── nvim/                  # LazyVim configuration
 │   └── starship.toml          # Starship prompt config
+├── dot_kiro/                  # Kiro CLI config
+│   ├── agents/default.json.tmpl # Points to ai/ standards
+│   └── context.md            # Placeholder (workspace-specific locally)
 ├── dot_zshrc.tmpl             # Shell configuration (templated)
 ├── dot_gitconfig.tmpl         # Git configuration (templated)
 ├── dot_wezterm.lua            # WezTerm terminal config
 ├── private_dot_ssh/           # SSH configuration (1Password managed)
 ├── private_dot_gnupg/         # GPG configuration
 ├── private_Library/           # macOS Library files
-├── run_onchange_*.sh.tmpl     # Install/setup scripts
-└── bin/                       # Custom scripts
+└── run_onchange_*.sh.tmpl     # Install/setup scripts
 ```
+
+## AI Architecture (XDG: ~/.config/ai)
+
+All AI tools (Kiro, Claude Code, ChatGPT, etc.) read from a single canonical location:
+
+```
+~/.config/ai/ → symlink to this repo's ai/ directory
+~/ai/         → convenience symlink to ~/.config/ai/
+```
+
+Tool-specific configs are thin wrappers that point here:
+- `~/.claude/CLAUDE.md` → references `~/.config/ai/` files
+- `~/.kiro/agents/default.json` → loads `~/.config/ai/` as resources
+
+### Workspace Pattern
+
+Business-specific context lives locally per workspace, never in dotfiles:
+```
+~/Code/<workspace>/
+├── context.md         # Workspace-specific AI context (repos, accounts)
+├── notes/standups/    # Daily standup notes
+├── notes/learnings/   # Captured knowledge
+└── .workspace.yaml    # Metadata
+```
+
+The `standup` and `learning` commands auto-detect workspace from pwd.
 
 ## Chezmoi Patterns
 
@@ -184,6 +235,26 @@ Defined in `.chezmoiexternal.toml`:
 - LazyVim configuration (pulled from GitHub)
 - Other external configs as needed
 
+### Zsh History Configuration
+
+Unlike oh-my-zsh (which sets history options automatically), this minimal zsh setup requires explicit `setopt` configuration in `dot_zshrc.tmpl`:
+
+```zsh
+export HISTFILE=~/.zsh_history
+export HISTSIZE=1000000
+export SAVEHIST=1000000
+
+setopt APPEND_HISTORY    # Append to history file instead of overwriting
+setopt SHARE_HISTORY     # Share history across all sessions
+setopt HIST_IGNORE_DUPS  # Don't record duplicate commands
+setopt HIST_IGNORE_SPACE # Don't record commands starting with space
+setopt HIST_REDUCE_BLANKS # Remove superfluous blanks from history
+```
+
+**Common Issue:** If `history` only shows ~10 lines, it's likely because `APPEND_HISTORY` or `SHARE_HISTORY` are not set. Without these, zsh overwrites the history file on exit instead of appending to it.
+
+**Note:** Starship only customizes the prompt appearance and does NOT manage shell history - that remains a core zsh function.
+
 ## Important Notes
 
 ### Platform-Specific Code
@@ -222,7 +293,7 @@ Use chezmoi templating for platform differences:
 
 ---
 
-**Last Updated:** 2025-12-12
+**Last Updated:** 2026-04-18
 
 This file should be updated whenever:
 

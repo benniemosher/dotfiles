@@ -1,0 +1,60 @@
+{{ $workspace := env "WORK_WORKSPACE" -}}
+{
+  "name": "default",
+  "description": "Default agent with universal standards and workspace context",
+  "prompt": "At the start of every conversation, read ~/.config/ai/AGENT.md for your instructions. Detect the active workspace from the user's working directory (~/Code/<workspace>/) and load <workspace>/context.md for business-specific context. Use ~/.config/ai/workflows/ and ~/.config/ai/standards/ as your reference for how to work.",
+  "resources": [
+    "file://{{ .chezmoi.homeDir }}/.config/ai/AGENT.md",
+    "file://{{ .chezmoi.homeDir }}/.config/ai/workflows/**/*",
+    "file://{{ .chezmoi.homeDir }}/.config/ai/standards/**/*"{{ if $workspace }},
+    "file://{{ .chezmoi.homeDir }}/Code/{{ $workspace }}/context.md",
+    "file://{{ .chezmoi.homeDir }}/Code/{{ $workspace }}/notes/learnings/**/*",
+    "file://{{ .chezmoi.homeDir }}/Code/{{ $workspace }}/notes/standups/**/*"{{ end }}
+  ],
+  "toolsSettings": {
+    "fs_write": {
+      "allowedPaths": ["~/Code/**"]
+    },
+    "fs_read": {
+      "allowedPaths": ["~/Code/**", "~/.config/ai/**"]
+    },
+    "execute_bash": {
+      "autoAllowReadonly": true
+    }
+  },
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "cat ~/.config/ai/AGENT.md",
+        "description": "Load universal agent instructions"
+      }{{ if $workspace }},
+      {
+        "command": "echo '--- TODAY: '$(date +%Y-%m-%d)' | Standup file: ~/Code/{{ $workspace }}/notes/standups/'$(date +%Y-%m-%d)'.md ---'",
+        "description": "Show today's date and standup file path"
+      }{{ end }}
+    ]
+  },
+  "tools": [
+    "fs_read",
+    "fs_write",
+    "execute_bash",
+    "grep",
+    "glob",
+    "code",
+    "use_aws",
+    "use_subagent",
+    "delegate",
+    "report_issue",
+    "introspect",
+    "web_search",
+    "web_fetch",
+    "search_documentation",
+    "read_documentation",
+    "read_sections",
+    "recommend",
+    "session"
+  ],
+  "mcpServers": {},
+  "includeMcpJson": true,
+  "model": null
+}
