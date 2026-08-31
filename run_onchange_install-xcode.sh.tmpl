@@ -1,5 +1,5 @@
 #!/bin/bash
 
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if and (eq .chezmoi.os "darwin") (index . "xcode_auto_update") -}}
 $HOME/bin/xcode-update{{ if index . "work_platform" }} --skip-ios-runtime{{ end }}
 {{ end -}}

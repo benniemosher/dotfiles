@@ -51,7 +51,7 @@ alias pinentryprogram="$(which pinentry-mac)"
 
 alias brew-update="brew update; brew outdated; brew upgrade; brew cleanup; brew doctor;"
 alias mise-update="mise upgrade --bump; mise reshim;"
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if and (eq .chezmoi.os "darwin") (index . "xcode_auto_update") -}}
 alias ups="brew-update; mise-update; xcode-update"
 {{ else -}}
 alias ups="brew-update; mise-update"
