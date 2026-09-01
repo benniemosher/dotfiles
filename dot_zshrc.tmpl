@@ -1,6 +1,10 @@
 {{ if eq .chezmoi.os "darwin" }}
-# Load homebrew
-eval "$(/opt/homebrew/bin/brew shellenv)"
+# Load homebrew (Apple Silicon: /opt/homebrew, Intel: /usr/local)
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -x /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
 {{ end }}
 
 # =================================================================================================================
@@ -49,7 +53,6 @@ alias yamllint="docker run --rm -it -v $(pwd):/data cytopia/yamllint"
 alias flushdns="sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder"
 alias pinentryprogram="$(which pinentry-mac)"
 
-alias brew-update="brew update; brew outdated; brew upgrade; brew cleanup; brew doctor;"
 alias mise-update="mise upgrade --bump; mise reshim;"
 {{ if and (eq .chezmoi.os "darwin") (index . "xcode_auto_update") -}}
 alias ups="brew-update; mise-update; xcode-update"
@@ -97,7 +100,7 @@ export SSH_AUTH_SOCK=~/.1password/agent.sock
 {{ end }}
 
 {{ if eq .chezmoi.os "darwin" }}
-eval "$(/usr/local/bin/mise activate zsh)"
+eval "$(mise activate zsh)"
 {{ else if eq .chezmoi.os "linux" }}
 eval "$(mise activate zsh)"
 {{ end }}
