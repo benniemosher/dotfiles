@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -uo pipefail
+
+echo "==> Updating Homebrew"
+brew update
+
+outdated_formulae=()
+while IFS= read -r formula; do
+  outdated_formulae+=("$formula")
+done < <(brew outdated --formula | awk '{print $1}')
+
+if [ "${#outdated_formulae[@]}" -eq 0 ]; then
+  echo "==> No outdated formulae"
+else
+  for formula in "${outdated_formulae[@]}"; do
+    echo "==> Upgrading ${formula}"
+    if ! brew upgrade "${formula}"; then
+      echo "==> No bottle available for ${formula} on this platform, building from source"
+      brew install --build-from-source "${formula}"
+    fi
+  done
+fi
+
+echo "==> Upgrading casks"
+brew upgrade --cask
+
+echo "==> Cleaning up"
+brew cleanup
+
+echo "==> Running brew doctor"
+brew doctor
