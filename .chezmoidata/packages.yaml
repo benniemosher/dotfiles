@@ -51,18 +51,14 @@ packages:
     casks:
       work:
         - "amethyst"
-        - "kiro"
-        - "kiro-cli"
-        - "notion"
+        - "docker-desktop"
         - "sequel-ace"
-        - "sourcetree"
         - "wezterm"
       personal:
         - "1password"
         - "1password-cli"
         - "brave-browser"
         - "claude-code"
-        - "docker-desktop"
         - "grammarly-desktop"
         - "keybase"
         - "slack"
