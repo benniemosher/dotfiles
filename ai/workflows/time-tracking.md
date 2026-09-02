@@ -22,13 +22,17 @@ cd ~/Code/zcore
 hours 2.5 "Fixed CORS bug in tunnel config"
 ```
 
-Appends a row to `~/Code/obsidian-vault-setup/02-Areas/<workspace>/Hours.md`:
+Appends a row to `~/Code/obsidian-vault-setup/02-Areas/<workspace>/Hours.md`, which is one
+`### YYYY-MM-DD` section and table **per day** (not one flat table for the whole client):
 
 ```markdown
+### 2026-09-01
+
 | Date       | Hours | Time        | Description                | Invoiced |
 |------------|-------|-------------|-----------------------------|----------|
 | 2026-09-01 | 2.5   |             | Fixed CORS bug in tunnel   | No       |
 | 2026-09-01 | 3.00  | 19:00-22:00 | Client call, budget review | No       |
+| **Total**  | **5.50** |  |  |  |
 ```
 
 `hours <start> to <end> "<desc>"` (24h `HHMM` or `HH:MM`) fills in both Hours (computed
@@ -41,13 +45,18 @@ note's `## Standup` section (see `standup-notes.md`); this table is purely for b
 
 Errors out on a work machine (`WORK_WORKSPACE` set) — there's no vault to write to there.
 
-Every `Hours.md` ends with a `dataviewjs` block that computes an "Unbilled: Xh · $Y" line live,
-straight from the table — it's correct on every view, not just after running `hours` (so a
-manual edit or a mobile QuickAdd capture doesn't go stale). The script keeps that block
-positioned as the last thing in the file whenever it appends a row; don't reorder it by hand,
-and if writing to `Hours.md` outside the script (e.g. marking rows `Invoiced: Yes` when
-generating an invoice, below), insert new/changed rows *above* the ```` ```dataviewjs ```` fence,
-never below it.
+Each day's **Total** row is recomputed by the script every time it logs another entry for that
+day — a plain sum, no target/goal comparison, so the user can glance at today's section and see
+today's hours at a time. New days append at the end of the file; re-logging to an
+existing-but-not-most-recent day moves that day's section to the end too, not sorted by date.
+
+The file ends with a `dataviewjs` block that computes a *grand* "Unbilled: Xh · $Y" line live,
+across every day — it's correct on every view, not just after running `hours` (so a manual edit
+or a mobile QuickAdd capture doesn't go stale). The script keeps that block positioned as the
+last thing in the file whenever it appends a row; don't reorder it by hand, and if writing to
+`Hours.md` outside the script (e.g. marking rows `Invoiced: Yes` when generating an invoice,
+below), insert changes into the correct day's table, always *above* the
+```` ```dataviewjs ```` fence, never below it.
 
 ## Generating an Invoice
 
