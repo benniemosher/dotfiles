@@ -1,4 +1,11 @@
 {{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
+Host github-zcore
+  HostName github.com
+  User git
+  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+  IdentityFile ~/.ssh/github_zcore.pub
+  IdentitiesOnly yes
+
 Host *
   IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 {{- else if and (eq .chezmoi.os "darwin") (index . "work_platform") -}}

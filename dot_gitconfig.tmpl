@@ -10,6 +10,9 @@
 {{ end -}}
 {{ end -}}
 
+[includeIf "gitdir:~/Code/zcore/"]
+  path = ~/.config/git/zcore.gitconfig
+
 [alias]
   s = status
   co = checkout
