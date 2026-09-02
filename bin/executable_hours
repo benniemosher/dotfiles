@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# hours — Log billable time against the current workspace, for invoicing
+#
+# Auto-detects workspace/client from current directory (~/Code/<workspace>/).
+# Appends a row to that client's 02-Areas/<workspace>/Hours.md table in the
+# personal Obsidian vault. Only works on personal machines — invoicing reads
+# from the vault, and there's no equivalent destination on a work machine.
+#
+# Usage:
+#   hours 2.5 "Fixed CORS bug in tunnel config"
+#   hours                       # opens the current workspace's Hours.md in $EDITOR
+#   WORKSPACE=mywork hours 1 "Client call"
+
+VAULT_DIR="$HOME/Code/obsidian-vault-setup"
+
+# --- Detect workspace ---
+detect_workspace() {
+  local cwd="$PWD"
+  local code_dir="$HOME/Code"
+
+  if [[ "$cwd" == "$code_dir/"* ]]; then
+    local relative="${cwd#$code_dir/}"
+    echo "${relative%%/*}"
+  elif [[ -n "${WORKSPACE:-}" ]]; then
+    echo "$WORKSPACE"
+  else
+    echo ""
+  fi
+}
+
+WORKSPACE_NAME=$(detect_workspace)
+
+if [[ -z "$WORKSPACE_NAME" ]]; then
+  echo "Error: Could not detect workspace. Either cd into ~/Code/<workspace>/ or set WORKSPACE env var."
+  exit 1
+fi
+
+if [[ -n "${WORK_WORKSPACE:-}" || ! -d "$VAULT_DIR" ]]; then
+  echo "Error: hours tracking reads/writes the personal vault at $VAULT_DIR, not available on a work machine." >&2
+  exit 1
+fi
+
+HOURS_DIR="$VAULT_DIR/02-Areas/$WORKSPACE_NAME"
+HOURS_FILE="$HOURS_DIR/Hours.md"
+TODAY=$(date +%Y-%m-%d)
+
+mkdir -p "$HOURS_DIR"
+
+if [[ ! -f "$HOURS_FILE" ]]; then
+  cat > "$HOURS_FILE" <<EOF
+---
+type: hours
+client: $WORKSPACE_NAME
+rate:
+tags: []
+---
+
+# $WORKSPACE_NAME — Hours
+
+| Date | Hours | Description | Invoiced |
+|------|-------|--------------|----------|
+EOF
+fi
+
+if [[ $# -ge 2 ]]; then
+  AMOUNT="$1"
+  shift
+  DESCRIPTION="$*"
+  DESCRIPTION="${DESCRIPTION//|/-}"
+
+  if ! [[ "$AMOUNT" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    echo "Error: hours must be a number (e.g. 2.5), got: $AMOUNT" >&2
+    exit 1
+  fi
+
+  echo "| $TODAY | $AMOUNT | $DESCRIPTION | No |" >> "$HOURS_FILE"
+  echo "✓ Logged ${AMOUNT}h to $HOURS_FILE"
+elif [[ $# -eq 1 ]]; then
+  echo "Usage: hours <amount> <brief description>"
+  echo "       hours                          # open in editor"
+  exit 1
+else
+  ${EDITOR:-vim} "$HOURS_FILE"
+fi
