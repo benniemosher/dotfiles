@@ -9,6 +9,7 @@ Read and follow the instructions in these files (they are the canonical source o
 - `~/.config/ai/AGENT.md` — personality, communication style, working preferences
 - `~/.config/ai/workflows/standup-notes.md` — how I track daily work
 - `~/.config/ai/workflows/learnings.md` — how I capture knowledge
+- `~/.config/ai/workflows/time-tracking.md` — how I log billable hours and generate invoices
 - `~/.config/ai/workflows/merge-requests.md` — MR creation standards
 - `~/.config/ai/workflows/pre-commit.md` — pre-commit workflow
 - `~/.config/ai/standards/git.md` — git conventions
@@ -22,15 +23,24 @@ Read and follow the instructions in these files (they are the canonical source o
 
 I work in `~/Code/<workspace>/` directories. Detect the active workspace from pwd and look for:
 - `<workspace>/context.md` — workspace-specific context (repos, accounts, team info)
-- `<workspace>/notes/standups/` — daily standup notes
-- `<workspace>/notes/learnings/` — accumulated knowledge
+- `<workspace>/notes/standups/` — daily standup notes (work machines only — see below)
+- `<workspace>/notes/learnings/` — accumulated knowledge (work machines only — see below)
 
 The workspace `context.md` contains business-specific details (team, repos, accounts, credentials paths) that complement the generic standards above.
 
+**Personal vs work machine:** if `WORK_WORKSPACE` is not set (personal machine), standup and
+learning tracking route into the Obsidian vault at `~/Code/obsidian-vault-setup` instead of the
+per-workspace `notes/` paths above — see `standup-notes.md` and `learnings.md` for the exact
+destinations. Billable hours and invoicing (`time-tracking.md`) are personal-machine-only,
+always in that same vault.
+
 ## Key Behaviors
 
-- Update standup notes (`notes/standups/YYYY-MM-DD.md`) as we work throughout the day
+- Update standup notes as we work throughout the day (vault `Daily/` note on a personal
+  machine, `notes/standups/YYYY-MM-DD.md` on a work machine)
 - Capture learnings when we discover reusable patterns
+- Log billable hours (`hours <amount> "<brief description>"`) when doing paid client work on a
+  personal machine, so it's ready to invoice later
 - Never commit secrets, business IP, or workspace-specific notes to public repos
 - Run pre-commit hooks before committing
 - Validate Terraform before pushing
