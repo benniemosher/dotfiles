@@ -3,3 +3,6 @@
 playbook.retry
 Brewfile.lock.json
 *.terminal
+
+# Workspace-specific git identity/keys — kept local only, never committed
+dot_config/git/*.gitconfig
