@@ -6,10 +6,19 @@ set -euo pipefail
 # Auto-detects workspace from current directory (~/Code/<workspace>/).
 # Falls back to $WORKSPACE env var if not in a workspace directory.
 #
+# On personal machines (no WORK_WORKSPACE set), entries route into the
+# Obsidian vault's Daily note under "## Standup", grouped by workspace as
+# "### <name>" subsections — so one workspace's (e.g. a client's) updates can
+# be read straight off in a meeting without wading through other projects'
+# entries. On work machines (WORK_WORKSPACE set in ~/.zshrc.local), entries
+# stay in the per-workspace notes/standups/ files, unsynced, as before.
+#
 # Usage:
 #   standup "TICKET-123: Fixed the flaky test"
 #   standup                    # opens today's file in $EDITOR
 #   WORKSPACE=mywork standup "PROJ-999: something"
+
+VAULT_DIR="$HOME/Code/obsidian-vault-setup"
 
 # --- Detect workspace ---
 detect_workspace() {
@@ -17,7 +26,6 @@ detect_workspace() {
   local code_dir="$HOME/Code"
 
   if [[ "$cwd" == "$code_dir/"* ]]; then
-    # Extract first directory component after ~/Code/
     local relative="${cwd#$code_dir/}"
     echo "${relative%%/*}"
   elif [[ -n "${WORKSPACE:-}" ]]; then
@@ -34,8 +42,81 @@ if [[ -z "$WORKSPACE_NAME" ]]; then
   exit 1
 fi
 
-STANDUP_DIR="$HOME/Code/$WORKSPACE_NAME/notes/standups"
 TODAY=$(date +%Y-%m-%d)
+TIMESTAMP=$(date +%H:%M)
+
+# --- Insert `entry` as the last line under a "### <heading>" block (i.e.
+#     immediately before the next "##"/"###" heading, or EOF). Creates the
+#     heading right after `marker_line` first if it doesn't already exist. ---
+append_under_heading() {
+  local file="$1" marker_line="$2" heading="$3" entry="$4"
+
+  if ! grep -qxF "$heading" "$file"; then
+    awk -v marker="$marker_line" -v heading="$heading" '
+      BEGIN { in_block = 0; inserted = 0 }
+      {
+        if (in_block && !inserted && $0 ~ /^## /) { print heading; print ""; inserted = 1 }
+        print
+        if ($0 == marker) in_block = 1
+      }
+      END { if (in_block && !inserted) { print heading; print "" } }
+    ' "$file" > "$file.tmp"
+    mv "$file.tmp" "$file"
+  fi
+
+  awk -v heading="$heading" -v entry="$entry" '
+    BEGIN { in_block = 0; inserted = 0 }
+    {
+      if (in_block && !inserted && ($0 ~ /^##+ /)) { print entry; inserted = 1 }
+      print
+      if ($0 == heading) in_block = 1
+      else if ($0 ~ /^##+ /) in_block = 0
+    }
+    END { if (in_block && !inserted) print entry }
+  ' "$file" > "$file.tmp"
+  mv "$file.tmp" "$file"
+}
+
+if [[ -z "${WORK_WORKSPACE:-}" && -d "$VAULT_DIR" ]]; then
+  STANDUP_FILE="$VAULT_DIR/Daily/$TODAY.md"
+  mkdir -p "$VAULT_DIR/Daily"
+
+  if [[ ! -f "$STANDUP_FILE" ]]; then
+    cat > "$STANDUP_FILE" <<EOF
+---
+type: daily
+date: $TODAY
+tags: []
+---
+
+# $(date +"%A, %B %-d, %Y")
+
+## Focus
+
+## Tasks
+- [ ]
+
+## Notes
+
+## Standup
+
+## Log
+
+---
+EOF
+  fi
+  grep -qxF '## Standup' "$STANDUP_FILE" || printf '\n## Standup\n' >> "$STANDUP_FILE"
+
+  if [[ $# -gt 0 ]]; then
+    append_under_heading "$STANDUP_FILE" "## Standup" "### $WORKSPACE_NAME" "- [$TIMESTAMP] $*"
+    echo "✓ Added to $STANDUP_FILE (### $WORKSPACE_NAME)"
+  else
+    ${EDITOR:-vim} "$STANDUP_FILE"
+  fi
+  exit 0
+fi
+
+STANDUP_DIR="$HOME/Code/$WORKSPACE_NAME/notes/standups"
 STANDUP_FILE="$STANDUP_DIR/$TODAY.md"
 
 # --- Ensure directory exists ---
@@ -69,7 +150,6 @@ fi
 
 # --- Add entry or open file ---
 if [[ $# -gt 0 ]]; then
-  TIMESTAMP=$(date +%H:%M)
   echo "- [$TIMESTAMP] $*" >> "$STANDUP_FILE"
   echo "✓ Added to $STANDUP_FILE"
 else
