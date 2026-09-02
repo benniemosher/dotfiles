@@ -25,12 +25,10 @@ set -euo pipefail
 #
 # Each day gets its own "### YYYY-MM-DD" section with its own table and a
 # bold **Total** row at the bottom, computed by this script (recomputed
-# fresh each time you log another entry for that day). If a client's
-# frontmatter sets `daily_goal: 4` (hours), the Total row shows progress
-# toward it, e.g. "**2.50** (1.50 to go)" or "**4.50** ✓ goal met". New days
-# are always added at the end of the file — logging a new entry against an
-# *existing* but not-most-recent day moves that day's whole section to the
-# end too, rather than sorting the file by date.
+# fresh each time you log another entry for that day). New days are always
+# added at the end of the file — logging a new entry against an *existing*
+# but not-most-recent day moves that day's whole section to the end too,
+# rather than sorting the file by date.
 #
 # The file ends with a dataviewjs block that computes the grand unbilled
 # total live across every day (Obsidian re-runs it on every view, including
@@ -61,12 +59,6 @@ format_minutes() {
   printf "%02d:%02d" $(( $1 / 60 )) $(( $1 % 60 ))
 }
 
-# --- Extract a numeric frontmatter field (e.g. "rate: 80") from a Hours.md ---
-frontmatter_number() {
-  local file="$1" field="$2"
-  grep "^${field}:" "$file" | head -1 | sed "s/^${field}: *//" | tr -d '[:space:]'
-}
-
 # --- Remove any existing "### <date> ... " day section (up to the next
 #     "### " heading or EOF) from the file, saving its data rows for that
 #     date to $rows_out so they can be folded into a rebuilt section. ---
@@ -89,21 +81,12 @@ extract_and_strip_day_block() {
 }
 
 # --- Append a freshly built "### <date>" section (prior rows + the new row
-#     + a bold Total row, showing progress toward daily_goal if set). ---
+#     + a bold Total row). ---
 write_day_block() {
-  local file="$1" date="$2" rows_file="$3" new_row="$4" new_amount="$5" goal="$6"
-  local old_sum day_total total_cell
+  local file="$1" date="$2" rows_file="$3" new_row="$4" new_amount="$5"
+  local old_sum day_total
   old_sum=$(awk -F'|' '{ h = $3; gsub(/^ +| +$/, "", h); sum += h } END { printf "%.2f", sum + 0 }' "$rows_file")
   day_total=$(awk -v a="$old_sum" -v b="$new_amount" 'BEGIN { printf "%.2f", a + b }')
-
-  if [[ -n "$goal" && "$goal" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-    total_cell=$(awk -v t="$day_total" -v g="$goal" 'BEGIN {
-      if (t + 0 >= g + 0) printf "**%.2f** ✓ goal met", t
-      else printf "**%.2f** (%.2f to go)", t, g - t
-    }')
-  else
-    total_cell="**${day_total}**"
-  fi
 
   {
     echo
@@ -113,7 +96,7 @@ write_day_block() {
     echo "|------|-------|------|--------------|----------|"
     cat "$rows_file"
     echo "$new_row"
-    echo "| **Total** | ${total_cell} |  |  |  |"
+    echo "| **Total** | **${day_total}** |  |  |  |"
   } >> "$file"
 }
 
@@ -225,7 +208,6 @@ if [[ ! -f "$HOURS_FILE" ]]; then
 type: hours
 client: $WORKSPACE_NAME
 rate:
-daily_goal:
 tags: []
 cssclass: hours-tracker
 ---
@@ -270,12 +252,11 @@ fi
 
 DESCRIPTION="${DESCRIPTION//|/-}"
 ROW="| $ENTRY_DATE | $AMOUNT | $TIME_RANGE | $DESCRIPTION | No |"
-DAILY_GOAL=$(frontmatter_number "$HOURS_FILE" "daily_goal")
 
 strip_dataviewjs_block "$HOURS_FILE"
 DAY_ROWS_TMP=$(mktemp)
 extract_and_strip_day_block "$HOURS_FILE" "$ENTRY_DATE" "$DAY_ROWS_TMP"
-write_day_block "$HOURS_FILE" "$ENTRY_DATE" "$DAY_ROWS_TMP" "$ROW" "$AMOUNT" "$DAILY_GOAL"
+write_day_block "$HOURS_FILE" "$ENTRY_DATE" "$DAY_ROWS_TMP" "$ROW" "$AMOUNT"
 rm -f "$DAY_ROWS_TMP"
 append_dataviewjs_block "$HOURS_FILE"
 echo "✓ Logged ${AMOUNT}h to $HOURS_FILE ($ENTRY_DATE)"
