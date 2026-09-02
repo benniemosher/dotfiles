@@ -10,10 +10,27 @@ set -euo pipefail
 #
 # Usage:
 #   hours 2.5 "Fixed CORS bug in tunnel config"
+#   hours 1900 to 2200 "Client call, budget review"   # 24h HHMM or HH:MM, duration computed
 #   hours                       # opens the current workspace's Hours.md in $EDITOR
 #   WORKSPACE=mywork hours 1 "Client call"
 
 VAULT_DIR="$HOME/Code/obsidian-vault-setup"
+
+# --- Parse "HHMM" or "HH:MM" (24h) into minutes since midnight ---
+parse_time_to_minutes() {
+  local raw="$1" t="${1//:/}"
+  if ! [[ "$t" =~ ^[0-9]{3,4}$ ]]; then
+    echo "Error: invalid time '$raw' — use HHMM or HH:MM (24h), e.g. 1900 or 19:00" >&2
+    return 1
+  fi
+  while [[ ${#t} -lt 4 ]]; do t="0$t"; done
+  local h=$((10#${t:0:2})) m=$((10#${t:2:2}))
+  if (( h > 23 || m > 59 )); then
+    echo "Error: invalid time '$raw'" >&2
+    return 1
+  fi
+  echo $(( h * 60 + m ))
+}
 
 # --- Detect workspace ---
 detect_workspace() {
@@ -64,23 +81,37 @@ tags: []
 EOF
 fi
 
-if [[ $# -ge 2 ]]; then
+if [[ $# -ge 4 && "$2" == "to" ]]; then
+  START_MIN=$(parse_time_to_minutes "$1") || exit 1
+  END_MIN=$(parse_time_to_minutes "$3") || exit 1
+  shift 3
+  DESCRIPTION="$*"
+
+  DIFF=$(( END_MIN - START_MIN ))
+  if (( DIFF <= 0 )); then
+    echo "Error: end time must be after start time (overnight ranges aren't supported — log manually if needed)" >&2
+    exit 1
+  fi
+  AMOUNT=$(awk -v m="$DIFF" 'BEGIN { printf "%.2f", m / 60 }')
+elif [[ $# -ge 2 ]]; then
   AMOUNT="$1"
   shift
   DESCRIPTION="$*"
-  DESCRIPTION="${DESCRIPTION//|/-}"
 
   if ! [[ "$AMOUNT" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-    echo "Error: hours must be a number (e.g. 2.5), got: $AMOUNT" >&2
+    echo "Error: hours must be a number (e.g. 2.5) or a time range (e.g. 1900 to 2200), got: $AMOUNT" >&2
     exit 1
   fi
-
-  echo "| $TODAY | $AMOUNT | $DESCRIPTION | No |" >> "$HOURS_FILE"
-  echo "✓ Logged ${AMOUNT}h to $HOURS_FILE"
 elif [[ $# -eq 1 ]]; then
   echo "Usage: hours <amount> <brief description>"
+  echo "       hours <start> to <end> <brief description>   (24h, e.g. hours 1900 to 2200 \"desc\")"
   echo "       hours                          # open in editor"
   exit 1
 else
   ${EDITOR:-vim} "$HOURS_FILE"
+  exit 0
 fi
+
+DESCRIPTION="${DESCRIPTION//|/-}"
+echo "| $TODAY | $AMOUNT | $DESCRIPTION | No |" >> "$HOURS_FILE"
+echo "✓ Logged ${AMOUNT}h to $HOURS_FILE"
