@@ -32,7 +32,6 @@ packages:
         - "kustomize"
         - "lolcat"
         - "mas"
-        - "mise"
         - "neovim"
         - "pinentry"
         - "pinentry-mac"
@@ -53,6 +52,8 @@ packages:
         - "amethyst"
         - "docker-desktop"
         - "sequel-ace"
+        - "sourcetree"
+        - "visual-studio-code@insiders"
         - "wezterm"
       personal:
         - "1password"
@@ -62,7 +63,6 @@ packages:
         - "grammarly-desktop"
         - "keybase"
         - "slack"
-        - "sourcetree"
   linux:
     apts:
       - "build-essential"
