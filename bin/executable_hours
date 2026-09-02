@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# hours — Log billable time against the current workspace, for invoicing
+#
+# Auto-detects workspace/client from current directory (~/Code/<workspace>/).
+# Appends a row to that client's 02-Areas/<workspace>/Hours.md table in the
+# personal Obsidian vault. Only works on personal machines — invoicing reads
+# from the vault, and there's no equivalent destination on a work machine.
+#
+# Usage:
+#   hours 2.5 "Fixed CORS bug in tunnel config"
+#   hours 1900 to 2200 "Client call, budget review"   # 24h HHMM or HH:MM, duration computed
+#   hours                       # opens the current workspace's Hours.md in $EDITOR
+#   WORKSPACE=mywork hours 1 "Client call"
+
+VAULT_DIR="$HOME/Code/obsidian-vault-setup"
+
+# --- Parse "HHMM" or "HH:MM" (24h) into minutes since midnight ---
+parse_time_to_minutes() {
+  local raw="$1" t="${1//:/}"
+  if ! [[ "$t" =~ ^[0-9]{3,4}$ ]]; then
+    echo "Error: invalid time '$raw' — use HHMM or HH:MM (24h), e.g. 1900 or 19:00" >&2
+    return 1
+  fi
+  while [[ ${#t} -lt 4 ]]; do t="0$t"; done
+  local h=$((10#${t:0:2})) m=$((10#${t:2:2}))
+  if (( h > 23 || m > 59 )); then
+    echo "Error: invalid time '$raw'" >&2
+    return 1
+  fi
+  echo $(( h * 60 + m ))
+}
+
+# --- Detect workspace ---
+detect_workspace() {
+  local cwd="$PWD"
+  local code_dir="$HOME/Code"
+
+  if [[ "$cwd" == "$code_dir/"* ]]; then
+    local relative="${cwd#$code_dir/}"
+    echo "${relative%%/*}"
+  elif [[ -n "${WORKSPACE:-}" ]]; then
+    echo "$WORKSPACE"
+  else
+    echo ""
+  fi
+}
+
+WORKSPACE_NAME=$(detect_workspace)
+
+if [[ -z "$WORKSPACE_NAME" ]]; then
+  echo "Error: Could not detect workspace. Either cd into ~/Code/<workspace>/ or set WORKSPACE env var."
+  exit 1
+fi
+
+if [[ -n "${WORK_WORKSPACE:-}" || ! -d "$VAULT_DIR" ]]; then
+  echo "Error: hours tracking reads/writes the personal vault at $VAULT_DIR, not available on a work machine." >&2
+  exit 1
+fi
+
+HOURS_DIR="$VAULT_DIR/02-Areas/$WORKSPACE_NAME"
+HOURS_FILE="$HOURS_DIR/Hours.md"
+TODAY=$(date +%Y-%m-%d)
+
+mkdir -p "$HOURS_DIR"
+
+if [[ ! -f "$HOURS_FILE" ]]; then
+  cat > "$HOURS_FILE" <<EOF
+---
+type: hours
+client: $WORKSPACE_NAME
+rate:
+tags: []
+---
+
+# $WORKSPACE_NAME — Hours
+
+| Date | Hours | Description | Invoiced |
+|------|-------|--------------|----------|
+EOF
+fi
+
+if [[ $# -ge 4 && "$2" == "to" ]]; then
+  START_MIN=$(parse_time_to_minutes "$1") || exit 1
+  END_MIN=$(parse_time_to_minutes "$3") || exit 1
+  shift 3
+  DESCRIPTION="$*"
+
+  DIFF=$(( END_MIN - START_MIN ))
+  if (( DIFF <= 0 )); then
+    echo "Error: end time must be after start time (overnight ranges aren't supported — log manually if needed)" >&2
+    exit 1
+  fi
+  AMOUNT=$(awk -v m="$DIFF" 'BEGIN { printf "%.2f", m / 60 }')
+elif [[ $# -ge 2 ]]; then
+  AMOUNT="$1"
+  shift
+  DESCRIPTION="$*"
+
+  if ! [[ "$AMOUNT" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    echo "Error: hours must be a number (e.g. 2.5) or a time range (e.g. 1900 to 2200), got: $AMOUNT" >&2
+    exit 1
+  fi
+elif [[ $# -eq 1 ]]; then
+  echo "Usage: hours <amount> <brief description>"
+  echo "       hours <start> to <end> <brief description>   (24h, e.g. hours 1900 to 2200 \"desc\")"
+  echo "       hours                          # open in editor"
+  exit 1
+else
+  ${EDITOR:-vim} "$HOURS_FILE"
+  exit 0
+fi
+
+DESCRIPTION="${DESCRIPTION//|/-}"
+echo "| $TODAY | $AMOUNT | $DESCRIPTION | No |" >> "$HOURS_FILE"
+echo "✓ Logged ${AMOUNT}h to $HOURS_FILE"
