@@ -10,7 +10,9 @@ set -euo pipefail
 #
 # Usage:
 #   hours 2.5 "Fixed CORS bug in tunnel config"
-#   hours 1900 to 2200 "Client call, budget review"   # 24h HHMM or HH:MM, duration computed
+#   hours 1900 to 2200 "Client call, budget review"   # 24h HHMM or HH:MM; duration computed
+#                                                       and "(19:00-22:00)" appended to the
+#                                                       description so the original times aren't lost
 #   hours --date yesterday 2.5 "Forgot to log this yesterday"
 #   hours --date 2026-08-28 1 "Backdated entry"
 #   hours                       # opens the current workspace's Hours.md in $EDITOR
@@ -36,6 +38,11 @@ parse_time_to_minutes() {
     return 1
   fi
   echo $(( h * 60 + m ))
+}
+
+# --- Format minutes-since-midnight back into HH:MM ---
+format_minutes() {
+  printf "%02d:%02d" $(( $1 / 60 )) $(( $1 % 60 ))
 }
 
 # --- Detect workspace ---
@@ -116,6 +123,7 @@ if [[ $# -ge 4 && "$2" == "to" ]]; then
     exit 1
   fi
   AMOUNT=$(awk -v m="$DIFF" 'BEGIN { printf "%.2f", m / 60 }')
+  DESCRIPTION="$DESCRIPTION ($(format_minutes "$START_MIN")-$(format_minutes "$END_MIN"))"
 elif [[ $# -ge 2 ]]; then
   AMOUNT="$1"
   shift
