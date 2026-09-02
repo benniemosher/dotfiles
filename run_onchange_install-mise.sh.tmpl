@@ -1,6 +1,16 @@
-{{ if eq .chezmoi.os "linux" -}}
 #!/bin/bash
 
+{{ if eq .chezmoi.os "darwin" -}}
+# Installed via mise's own installer, not Homebrew: Homebrew has no prebuilt
+# bottle for mise on most platforms, so `brew install mise` falls back to
+# building it from source (a large Rust codebase — a slow, multi-minute
+# compile on every fresh machine, easily mistaken for a hang).
+if command -v brew >/dev/null 2>&1 && brew list --formula mise &>/dev/null; then
+  brew uninstall mise
+fi
+
+curl https://mise.run | sh
+{{ else if eq .chezmoi.os "linux" -}}
 sudo apt update -y && sudo apt install -y gpg sudo wget curl
 sudo install -dm 755 /etc/apt/keyrings
 wget -qO - https://mise.jdx.dev/gpg-key.pub | gpg --dearmor | sudo tee /etc/apt/keyrings/mise-archive-keyring.gpg 1> /dev/null
