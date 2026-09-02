@@ -2,7 +2,7 @@
 title: Standup Notes Workflow
 description: System for maintaining daily standup notes with AI assistance
 tags: [workflow, productivity, daily]
-last_updated: 2026-07-26
+last_updated: 2026-09-01
 ---
 
 # Standup Notes Workflow
@@ -10,6 +10,23 @@ last_updated: 2026-07-26
 ## Overview
 
 Daily standup notes track what was accomplished, what's planned, and serve as an audit trail of decisions and debugging. AI assistants update these throughout the day as work happens — not just at the end.
+
+## Routing: Personal vs Work Machine
+
+Where entries land depends on whether `WORK_WORKSPACE` is set (in `~/.zshrc.local` on a
+work-issued machine):
+
+- **No `WORK_WORKSPACE` (personal machine):** entries route into the Obsidian vault at
+  `~/Code/obsidian-vault-setup/Daily/YYYY-MM-DD.md`, under a `## Standup` section, grouped by
+  workspace as `### <workspace-name>` subsections. This lets a single workspace's updates — a
+  client's, say — be read straight off in a meeting without scrolling past every other
+  project worked on that day. Synced to every device via LiveSync.
+- **`WORK_WORKSPACE` set (work machine):** entries stay in the per-workspace
+  `<workspace>/notes/standups/` files described below — unsynced, git-tracked per repo, exactly
+  as before. This never changes based on the personal-vault behavior above.
+
+The rest of this doc describes the work-machine format; see the vault's own `Meta/Schema.md`
+for the personal-vault `daily` note frontmatter.
 
 ## File Structure
 
@@ -83,7 +100,9 @@ Quick entry from any terminal:
 standup "TICKET-123: Fixed the flaky test by mocking the clock"
 ```
 
-This appends a timestamped entry to today's standup file in the current workspace.
+This appends a timestamped entry to today's standup file in the current workspace — the
+vault's `Daily/YYYY-MM-DD.md` under `### <workspace>` on a personal machine, or
+`<workspace>/notes/standups/YYYY-MM-DD.md` on a work machine (see Routing above).
 
 ## Obsidian Compatibility
 

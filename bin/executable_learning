@@ -5,11 +5,20 @@ set -euo pipefail
 #
 # Auto-detects workspace from current directory.
 #
+# On personal machines (no WORK_WORKSPACE set), entries route into the
+# Obsidian vault at 03-Resources/Learnings/, one file per day, tagged
+# `learning` per the vault's frontmatter schema — so it's searchable and
+# synced across devices. On work machines (WORK_WORKSPACE set in
+# ~/.zshrc.local), entries stay in the per-workspace notes/learnings/ files,
+# unsynced, as before.
+#
 # Usage:
 #   learning "terraform" "for_each requires map or set, not list of objects"
 #   learning                   # opens today's learning file in $EDITOR
 #
 # First argument is the tag/topic, rest is the content.
+
+VAULT_DIR="$HOME/Code/obsidian-vault-setup"
 
 # --- Detect workspace ---
 detect_workspace() {
@@ -33,8 +42,60 @@ if [[ -z "$WORKSPACE_NAME" ]]; then
   exit 1
 fi
 
-LEARNING_DIR="$HOME/Code/$WORKSPACE_NAME/notes/learnings"
 TODAY=$(date +%Y-%m-%d)
+TIMESTAMP=$(date +%H:%M)
+
+if [[ -z "${WORK_WORKSPACE:-}" && -d "$VAULT_DIR" ]]; then
+  LEARNING_DIR="$VAULT_DIR/03-Resources/Learnings"
+  LEARNING_FILE="$LEARNING_DIR/$TODAY.md"
+  mkdir -p "$LEARNING_DIR"
+
+  if [[ ! -f "$LEARNING_FILE" ]]; then
+    cat > "$LEARNING_FILE" <<EOF
+---
+type: learning
+date: $TODAY
+tags: []
+---
+
+# Learnings - $TODAY
+EOF
+  fi
+
+  if [[ $# -ge 2 ]]; then
+    TAG="$1"
+    shift
+    CONTENT="$*"
+
+    if ! grep -q "$TAG" "$LEARNING_FILE" 2>/dev/null; then
+      sed -i '' "s/^tags: \[/tags: [$TAG, /" "$LEARNING_FILE"
+      sed -i '' 's/tags: \[, /tags: [/' "$LEARNING_FILE"
+    fi
+
+    cat >> "$LEARNING_FILE" <<EOF
+
+## $CONTENT (from $WORKSPACE_NAME)
+
+_Captured at $TIMESTAMP. Topic: $TAG._
+
+### Context
+(fill in)
+
+### Solution
+(fill in)
+EOF
+    echo "✓ Added learning to $LEARNING_FILE (tag: $TAG)"
+  elif [[ $# -eq 1 ]]; then
+    echo "Usage: learning <tag> <description>"
+    echo "       learning                    # open in editor"
+    exit 1
+  else
+    ${EDITOR:-vim} "$LEARNING_FILE"
+  fi
+  exit 0
+fi
+
+LEARNING_DIR="$HOME/Code/$WORKSPACE_NAME/notes/learnings"
 LEARNING_FILE="$LEARNING_DIR/$TODAY.md"
 
 # --- Ensure directory exists ---
@@ -57,7 +118,6 @@ if [[ $# -ge 2 ]]; then
   TAG="$1"
   shift
   CONTENT="$*"
-  TIMESTAMP=$(date +%H:%M)
 
   # Add tag to frontmatter if not already there
   if ! grep -q "$TAG" "$LEARNING_FILE" 2>/dev/null; then

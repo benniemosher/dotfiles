@@ -2,7 +2,7 @@
 title: Learnings Workflow
 description: System for capturing and organizing technical learnings
 tags: [workflow, productivity, knowledge-management]
-last_updated: 2026-07-26
+last_updated: 2026-09-01
 ---
 
 # Learnings Workflow
@@ -10,6 +10,21 @@ last_updated: 2026-07-26
 ## Overview
 
 Learnings capture reusable knowledge discovered during daily work. They serve as a personal knowledge base that AI assistants can reference in future sessions, preventing re-discovery of solutions.
+
+## Routing: Personal vs Work Machine
+
+Where entries land depends on whether `WORK_WORKSPACE` is set (in `~/.zshrc.local` on a
+work-issued machine):
+
+- **No `WORK_WORKSPACE` (personal machine):** entries route into the Obsidian vault at
+  `~/Code/obsidian-vault-setup/03-Resources/Learnings/YYYY-MM-DD.md`, tagged `type: learning`
+  per the vault's frontmatter schema (`Meta/Schema.md`). Synced to every device via LiveSync.
+- **`WORK_WORKSPACE` set (work machine):** entries stay in the per-workspace
+  `<workspace>/notes/learnings/` files described below — unsynced, git-tracked per repo,
+  exactly as before.
+
+The Portable vs Business-Specific classification below still applies either way — it's about
+where a *pattern* belongs long-term, independent of which machine captured it.
 
 ## File Structure
 
@@ -85,7 +100,9 @@ Quick capture from terminal:
 learning "terraform" "for_each requires map or set, not list of objects"
 ```
 
-Creates or appends to today's learning file with a timestamp and the provided tags/content.
+Creates or appends to today's learning file with a timestamp and the provided tags/content —
+the vault's `03-Resources/Learnings/YYYY-MM-DD.md` on a personal machine, or
+`<workspace>/notes/learnings/YYYY-MM-DD.md` on a work machine (see Routing above).
 
 ## Obsidian Compatibility
 
