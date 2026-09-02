@@ -16,12 +16,18 @@ set -euo pipefail
 #                                                       you just give a plain amount instead
 #   hours --date yesterday 2.5 "Forgot to log this yesterday"
 #   hours 1900 to 2200 --date 2026-08-28 "Backdated range"
+#   hours --totals              # recompute the unbilled totals line, no new entry
 #   hours                       # opens the current workspace's Hours.md in $EDITOR
 #   WORKSPACE=mywork hours 1 "Client call"
 #
 # --date accepts yesterday, today, YYYY-MM-DD, or MM-DD-YYYY, and can appear
 # anywhere in the arguments. Run the command multiple times (once per entry)
 # to backfill several entries for the same past day.
+#
+# Every logged entry recomputes an "Unbilled: Xh · $Y" line at the bottom of
+# the file (rows with Invoiced != No are excluded). If you edit the table by
+# hand (fixing a typo, marking rows invoiced, or a QuickAdd mobile capture),
+# run `hours --totals` afterward to refresh it — it's not live/automatic.
 
 VAULT_DIR="$HOME/Code/obsidian-vault-setup"
 
@@ -44,6 +50,54 @@ parse_time_to_minutes() {
 # --- Format minutes-since-midnight back into HH:MM ---
 format_minutes() {
   printf "%02d:%02d" $(( $1 / 60 )) $(( $1 % 60 ))
+}
+
+# --- Strip any existing "<!-- TOTALS:START -->...<!-- TOTALS:END -->" block
+#     (and trailing blank lines) so it's always the true last thing in the
+#     file -- call before appending a new table row, not just before
+#     recompute_totals, or the row lands after the (stale) totals block. ---
+strip_totals_block() {
+  local file="$1" stripped
+  stripped=$(awk '
+    /<!-- TOTALS:START -->/ { skip = 1 }
+    !skip { print }
+    /<!-- TOTALS:END -->/ { skip = 0 }
+  ' "$file")
+  printf '%s\n' "$stripped" > "$file"
+}
+
+# --- Recompute the "Unbilled: Xh · $Y" line at the bottom of a Hours.md,
+#     replacing any previous one. Sums the Hours column for every row whose
+#     Invoiced column isn't "No" -- excluded. ---
+recompute_totals() {
+  local file="$1"
+  local rate
+  rate=$(grep '^rate:' "$file" | head -1 | sed 's/^rate: *//' | tr -d '[:space:]')
+
+  local unbilled
+  unbilled=$(awk -F'|' '
+    /^\| *[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] *\|/ {
+      hours = $3; gsub(/^ +| +$/, "", hours)
+      invoiced = $6; gsub(/^ +| +$/, "", invoiced)
+      if (invoiced == "No") sum += hours
+    }
+    END { printf "%.2f", sum + 0 }
+  ' "$file")
+
+  strip_totals_block "$file"
+
+  {
+    echo
+    echo "<!-- TOTALS:START -->"
+    if [[ -n "$rate" && "$rate" =~ ^[0-9]+(\.[0-9]+)?$ && "$rate" != "0" ]]; then
+      local dollars
+      dollars=$(awk -v h="$unbilled" -v r="$rate" 'BEGIN { printf "%.2f", h * r }')
+      echo "**Unbilled: ${unbilled}h · \$${dollars} at \$${rate}/hr**"
+    else
+      echo "**Unbilled: ${unbilled}h**"
+    fi
+    echo "<!-- TOTALS:END -->"
+  } >> "$file"
 }
 
 # --- Detect workspace ---
@@ -76,6 +130,16 @@ fi
 HOURS_DIR="$VAULT_DIR/02-Areas/$WORKSPACE_NAME"
 HOURS_FILE="$HOURS_DIR/Hours.md"
 ENTRY_DATE=$(date +%Y-%m-%d)
+
+if [[ "${1:-}" == "--totals" ]]; then
+  if [[ ! -f "$HOURS_FILE" ]]; then
+    echo "Error: no Hours.md yet for $WORKSPACE_NAME — log an entry first." >&2
+    exit 1
+  fi
+  recompute_totals "$HOURS_FILE"
+  echo "✓ Refreshed totals in $HOURS_FILE"
+  exit 0
+fi
 
 # --- Pull "--date <value>" out of the arguments, wherever it appears ---
 ARGS=()
@@ -159,5 +223,7 @@ else
 fi
 
 DESCRIPTION="${DESCRIPTION//|/-}"
+strip_totals_block "$HOURS_FILE"
 echo "| $ENTRY_DATE | $AMOUNT | $TIME_RANGE | $DESCRIPTION | No |" >> "$HOURS_FILE"
+recompute_totals "$HOURS_FILE"
 echo "✓ Logged ${AMOUNT}h to $HOURS_FILE ($ENTRY_DATE)"
