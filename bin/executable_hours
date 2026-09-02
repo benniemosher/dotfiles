@@ -10,9 +10,10 @@ set -euo pipefail
 #
 # Usage:
 #   hours 2.5 "Fixed CORS bug in tunnel config"
-#   hours 1900 to 2200 "Client call, budget review"   # 24h HHMM or HH:MM; duration computed
-#                                                       and "(19:00-22:00)" appended to the
-#                                                       description so the original times aren't lost
+#   hours 1900 to 2200 "Client call, budget review"   # 24h HHMM or HH:MM; duration goes in
+#                                                       the Hours column, "19:00-22:00" in its
+#                                                       own Time column — Time is blank when
+#                                                       you just give a plain amount instead
 #   hours --date yesterday 2.5 "Forgot to log this yesterday"
 #   hours --date 2026-08-28 1 "Backdated entry"
 #   hours                       # opens the current workspace's Hours.md in $EDITOR
@@ -106,10 +107,12 @@ tags: []
 
 # $WORKSPACE_NAME — Hours
 
-| Date | Hours | Description | Invoiced |
-|------|-------|--------------|----------|
+| Date | Hours | Time | Description | Invoiced |
+|------|-------|------|--------------|----------|
 EOF
 fi
+
+TIME_RANGE=""
 
 if [[ $# -ge 4 && "$2" == "to" ]]; then
   START_MIN=$(parse_time_to_minutes "$1") || exit 1
@@ -123,7 +126,7 @@ if [[ $# -ge 4 && "$2" == "to" ]]; then
     exit 1
   fi
   AMOUNT=$(awk -v m="$DIFF" 'BEGIN { printf "%.2f", m / 60 }')
-  DESCRIPTION="$DESCRIPTION ($(format_minutes "$START_MIN")-$(format_minutes "$END_MIN"))"
+  TIME_RANGE="$(format_minutes "$START_MIN")-$(format_minutes "$END_MIN")"
 elif [[ $# -ge 2 ]]; then
   AMOUNT="$1"
   shift
@@ -144,5 +147,5 @@ else
 fi
 
 DESCRIPTION="${DESCRIPTION//|/-}"
-echo "| $ENTRY_DATE | $AMOUNT | $DESCRIPTION | No |" >> "$HOURS_FILE"
+echo "| $ENTRY_DATE | $AMOUNT | $TIME_RANGE | $DESCRIPTION | No |" >> "$HOURS_FILE"
 echo "✓ Logged ${AMOUNT}h to $HOURS_FILE ($ENTRY_DATE)"
