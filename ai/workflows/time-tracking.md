@@ -56,12 +56,18 @@ assistant should:
 
 1. Read `02-Areas/<client>/Hours.md`.
 2. Filter rows in the requested period where `Invoiced` = `No`.
-3. Sum hours. If `rate` is set in that file's frontmatter, compute the total ($).
-4. Write a new note at `02-Areas/<client>/Invoices/<invoice_number>.md`, following the shape
+3. Compute the line-item `Amount` for each row (Hours × `rate` from that file's frontmatter),
+   and the Total Hours / Total Due. If `rate` isn't set, ask for one rather than guessing.
+4. Compute `due_date` from the invoice date using `terms` (default **Net 15** unless the user
+   says otherwise for that invoice) — e.g. date `2026-09-01` + Net 15 → `2026-09-16`.
+5. Write a new note at `02-Areas/<client>/Invoices/<invoice_number>.md`, following the shape
    in `03-Resources/Templates/invoice.md` (frontmatter includes `cssclass: invoice`, which
-   picks up `.obsidian/snippets/invoice.css` for a clean printed layout).
-5. Update those same rows in `Hours.md` to `Invoiced: Yes` so they aren't billed twice.
-6. Tell the user to open the new note in Obsidian and use **Export to PDF** (Command
+   picks up `.obsidian/snippets/invoice.css` for a clean, client-ready layout). Sender block is
+   fixed: Bennie Mosher / benniemosher@gmail.com / 970-590-2040. Payment line reads "Direct
+   deposit (arranged separately)" — never print bank/account details in the note.
+6. Update those same rows in `Hours.md` to `Invoiced: Yes` so they aren't billed twice — insert
+   changes *above* the ```` ```dataviewjs ```` fence at the end of the file, never below it.
+7. Tell the user to open the new note in Obsidian and use **Export to PDF** (Command
    Palette → "Export to PDF") to produce the sendable file — no plugin needed, it's a core
    Obsidian command.
 
