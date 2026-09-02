@@ -33,13 +33,21 @@ Appends a row to `~/Code/obsidian-vault-setup/02-Areas/<workspace>/Hours.md`:
 
 `hours <start> to <end> "<desc>"` (24h `HHMM` or `HH:MM`) fills in both Hours (computed
 duration) and Time (the original range); `hours <amount> "<desc>"` fills in Hours only, leaving
-Time blank. `hours --date yesterday|today|YYYY-MM-DD ...` backdates an entry — run once per
-entry to backfill several for the same day.
+Time blank. `hours --date yesterday|today|YYYY-MM-DD|MM-DD-YYYY ...` backdates an entry — it
+can appear anywhere in the arguments — run once per entry to backfill several for the same day.
 
 Keep descriptions very brief — a few words, not a paragraph. Detail belongs in the Daily
 note's `## Standup` section (see `standup-notes.md`); this table is purely for billing.
 
 Errors out on a work machine (`WORK_WORKSPACE` set) — there's no vault to write to there.
+
+Every `Hours.md` ends with a `dataviewjs` block that computes an "Unbilled: Xh · $Y" line live,
+straight from the table — it's correct on every view, not just after running `hours` (so a
+manual edit or a mobile QuickAdd capture doesn't go stale). The script keeps that block
+positioned as the last thing in the file whenever it appends a row; don't reorder it by hand,
+and if writing to `Hours.md` outside the script (e.g. marking rows `Invoiced: Yes` when
+generating an invoice, below), insert new/changed rows *above* the ```` ```dataviewjs ```` fence,
+never below it.
 
 ## Generating an Invoice
 
