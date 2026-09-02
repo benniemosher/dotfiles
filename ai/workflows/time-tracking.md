@@ -25,10 +25,16 @@ hours 2.5 "Fixed CORS bug in tunnel config"
 Appends a row to `~/Code/obsidian-vault-setup/02-Areas/<workspace>/Hours.md`:
 
 ```markdown
-| Date       | Hours | Description                      | Invoiced |
-|------------|-------|-----------------------------------|----------|
-| 2026-09-01 | 2.5   | Fixed CORS bug in tunnel config  | No       |
+| Date       | Hours | Time        | Description                | Invoiced |
+|------------|-------|-------------|-----------------------------|----------|
+| 2026-09-01 | 2.5   |             | Fixed CORS bug in tunnel   | No       |
+| 2026-09-01 | 3.00  | 19:00-22:00 | Client call, budget review | No       |
 ```
+
+`hours <start> to <end> "<desc>"` (24h `HHMM` or `HH:MM`) fills in both Hours (computed
+duration) and Time (the original range); `hours <amount> "<desc>"` fills in Hours only, leaving
+Time blank. `hours --date yesterday|today|YYYY-MM-DD ...` backdates an entry — run once per
+entry to backfill several for the same day.
 
 Keep descriptions very brief — a few words, not a paragraph. Detail belongs in the Daily
 note's `## Standup` section (see `standup-notes.md`); this table is purely for billing.
