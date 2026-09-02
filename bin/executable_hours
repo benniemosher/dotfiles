@@ -15,13 +15,13 @@ set -euo pipefail
 #                                                       own Time column — Time is blank when
 #                                                       you just give a plain amount instead
 #   hours --date yesterday 2.5 "Forgot to log this yesterday"
-#   hours --date 2026-08-28 1 "Backdated entry"
+#   hours 1900 to 2200 --date 2026-08-28 "Backdated range"
 #   hours                       # opens the current workspace's Hours.md in $EDITOR
 #   WORKSPACE=mywork hours 1 "Client call"
 #
-# --date accepts yesterday, today, or an explicit YYYY-MM-DD, and must come
-# first if given. Run the command multiple times (once per entry) to backfill
-# several entries for the same past day.
+# --date accepts yesterday, today, YYYY-MM-DD, or MM-DD-YYYY, and can appear
+# anywhere in the arguments. Run the command multiple times (once per entry)
+# to backfill several entries for the same past day.
 
 VAULT_DIR="$HOME/Code/obsidian-vault-setup"
 
@@ -77,22 +77,34 @@ HOURS_DIR="$VAULT_DIR/02-Areas/$WORKSPACE_NAME"
 HOURS_FILE="$HOURS_DIR/Hours.md"
 ENTRY_DATE=$(date +%Y-%m-%d)
 
-if [[ "${1:-}" == "--date" ]]; then
-  if [[ $# -lt 2 ]]; then
-    echo "Error: --date requires a value (yesterday, today, or YYYY-MM-DD)" >&2
-    exit 1
-  fi
-  case "$2" in
-    yesterday) ENTRY_DATE=$(date -v-1d +%Y-%m-%d) ;;
-    today) ENTRY_DATE=$(date +%Y-%m-%d) ;;
-    [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ENTRY_DATE="$2" ;;
-    *)
-      echo "Error: --date expects 'yesterday', 'today', or YYYY-MM-DD, got: $2" >&2
+# --- Pull "--date <value>" out of the arguments, wherever it appears ---
+ARGS=()
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "--date" ]]; then
+    if [[ $# -lt 2 ]]; then
+      echo "Error: --date requires a value (yesterday, today, YYYY-MM-DD, or MM-DD-YYYY)" >&2
       exit 1
-      ;;
-  esac
-  shift 2
-fi
+    fi
+    case "$2" in
+      yesterday) ENTRY_DATE=$(date -v-1d +%Y-%m-%d) ;;
+      today) ENTRY_DATE=$(date +%Y-%m-%d) ;;
+      [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ENTRY_DATE="$2" ;;
+      [0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9])
+        IFS='-' read -r mm dd yyyy <<< "$2"
+        ENTRY_DATE="$yyyy-$mm-$dd"
+        ;;
+      *)
+        echo "Error: --date expects 'yesterday', 'today', YYYY-MM-DD, or MM-DD-YYYY, got: $2" >&2
+        exit 1
+        ;;
+    esac
+    shift 2
+  else
+    ARGS+=("$1")
+    shift
+  fi
+done
+set -- "${ARGS[@]+"${ARGS[@]}"}"
 
 mkdir -p "$HOURS_DIR"
 
