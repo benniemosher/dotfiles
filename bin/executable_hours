@@ -23,11 +23,18 @@ set -euo pipefail
 # anywhere in the arguments. Run the command multiple times (once per entry)
 # to backfill several entries for the same past day.
 #
-# Every Hours.md ends with a dataviewjs block that computes the unbilled
-# total live (Obsidian re-runs it on every view, including edits made by
-# hand or via QuickAdd on mobile — no need to re-run this script for it to
-# be correct). This script only keeps that block positioned as the last
-# thing in the file so new rows land above it, not after it.
+# Each day gets its own "### YYYY-MM-DD" section with its own table and a
+# bold **Total** row at the bottom, computed by this script (recomputed
+# fresh each time you log another entry for that day). New days are always
+# added at the end of the file — logging a new entry against an *existing*
+# but not-most-recent day moves that day's whole section to the end too,
+# rather than sorting the file by date.
+#
+# The file ends with a dataviewjs block that computes the grand unbilled
+# total live across every day (Obsidian re-runs it on every view, including
+# edits made by hand or via QuickAdd on mobile — no need to re-run this
+# script for it to be correct). This script only keeps that block
+# positioned as the last thing in the file so new rows land above it.
 
 VAULT_DIR="$HOME/Code/obsidian-vault-setup"
 
@@ -50,6 +57,47 @@ parse_time_to_minutes() {
 # --- Format minutes-since-midnight back into HH:MM ---
 format_minutes() {
   printf "%02d:%02d" $(( $1 / 60 )) $(( $1 % 60 ))
+}
+
+# --- Remove any existing "### <date> ... " day section (up to the next
+#     "### " heading or EOF) from the file, saving its data rows for that
+#     date to $rows_out so they can be folded into a rebuilt section. ---
+extract_and_strip_day_block() {
+  local file="$1" date="$2" rows_out="$3" stripped
+  : > "$rows_out"
+  stripped=$(awk -v heading="### $date" -v date="$date" -v out="$rows_out" '
+    BEGIN { in_day = 0 }
+    {
+      if ($0 == heading) { in_day = 1; next }
+      if (in_day && /^### /) { in_day = 0 }
+      if (in_day) {
+        if ($0 ~ ("^\\| *" date " *\\|")) print > out
+        next
+      }
+      print
+    }
+  ' "$file")
+  printf '%s\n' "$stripped" > "$file"
+}
+
+# --- Append a freshly built "### <date>" section (prior rows + the new row
+#     + a bold Total row). ---
+write_day_block() {
+  local file="$1" date="$2" rows_file="$3" new_row="$4" new_amount="$5"
+  local old_sum day_total
+  old_sum=$(awk -F'|' '{ h = $3; gsub(/^ +| +$/, "", h); sum += h } END { printf "%.2f", sum + 0 }' "$rows_file")
+  day_total=$(awk -v a="$old_sum" -v b="$new_amount" 'BEGIN { printf "%.2f", a + b }')
+
+  {
+    echo
+    echo "### $date"
+    echo
+    echo "| Date | Hours | Time | Description | Invoiced |"
+    echo "|------|-------|------|--------------|----------|"
+    cat "$rows_file"
+    echo "$new_row"
+    echo "| **Total** | **${day_total}** |  |  |  |"
+  } >> "$file"
 }
 
 # --- The live totals block. Content never changes -- Obsidian recomputes it
@@ -165,9 +213,6 @@ cssclass: hours-tracker
 ---
 
 # $WORKSPACE_NAME — Hours
-
-| Date | Hours | Time | Description | Invoiced |
-|------|-------|------|--------------|----------|
 EOF
 fi
 
@@ -206,7 +251,12 @@ else
 fi
 
 DESCRIPTION="${DESCRIPTION//|/-}"
+ROW="| $ENTRY_DATE | $AMOUNT | $TIME_RANGE | $DESCRIPTION | No |"
+
 strip_dataviewjs_block "$HOURS_FILE"
-echo "| $ENTRY_DATE | $AMOUNT | $TIME_RANGE | $DESCRIPTION | No |" >> "$HOURS_FILE"
+DAY_ROWS_TMP=$(mktemp)
+extract_and_strip_day_block "$HOURS_FILE" "$ENTRY_DATE" "$DAY_ROWS_TMP"
+write_day_block "$HOURS_FILE" "$ENTRY_DATE" "$DAY_ROWS_TMP" "$ROW" "$AMOUNT"
+rm -f "$DAY_ROWS_TMP"
 append_dataviewjs_block "$HOURS_FILE"
 echo "✓ Logged ${AMOUNT}h to $HOURS_FILE ($ENTRY_DATE)"
