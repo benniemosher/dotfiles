@@ -1,0 +1,63 @@
+/* Styling for notes with `cssclass: invoice` in frontmatter — a clean,
+   client-ready layout for Obsidian's built-in "Export to PDF" command.
+   Scoped to .invoice so it never affects any other note.
+
+   NOTE: PDF export has been unreliable about picking up this snippet, so
+   the invoice note itself carries inline styles for anything visually
+   load-bearing (banner colors, table zebra striping, total bar). Treat
+   this file as the nice-to-have polish layer for viewing in Obsidian,
+   not the only thing standing between the note and "chicken scratch". */
+
+.invoice {
+  font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  color: #1f2937;
+}
+
+.invoice .invoice-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 2em;
+  margin-bottom: 1.5em;
+}
+
+.invoice .invoice-meta > div {
+  flex: 1;
+}
+
+.invoice .invoice-from p,
+.invoice .invoice-to p,
+.invoice .invoice-dates p {
+  margin: 0.2em 0;
+}
+
+.invoice .invoice-dates {
+  text-align: right;
+}
+
+.invoice table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5em 0 1.5em;
+  font-size: 0.95em;
+}
+
+.invoice table td {
+  padding: 9px 12px;
+}
+
+.invoice .invoice-payment {
+  margin-top: 1.5em;
+  padding-top: 1em;
+  border-top: 1px solid #e6e0f0;
+  font-size: 0.9em;
+  color: #6b6172;
+}
+
+/* Page 1: at-a-glance summary. Forces a page break after it so the
+   itemized detail always starts on its own page in the exported PDF.
+   (Also set inline on the element itself — see note above.) */
+.invoice .invoice-summary-page {
+  page-break-after: always;
+  break-after: page;
+}
