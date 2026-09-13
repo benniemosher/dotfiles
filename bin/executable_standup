@@ -81,6 +81,26 @@ if [[ -z "${WORK_WORKSPACE:-}" && -d "$VAULT_DIR" ]]; then
   STANDUP_FILE="$VAULT_DIR/Daily/$TODAY.md"
   mkdir -p "$VAULT_DIR/Daily"
 
+  # --- Warn before starting a brand-new "### <workspace>" heading. Same footgun as
+  #     `hours`: $PWD-based detection means running this from inside the vault repo
+  #     itself (also under ~/Code/) silently creates a plausible-looking but wrong
+  #     workspace section instead of erroring. ---
+  if [[ $# -gt 0 ]] && ! grep -qxF "### $WORKSPACE_NAME" "$VAULT_DIR"/Daily/*.md 2>/dev/null; then
+    echo "⚠️  \"$WORKSPACE_NAME\" has never appeared as a standup workspace before — this would start a new \"### $WORKSPACE_NAME\" section in:" >&2
+    echo "    $STANDUP_FILE" >&2
+    echo "    If you meant a different client, check your \$PWD (workspace is auto-detected from it) and Ctrl-C." >&2
+    if [[ -t 0 ]]; then
+      read -r -p "    Type 'y' to log under this new workspace: " CONFIRM
+      if [[ "$CONFIRM" != "y" ]]; then
+        echo "Aborted — nothing logged." >&2
+        exit 1
+      fi
+    else
+      echo "Error: refusing to silently create a new workspace heading outside a terminal. Run interactively to confirm." >&2
+      exit 1
+    fi
+  fi
+
   if [[ ! -f "$STANDUP_FILE" ]]; then
     cat > "$STANDUP_FILE" <<EOF
 ---
