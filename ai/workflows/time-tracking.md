@@ -70,15 +70,74 @@ assistant should:
 4. Compute `due_date` from the invoice date using `terms` (default **Net 15** unless the user
    says otherwise for that invoice) — e.g. date `2026-09-01` + Net 15 → `2026-09-16`.
 5. Write a new note at `02-Areas/<client>/Invoices/<invoice_number>.md`, following the shape
-   in `03-Resources/Templates/invoice.md` (frontmatter includes `cssclass: invoice`, which
-   picks up `.obsidian/snippets/invoice.css` for a clean, client-ready layout). Sender block is
-   fixed: Bennie Mosher / benniemosher@gmail.com / 970-590-2040. Payment line reads "Direct
-   deposit (arranged separately)" — never print bank/account details in the note.
+   in `03-Resources/Templates/invoice.md`. Sender block is fixed: Bennie Mosher /
+   benniemosher@gmail.com / 970-590-2040. Payment line reads "Direct deposit (arranged
+   separately)" — never print bank/account details in the note.
+
+   The note is two parts, split by a hard page break, so **Export to PDF** always starts the
+   itemized detail on its own page:
+     - `.invoice-summary-page` — a "Summary" table with columns **Category, Hours, Rate,
+       Amount** (in that order — matches the standard invoicing convention of title → hours →
+       rate → amount), one row per category, ordered by hours descending, ending in a bold
+       `Total` row that gives Total Hours and Total Due **in one line** rather than as a
+       separate banner (Rate is blank on the Total row — summing a rate is meaningless). Every
+       category used here must come from the canonical list below — see "Rules for AI
+       Assistants" before inventing a new one. The `**Payment:**` line lives on this page too,
+       directly below the Total row — not at the bottom of the whole note — so the reader sees
+       it without turning to the detail pages. **Rate lives here, not on the detail pages.**
+     - `.invoice-detail-page` — one day-header bar + table per calendar day in the period
+       (mirroring `Hours.md`'s per-day sections), not one flat table for the whole period.
+       Each day's table has columns **Category, Description, Hours, Amount** — no Rate column
+       (that's on the Summary page only, since it's a constant per invoice and repeating it on
+       every row added no information) — and ends with a bold "Day Total" row; day totals must
+       sum to the Summary page's Total row. Each day's header-bar + table pair is wrapped in
+       one outer `<div style="page-break-inside:avoid;break-inside:avoid;">` — without it,
+       Obsidian's PDF pagination can strand a day's header bar at the bottom of a page and push
+       its table onto the next one. Wrap the pair, not just the table, so they always move
+       together.
+
+   **Styling is inline, not just the CSS snippet.** `.obsidian/snippets/invoice.css` exists and
+   is enabled, but Obsidian's "Export to PDF" has been observed dropping it entirely (symptom:
+   flex layouts collapse and adjacent `<span>`s render jammed together with no gap, e.g.
+   "Terraform3.00 h"). `03-Resources/Templates/invoice.md` bakes the letterhead banner, table
+   header colors, zebra-striping, and the Total row as `style="..."` attributes directly on
+   each element for this reason — copy that pattern rather than reintroducing bare classed
+   `<div>`/`<span>` layouts that only look right if the snippet happens to load. Color scheme
+   is a single royal purple, `#4c1d95` (user's preference, 2026-09-09: "purple and black is my
+   Harley color" — a follow-up dropped the black variant, then a second follow-up replaced the
+   first, brighter purple `#6d28d9` for something deeper/less neon — "royal purple like Jesus
+   would wear"): header banner, table header accents, day-header bars, and the summary Total
+   row all use it — don't drift back to blue, black, or the brighter violet.
+   The `**Period:**` line in `invoice-dates` is wrapped in an inline `<span style="white-space:
+   nowrap;">` on the same line as itself, staying in the same paragraph as the Date/Due/Terms
+   lines above it — this keeps the date range from wrapping without opening a `<div>` (a block
+   element), which would start a new paragraph and add a visible blank-line gap before it.
 6. Update those same rows in `Hours.md` to `Invoiced: Yes` so they aren't billed twice — insert
    changes *above* the ```` ```dataviewjs ```` fence at the end of the file, never below it.
 7. Tell the user to open the new note in Obsidian and use **Export to PDF** (Command
    Palette → "Export to PDF") to produce the sendable file — no plugin needed, it's a core
    Obsidian command.
+
+## Summary Categories
+
+Reuse these across invoices so the rollup stays comparable period to period — don't reinvent a
+category with slightly different wording each time:
+
+- **Meetings** — standups, syncs, 1:1s, team/project meetings.
+- **Code Review** — reviewing, approving, or merging *someone else's* PR; also covers
+  reviewing an infra/config PR (e.g. Terraform) even when the subject matter isn't code per se.
+- **Admin** — paperwork, Slack triage, general overhead, and travel/appointments (travel time
+  is folded in here rather than given its own bucket, per user preference 2026-09-09).
+- **Onboarding / Setup** — one-off account/environment/machine setup; mostly a new-engagement
+  category, won't recur on every invoice.
+- **Tooling / CI Setup** — pre-commit config, CI/CD pipeline work, dev-tooling setup — distinct
+  from feature/infra development.
+- **`PR#NN` / `Issue#NN` (ad hoc)** — when a meaningful chunk of time centers on building out
+  one specific ticket (not reviewing it — building it), break it out under its own
+  ticket-numbered category instead of a generic bucket, e.g. `PR#95 (App Service Deploy)`.
+- Client- or project-specific buckets (e.g. **Azure E2E Testing**) are fine to add when a
+  cluster of work is real and recurring — add it here once agreed so later invoices reuse the
+  same label instead of drifting (e.g. "Azure/Dev" vs "Azure Testing" vs "E2E work").
 
 ## Rules for AI Assistants
 
@@ -88,3 +147,7 @@ assistant should:
   same period before creating a duplicate.
 - If `rate` isn't set for a client, still generate the invoice with hours only and ask for a
   rate rather than guessing one.
+- When a line item's category isn't obviously covered by the list above — it's genuinely
+  ambiguous, or two activities are jammed into one logged row (e.g. "reviewed the Terraform PR
+  and prepped the pre-commit PR") — ask the user which bucket it belongs in rather than
+  guessing silently. Add the resolved category to the list above if it'll recur.
