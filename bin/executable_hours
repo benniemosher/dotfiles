@@ -200,6 +200,22 @@ while [[ $# -gt 0 ]]; do
 done
 set -- "${ARGS[@]+"${ARGS[@]}"}"
 
+if [[ ! -f "$HOURS_FILE" ]]; then
+  echo "⚠️  No existing Hours.md for workspace \"$WORKSPACE_NAME\" — this would create a NEW client log at:" >&2
+  echo "    $HOURS_FILE" >&2
+  echo "    If you meant a different client, check your \$PWD (workspace is auto-detected from it) and Ctrl-C." >&2
+  if [[ -t 0 ]]; then
+    read -r -p "    Type 'y' to create this new client and log the entry: " CONFIRM
+    if [[ "$CONFIRM" != "y" ]]; then
+      echo "Aborted — nothing logged." >&2
+      exit 1
+    fi
+  else
+    echo "Error: refusing to silently create a new client log outside a terminal. Run interactively to confirm." >&2
+    exit 1
+  fi
+fi
+
 mkdir -p "$HOURS_DIR"
 
 if [[ ! -f "$HOURS_FILE" ]]; then
