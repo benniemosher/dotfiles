@@ -25,10 +25,11 @@ set -euo pipefail
 #
 # Each day gets its own "### YYYY-MM-DD" section with its own table and a
 # bold **Total** row at the bottom, computed by this script (recomputed
-# fresh each time you log another entry for that day). New days are always
-# added at the end of the file — logging a new entry against an *existing*
-# but not-most-recent day moves that day's whole section to the end too,
-# rather than sorting the file by date.
+# fresh each time you log another entry for that day). Day sections are
+# kept newest-first — a new day is inserted before the first existing day
+# older than it (not sorted by "when you typed it," so backdated --date
+# entries land in the right place too), and logging another entry against
+# an existing day rebuilds that day's section in place rather than moving it.
 #
 # The file ends with a dataviewjs block that computes the grand unbilled
 # total live across every day (Obsidian re-runs it on every view, including
@@ -80,10 +81,12 @@ extract_and_strip_day_block() {
   printf '%s\n' "$stripped" > "$file"
 }
 
-# --- Append a freshly built "### <date>" section (prior rows + the new row
-#     + a bold Total row). ---
-write_day_block() {
-  local file="$1" date="$2" rows_file="$3" new_row="$4" new_amount="$5"
+# --- Build a freshly-composed "### <date>" section (prior rows + the new
+#     row + a bold Total row) into $block_file, for insert_day_block_sorted
+#     to place. Blank lines on both ends so it's cleanly separated from
+#     whatever ends up before/after it, regardless of where it lands. ---
+build_day_block() {
+  local date="$1" rows_file="$2" new_row="$3" new_amount="$4" block_file="$5"
   local old_sum day_total
   old_sum=$(awk -F'|' '{ h = $3; gsub(/^ +| +$/, "", h); sum += h } END { printf "%.2f", sum + 0 }' "$rows_file")
   day_total=$(awk -v a="$old_sum" -v b="$new_amount" 'BEGIN { printf "%.2f", a + b }')
@@ -97,7 +100,34 @@ write_day_block() {
     cat "$rows_file"
     echo "$new_row"
     echo "| **Total** | **${day_total}** |  |  |  |"
-  } >> "$file"
+    echo
+  } > "$block_file"
+}
+
+# --- Insert a freshly-built day-block into newest-first position: right
+#     before the first existing "### YYYY-MM-DD" heading whose date is
+#     older than this one, or at the end (before where the dataviewjs block
+#     gets re-appended) if this is the oldest date logged so far. ---
+insert_day_block_sorted() {
+  local file="$1" date="$2" block_file="$3" tmp
+  tmp=$(mktemp)
+  awk -v date="$date" -v blockfile="$block_file" '
+    BEGIN { inserted = 0 }
+    /^### [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ {
+      heading_date = substr($0, 5)
+      if (!inserted && heading_date < date) {
+        while ((getline line < blockfile) > 0) print line
+        inserted = 1
+      }
+    }
+    { print }
+    END {
+      if (!inserted) {
+        while ((getline line < blockfile) > 0) print line
+      }
+    }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
 }
 
 # --- The live totals block. Content never changes -- Obsidian recomputes it
@@ -272,7 +302,9 @@ ROW="| $ENTRY_DATE | $AMOUNT | $TIME_RANGE | $DESCRIPTION | No |"
 strip_dataviewjs_block "$HOURS_FILE"
 DAY_ROWS_TMP=$(mktemp)
 extract_and_strip_day_block "$HOURS_FILE" "$ENTRY_DATE" "$DAY_ROWS_TMP"
-write_day_block "$HOURS_FILE" "$ENTRY_DATE" "$DAY_ROWS_TMP" "$ROW" "$AMOUNT"
-rm -f "$DAY_ROWS_TMP"
+DAY_BLOCK_TMP=$(mktemp)
+build_day_block "$ENTRY_DATE" "$DAY_ROWS_TMP" "$ROW" "$AMOUNT" "$DAY_BLOCK_TMP"
+insert_day_block_sorted "$HOURS_FILE" "$ENTRY_DATE" "$DAY_BLOCK_TMP"
+rm -f "$DAY_ROWS_TMP" "$DAY_BLOCK_TMP"
 append_dataviewjs_block "$HOURS_FILE"
 echo "✓ Logged ${AMOUNT}h to $HOURS_FILE ($ENTRY_DATE)"
