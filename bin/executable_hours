@@ -4,7 +4,7 @@ set -euo pipefail
 # hours — Log billable time against the current workspace, for invoicing
 #
 # Auto-detects workspace/client from current directory (~/Code/<workspace>/).
-# Appends a row to that client's 02-Areas/<workspace>/Hours.md table in the
+# Appends a row to that client's 02-Areas/Work-Ongoing/<workspace>/Hours.md table in the
 # personal Obsidian vault. Only works on personal machines — invoicing reads
 # from the vault, and there's no equivalent destination on a work machine.
 #
@@ -167,7 +167,7 @@ if [[ -n "${WORK_WORKSPACE:-}" || ! -d "$VAULT_DIR" ]]; then
   exit 1
 fi
 
-HOURS_DIR="$VAULT_DIR/02-Areas/$WORKSPACE_NAME"
+HOURS_DIR="$VAULT_DIR/02-Areas/Work-Ongoing/$WORKSPACE_NAME"
 HOURS_FILE="$HOURS_DIR/Hours.md"
 ENTRY_DATE=$(date +%Y-%m-%d)
 
