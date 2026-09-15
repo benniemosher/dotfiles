@@ -47,8 +47,9 @@ Errors out on a work machine (`WORK_WORKSPACE` set) — there's no vault to writ
 
 Each day's **Total** row is recomputed by the script every time it logs another entry for that
 day — a plain sum, no target/goal comparison, so the user can glance at today's section and see
-today's hours at a time. New days append at the end of the file; re-logging to an
-existing-but-not-most-recent day moves that day's section to the end too, not sorted by date.
+today's hours at a time. Day sections are kept newest-first, inserted by actual date (not by
+when the command ran) so backdated `--date` entries land in the right place; re-logging to an
+existing day rebuilds that day's section in place rather than moving it.
 
 The file ends with a `dataviewjs` block that computes a *grand* "Unbilled: Xh · $Y" line live,
 across every day — it's correct on every view, not just after running `hours` (so a manual edit
