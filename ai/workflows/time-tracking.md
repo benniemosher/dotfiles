@@ -22,7 +22,7 @@ cd ~/Code/zcore
 hours 2.5 "Fixed CORS bug in tunnel config"
 ```
 
-Appends a row to `~/Code/obsidian-vault-setup/02-Areas/<workspace>/Hours.md`, which is one
+Appends a row to `~/Code/obsidian-vault-setup/02-Areas/Work-Ongoing/<workspace>/Hours.md`, which is one
 `### YYYY-MM-DD` section and table **per day** (not one flat table for the whole client):
 
 ```markdown
@@ -63,13 +63,13 @@ below), insert changes into the correct day's table, always *above* the
 When asked to generate an invoice (e.g. "generate my zcore invoice for August"), an AI
 assistant should:
 
-1. Read `02-Areas/<client>/Hours.md`.
+1. Read `02-Areas/Work-Ongoing/<client>/Hours.md`.
 2. Filter rows in the requested period where `Invoiced` = `No`.
 3. Compute the line-item `Amount` for each row (Hours × `rate` from that file's frontmatter),
    and the Total Hours / Total Due. If `rate` isn't set, ask for one rather than guessing.
 4. Compute `due_date` from the invoice date using `terms` (default **Net 15** unless the user
    says otherwise for that invoice) — e.g. date `2026-09-01` + Net 15 → `2026-09-16`.
-5. Write a new note at `02-Areas/<client>/Invoices/<invoice_number>.md`, following the shape
+5. Write a new note at `02-Areas/Work-Ongoing/<client>/Invoices/<invoice_number>.md`, following the shape
    in `03-Resources/Templates/invoice.md`. Sender block is fixed: Bennie Mosher /
    benniemosher@gmail.com / 970-590-2040. Payment line reads "Direct deposit (arranged
    separately)" — never print bank/account details in the note.
