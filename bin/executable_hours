@@ -31,11 +31,13 @@ set -euo pipefail
 # entries land in the right place too), and logging another entry against
 # an existing day rebuilds that day's section in place rather than moving it.
 #
-# The file ends with a dataviewjs block that computes the grand unbilled
-# total live across every day (Obsidian re-runs it on every view, including
-# edits made by hand or via QuickAdd on mobile — no need to re-run this
-# script for it to be correct). This script only keeps that block
-# positioned as the last thing in the file so new rows land above it.
+# Right after the H1 header, the file carries a dataviewjs block that
+# computes the grand unbilled total live across every day (Obsidian re-runs
+# it on every view, including edits made by hand or via QuickAdd on mobile —
+# no need to re-run this script for it to be correct). This script keeps
+# that block pinned there — right under the header, above every day
+# section — every time it logs a row, so the total is the first thing
+# visible on opening the note.
 
 VAULT_DIR="$HOME/Code/obsidian-vault-setup"
 
@@ -106,8 +108,10 @@ build_day_block() {
 
 # --- Insert a freshly-built day-block into newest-first position: right
 #     before the first existing "### YYYY-MM-DD" heading whose date is
-#     older than this one, or at the end (before where the dataviewjs block
-#     gets re-appended) if this is the oldest date logged so far. ---
+#     older than this one, or at the end of the file if this is the oldest
+#     date logged so far. (The dataviewjs block has already been stripped
+#     out at this point, so "end of file" here is the true end — it gets
+#     re-inserted at the top afterward.) ---
 insert_day_block_sorted() {
   local file="$1" date="$2" block_file="$3" tmp
   tmp=$(mktemp)
@@ -160,14 +164,39 @@ strip_dataviewjs_block() {
   printf '%s\n' "$stripped" > "$file"
 }
 
-# --- Append the (fixed, always-identical) dataviewjs block as the last
-#     thing in the file. Call once, after the new row has been added. ---
-append_dataviewjs_block() {
-  local file="$1"
+# --- Insert the (fixed, always-identical) dataviewjs block right after the
+#     H1 header, so the live unbilled total is the first thing visible in
+#     the note. Call once, after the new row has been added and the block
+#     stripped from wherever it was. Falls back to the true end of the file
+#     if no H1 header is found (shouldn't happen for a file this script
+#     wrote). ---
+insert_dataviewjs_block_at_top() {
+  local file="$1" block_content tmp
+  block_content=$(mktemp)
   {
     echo
     echo "$DATAVIEWJS_BLOCK"
-  } >> "$file"
+    echo
+  } > "$block_content"
+
+  tmp=$(mktemp)
+  awk -v blockfile="$block_content" '
+    BEGIN { inserted = 0 }
+    {
+      print
+      if (!inserted && $0 ~ /^# /) {
+        while ((getline line < blockfile) > 0) print line
+        inserted = 1
+      }
+    }
+    END {
+      if (!inserted) {
+        while ((getline line < blockfile) > 0) print line
+      }
+    }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  rm -f "$block_content"
 }
 
 # --- Detect workspace ---
@@ -306,5 +335,5 @@ DAY_BLOCK_TMP=$(mktemp)
 build_day_block "$ENTRY_DATE" "$DAY_ROWS_TMP" "$ROW" "$AMOUNT" "$DAY_BLOCK_TMP"
 insert_day_block_sorted "$HOURS_FILE" "$ENTRY_DATE" "$DAY_BLOCK_TMP"
 rm -f "$DAY_ROWS_TMP" "$DAY_BLOCK_TMP"
-append_dataviewjs_block "$HOURS_FILE"
+insert_dataviewjs_block_at_top "$HOURS_FILE"
 echo "✓ Logged ${AMOUNT}h to $HOURS_FILE ($ENTRY_DATE)"
