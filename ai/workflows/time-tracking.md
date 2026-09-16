@@ -51,13 +51,14 @@ today's hours at a time. Day sections are kept newest-first, inserted by actual 
 when the command ran) so backdated `--date` entries land in the right place; re-logging to an
 existing day rebuilds that day's section in place rather than moving it.
 
-The file ends with a `dataviewjs` block that computes a *grand* "Unbilled: Xh · $Y" line live,
-across every day — it's correct on every view, not just after running `hours` (so a manual edit
-or a mobile QuickAdd capture doesn't go stale). The script keeps that block positioned as the
-last thing in the file whenever it appends a row; don't reorder it by hand, and if writing to
-`Hours.md` outside the script (e.g. marking rows `Invoiced: Yes` when generating an invoice,
-below), insert changes into the correct day's table, always *above* the
-```` ```dataviewjs ```` fence, never below it.
+Right after the H1 header, the file carries a `dataviewjs` block that computes a *grand*
+"Unbilled: Xh · $Y" line live, across every day — it's correct on every view, not just after
+running `hours` (so a manual edit or a mobile QuickAdd capture doesn't go stale), and it's the
+first thing visible on opening the note. The script keeps that block pinned there — right under
+the header, above every day section — whenever it appends a row; don't reorder it by hand, and
+if writing to `Hours.md` outside the script (e.g. marking rows `Invoiced: Yes` when generating
+an invoice, below), insert changes into the correct day's table, always *below* the
+```` ```dataviewjs ```` block, never above it.
 
 ## Generating an Invoice
 
