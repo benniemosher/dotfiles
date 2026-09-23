@@ -13,6 +13,7 @@ Read and follow the instructions in these files (they are the canonical source o
 - `~/.config/ai/workflows/merge-requests.md` — MR creation standards
 - `~/.config/ai/workflows/pre-commit.md` — pre-commit workflow
 - `~/.config/ai/standards/git.md` — git conventions
+- `~/.config/ai/standards/code-review.md` — PR/diff review category framework and posting format
 - `~/.config/ai/standards/terraform.md` — Terraform patterns
 - `~/.config/ai/standards/kubernetes.md` — K8s standards
 - `~/.config/ai/standards/ci-cd.md` — CI/CD patterns
