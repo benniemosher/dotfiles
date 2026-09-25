@@ -158,6 +158,29 @@ chezmoi apply
 # Restart your terminal (or start WezTerm)
 ```
 
+## Remote desktop (Linux, opt-in)
+
+Answering yes to the remote-desktop prompt at `chezmoi init` sets up GNOME Remote Desktop over
+RDP: a self-signed TLS pair is generated, RDP is enabled, and the user service is started.
+
+This exists to break a chicken-and-egg. 1Password's SSH agent only runs inside a live, unlocked
+desktop session, and its switch is in the GUI — so on a machine you reach over SSH there is no
+way to turn it on without a desktop first.
+
+The password is not automated, because `grdctl` takes it in plaintext and anything the script
+could read it from would store it in plaintext too. Set it once:
+
+```bash
+grdctl rdp set-credentials "$(id -un)" '<password>'
+grdctl status
+```
+
+Then connect with an RDP client — Microsoft Remote Desktop on macOS — to
+`<hostname>.local:3389`. It will warn about the self-signed certificate; that is expected.
+
+Turn it back off with `grdctl rdp disable`. Note this is RDP, not VNC: GNOME serves RDP, and
+on Wayland attaching `x11vnc` to the running session does not work.
+
 ## Post-Installation
 
 ### Optional: GPG/Keybase Setup
@@ -204,14 +227,29 @@ chezmoi cd
 
 Edit `.chezmoidata/packages.yaml`:
 
+Every list is split by profile: `work` installs everywhere, `personal` only where
+`work_platform` is unset.
+
 ```yaml
 packages:
   darwin:
     brews:
-      - "new-package"
-    casks:
-      - "new-app"
+      work:
+        - "new-package"
+      personal:
+        - "new-package"
+  linux:
+    apts:
+      work:
+        - "new-package"
+    snaps:
+      work:
+        - "new-snap"
 ```
+
+Linux snap entries render unquoted so flags reach snap as arguments
+(`"kubectl --classic"`). apt installs as one batch, falling back to one at a time so a name
+missing from this Ubuntu release does not abort the rest.
 
 Then run `chezmoi apply`.
 

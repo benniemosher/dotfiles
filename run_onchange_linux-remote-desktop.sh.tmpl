@@ -1,0 +1,63 @@
+#!/bin/sh
+# GNOME Remote Desktop over RDP, for a Linux box driven remotely.
+#
+# Why this is worth automating: the 1Password SSH agent only exists inside a live, unlocked
+# desktop session, and its "Use the SSH agent" switch is in the GUI. On a machine reached over
+# SSH there is no way to turn it on -- so you need a desktop first, and that is a chicken and
+# egg this script breaks.
+#
+# Opt-in via enable_remote_desktop (see .chezmoi.toml.tmpl): it opens a
+# password-authenticated listener on 3389.
+#
+# Not VNC. GNOME serves RDP, and the desktop is Wayland, so attaching x11vnc to the running
+# session does not work at all.
+{{ if and (eq .chezmoi.os "linux") (index . "enable_remote_desktop") -}}
+
+if ! command -v grdctl >/dev/null 2>&1; then
+  echo "remote-desktop: grdctl not found (install gnome-remote-desktop), skipping"
+  exit 0
+fi
+
+# grdctl talks to the user's session bus. chezmoi runs this from a non-login shell where those
+# are often unset, and without them grdctl fails with an unhelpful error.
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
+
+CERT_DIR="$HOME/.local/share/gnome-remote-desktop"
+CERT="$CERT_DIR/rdp-tls.crt"
+KEY="$CERT_DIR/rdp-tls.key"
+
+# `grdctl rdp enable` refuses outright with "RDP server certificate is invalid" when no TLS
+# pair is configured -- this version does not generate one itself. Self-signed is correct
+# here; the RDP client will warn about it, which is expected rather than a problem.
+if [ ! -f "$CERT" ] || [ ! -f "$KEY" ]; then
+  echo "remote-desktop: generating a self-signed TLS pair"
+  mkdir -p "$CERT_DIR"
+  openssl req -new -newkey rsa:4096 -days 720 -nodes -x509 \
+    -subj "/C=US/ST=NA/L=NA/O=GNOME/CN=$(hostname)" \
+    -out "$CERT" -keyout "$KEY" >/dev/null 2>&1 || {
+      echo "remote-desktop: openssl failed, skipping" >&2
+      exit 0
+    }
+  chmod 600 "$KEY"
+fi
+
+grdctl rdp set-tls-cert "$CERT"
+grdctl rdp set-tls-key "$KEY"
+grdctl rdp disable-view-only
+grdctl rdp enable
+
+# The unit serves the headless session. Without it RDP only mirrors a session already logged
+# in at the machine, which is no help when the box is sitting at its login screen.
+systemctl --user enable --now gnome-remote-desktop 2>/dev/null || true
+
+# Credentials are deliberately not set here. grdctl takes the password in plaintext, and
+# anything this script could read it from -- chezmoi data, a template -- would store it in
+# plaintext too. One manual command, once per machine.
+if ! grdctl status 2>/dev/null | grep -qi "username"; then
+  echo "remote-desktop: RDP is on, but has no credentials yet. Run:"
+  echo "  grdctl rdp set-credentials $(id -un) '<password>'"
+fi
+
+grdctl status 2>/dev/null || true
+{{ end -}}

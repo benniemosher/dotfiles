@@ -23,6 +23,16 @@ existing machine is quiet and keeps the answers already given.
 {{-   $xcode = promptBoolOnce . "xcode_auto_update" "Keep Xcode updated automatically" -}}
 {{- end -}}
 
+{{- /* Opt-in, and deliberately asked rather than defaulted: saying yes opens a
+       password-authenticated RDP listener on port 3389. Useful on a machine you drive
+       remotely -- the 1Password SSH agent only runs inside a live desktop session, so
+       without a way in you cannot even switch it on -- but not something every Linux
+       machine should get by default. */ -}}
+{{- $rdp := false -}}
+{{- if eq .chezmoi.os "linux" -}}
+{{-   $rdp = promptBoolOnce . "enable_remote_desktop" "Enable GNOME Remote Desktop (RDP on port 3389)" -}}
+{{- end -}}
+
 [data]
 git_email = {{ $email | quote }}
 {{ if $work -}}
@@ -31,4 +41,7 @@ work_workspace = {{ $workspace | quote }}
 {{ end -}}
 {{ if $xcode -}}
 xcode_auto_update = true
+{{ end -}}
+{{ if $rdp -}}
+enable_remote_desktop = true
 {{ end -}}
