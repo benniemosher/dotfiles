@@ -1,8 +1,17 @@
 #!/bin/bash
 {{ if not (index . "work_platform") -}}
+{{ if .packages.npm.personal -}}
+# npm arrives with the node mise installs, and mise runs after this script (the `a-` prefix
+# puts package installation first). On a fresh machine npm therefore does not exist yet and
+# this printed `npm: command not found`; the next apply picks it up.
+if command -v npm >/dev/null 2>&1; then
 {{ range .packages.npm.personal -}}
-npm install -g {{ . | quote }}
-{{ end }}
+  npm install -g {{ . | quote }}
+{{ end -}}
+else
+  echo "npm not installed yet -- skipping global npm packages, re-run chezmoi apply after mise"
+fi
+{{ end -}}
 {{ end }}
 {{ if eq .chezmoi.os "darwin" -}}
 # Add and trust third-party taps before installing packages

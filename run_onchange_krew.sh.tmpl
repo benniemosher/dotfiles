@@ -1,5 +1,38 @@
 #!/bin/sh
+# kubectl plugins, via krew.
+#
+# krew puts its shims in ~/.krew/bin. dot_zshrc.tmpl adds that to PATH, but chezmoi runs this
+# under sh without sourcing zshrc, so it has to be added here too or `kubectl krew` is not
+# found even when it is installed.
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
-kubectl krew install neat
-kubectl krew install tree
-kubectl krew install tail
+if ! command -v kubectl >/dev/null 2>&1; then
+  echo "krew: kubectl not installed yet, skipping plugins"
+  exit 0
+fi
+
+# Homebrew has a krew formula; Linux has no package for it, so it comes from the release the
+# project publishes. Without this the script died with `unknown command "krew"` and took the
+# rest of the apply with it -- every run_onchange script sorting after this one was skipped.
+if ! kubectl krew version >/dev/null 2>&1; then
+  echo "krew: not installed, fetching it"
+  (
+    set -e
+    tmp="$(mktemp -d)"
+    cd "$tmp"
+    os="$(uname | tr '[:upper:]' '[:lower:]')"
+    arch="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64$/arm64/' -e 's/\(arm\)\(64\)\?.*/\1\2/')"
+    name="krew-${os}_${arch}"
+    curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${name}.tar.gz"
+    tar zxf "${name}.tar.gz"
+    "./${name}" install krew
+  ) || echo "krew: install failed, skipping plugins"
+fi
+
+# Each plugin installed separately and non-fatally: one that is already present, or briefly
+# missing from the index, should not fail the whole apply.
+if kubectl krew version >/dev/null 2>&1; then
+  for plugin in neat tree tail; do
+    kubectl krew install "$plugin" >/dev/null 2>&1 || echo "krew: could not install $plugin"
+  done
+fi

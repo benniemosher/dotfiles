@@ -111,7 +111,9 @@ packages:
     snaps:
       work:
         - "aws-cli --classic"
-        - "chezmoi"
+        # chezmoi is deliberately absent: the README bootstrap
+        # installs it to /usr/local/bin with the project's own
+        # installer, and the snap needs --classic anyway.
         - "code --classic"
         - "docker"
         # Installed by the README bootstrap too; snap is idempotent about it.
