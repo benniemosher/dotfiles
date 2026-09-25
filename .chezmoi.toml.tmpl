@@ -1,0 +1,34 @@
+{{/*
+Asked once, on `chezmoi init`, and written to ~/.config/chezmoi/chezmoi.toml.
+
+Before this existed the config had to be hand-written *before* the first apply, and a machine
+that skipped it silently came up as personal: `work_platform` was simply absent, which reads
+as false. On a work laptop that means personal packages and a GPG key import nobody asked
+for. Prompting makes the choice explicit at the one moment the answer is known.
+
+The `*Once` variants only prompt when the key is absent, so re-running `chezmoi init` on an
+existing machine is quiet and keeps the answers already given.
+*/ -}}
+
+{{- $email := promptStringOnce . "git_email" "Git commit email" -}}
+{{- $work := promptBoolOnce . "work_platform" "Is this a work machine (skips personal packages and GPG keys)" -}}
+{{- $workspace := "" -}}
+{{- if $work -}}
+{{-   $workspace = promptStringOnce . "work_workspace" "Workspace name (the ~/Code/<name> directory)" -}}
+{{- end -}}
+
+{{- /* Auto-updating Xcode is a macOS-only concern; asking about it elsewhere is noise. */ -}}
+{{- $xcode := false -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{-   $xcode = promptBoolOnce . "xcode_auto_update" "Keep Xcode updated automatically" -}}
+{{- end -}}
+
+[data]
+git_email = {{ $email | quote }}
+{{ if $work -}}
+work_platform = true
+work_workspace = {{ $workspace | quote }}
+{{ end -}}
+{{ if $xcode -}}
+xcode_auto_update = true
+{{ end -}}

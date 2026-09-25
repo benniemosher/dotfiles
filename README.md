@@ -14,7 +14,30 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io/), featuring [Starsh
 - Apps: `1password`, `brave-browser`, `slack`, `notion`, `amethyst`, `grammarly-desktop`, `keybase`
 
 **Linux (apt/snap):**
-- Similar toolset adapted for Linux package managers
+- Terminal: `starship`, `neovim`, `fzf`, `zsh` with autosuggestions
+- DevOps: `kubectl`, `kubectx`, `k9s`, `docker`
+- Build: `build-essential`, `gcc`, and the `lib*-dev` headers mise needs to compile runtimes
+- Tools: `gh`, `chezmoi`, `mise`, `pre-commit`, `shellcheck`, `jq`, `gnupg`
+- Apps (snap): `1password`, `brave`, `slack`, `keybase`
+
+### Profiles
+
+Every package list is split into `work` and `personal`. `work` installs everywhere; `personal`
+installs only on machines without `work_platform`, so a personal machine gets both. The
+profile is chosen once, when you run `chezmoi init`, and stored in
+`~/.config/chezmoi/chezmoi.toml`.
+
+A work machine also skips the Keybase GPG import (it generates its own signing key instead)
+and uses a plain `~/.ssh/id_ed25519` rather than the 1Password SSH agent.
+
+To change profile later, edit that file and re-apply:
+
+```toml
+[data]
+git_email = "you@company.com"
+work_platform = true
+work_workspace = "mycompany"    # the ~/Code/<name> directory
+```
 
 ### Configurations
 
@@ -44,33 +67,52 @@ Applies sensible defaults including:
 
 ### Phase 1: Bootstrap
 
+**macOS:**
+
 ```bash
-# Install Homebrew (macOS)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install essentials
 brew install gh chezmoi
+gh auth login
+```
 
-# Authenticate with GitHub
+**Ubuntu Desktop:**
+
+```bash
+sudo apt-get update
+sudo apt-get install -y curl git
+
+# chezmoi's own installer rather than apt -- the archived apt version lags badly.
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+
+# gh is not in Ubuntu's default repos
+sudo snap install gh
 gh auth login
 ```
 
 ### Phase 2: Initialize chezmoi
 
 ```bash
-# Clone and initialize dotfiles
 chezmoi init git@github.com:benniemosher/dotfiles-2024.git
+```
 
-# Preview what will be changed (optional but recommended)
-chezmoi diff
+This asks for your git email and whether the machine is a work machine, then writes
+`~/.config/chezmoi/chezmoi.toml`. Answer carefully — the work answer decides which packages
+install and how SSH and GPG are set up. It only asks once; re-running `init` later keeps your
+answers.
 
-# Apply dotfiles
+```bash
+chezmoi diff     # preview (recommended)
 chezmoi apply
 ```
 
+On Ubuntu the first apply is slow: it installs the apt and snap lists, and snaps in particular
+take a few minutes.
+
 ### Phase 3: Configure 1Password (Required for SSH/GPG)
 
-1. Open **1Password** app
+Personal machines only — work machines use `~/.ssh/id_ed25519` instead.
+
+1. Open the **1Password** app (on Ubuntu: `sudo snap install 1password`, installed by Phase 2)
 2. Go to **1Password Menu > Settings > Developer**
 3. Enable:
    - "Use the SSH agent"
@@ -79,6 +121,10 @@ chezmoi apply
    ```bash
    op signin
    ```
+
+The agent socket differs by OS and the dotfiles already point at the right one —
+`~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock` on macOS,
+`~/.1password/agent.sock` on Linux. Check it took with `ssh-add -l`.
 
 ### Phase 4: Final Apply
 

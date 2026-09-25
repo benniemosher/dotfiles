@@ -13,5 +13,23 @@ Host *
   AddKeysToAgent yes
   UseKeychain yes
   IdentityFile ~/.ssh/id_ed25519
-{{- else if eq .chezmoi.os "linux" -}}
+{{- else if and (eq .chezmoi.os "linux") (not (index . "work_platform")) -}}
+{{- /* Same shape as the darwin personal block above. 1Password's agent socket lives at a
+       different path on Linux -- ~/.1password/agent.sock, matching SSH_AUTH_SOCK in
+       dot_zshrc.tmpl -- and there is no Group Containers directory to point at. */}}
+Host github-zcore
+  HostName github.com
+  User git
+  IdentityAgent ~/.1password/agent.sock
+  IdentityFile ~/.ssh/github_zcore.pub
+  IdentitiesOnly yes
+
+Host *
+  IdentityAgent ~/.1password/agent.sock
+{{- else if and (eq .chezmoi.os "linux") (index . "work_platform") -}}
+{{- /* No UseKeychain here: it is a macOS-only keyword, and ssh rejects the whole config
+       file when it hits one it does not know. */}}
+Host *
+  AddKeysToAgent yes
+  IdentityFile ~/.ssh/id_ed25519
 {{- end -}}

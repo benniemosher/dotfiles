@@ -31,7 +31,12 @@ CLAUDE.md
 Brewfile
 Brewfile.lock.json
 
-private_Library/
-private_dot_gnupg/gpg-agent.conf
-run_onchange_install-gpg-keys.sh
+# Target paths, not source paths -- this file matches against what lands in $HOME. The old
+# entries here were written as source paths (private_Library/, private_dot_gnupg/...) and so
+# matched nothing: on Linux chezmoi would have created ~/Library/LaunchAgents with a macOS
+# keyboard-remapping plist in it.
+Library/
+
+# gpg-agent.conf and the key import are no longer excluded here -- both work on Linux now,
+# the former via a per-OS pinentry path.
 {{- end }}
