@@ -1,4 +1,17 @@
 #!/bin/sh
+# Installs whatever dot_config/mise/config.toml.tmpl declares.
+#
+# The hash below is the point of this comment: run_onchange re-runs a script only when the
+# script's own rendered content changes, so editing the mise config alone left this untouched
+# and nothing installed the new tool. Interpolating the config's hash makes a config change a
+# change to this script too.
+#
+# The profile is in here too: `include` hashes the template source, not the rendered result,
+# so a work/personal flip changes which npm tools the config declares without changing its
+# hash.
+#
+# mise config: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
+# profile: {{ if index . "work_platform" }}work{{ else }}personal{{ end }}
 
 mise install
 mise reshim
