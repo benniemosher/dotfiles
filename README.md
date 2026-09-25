@@ -94,8 +94,18 @@ gh auth login
 ### Phase 2: Initialize chezmoi
 
 ```bash
-chezmoi init git@github.com:benniemosher/dotfiles-2024.git
+chezmoi init https://github.com/benniemosher/dotfiles.git
 ```
+
+HTTPS, not SSH: there is no SSH key on the machine yet — that arrives with 1Password in
+Phase 3 — and `gh auth login` from Phase 1 already supplies HTTPS credentials. Switch the
+remote to SSH afterwards if you want:
+
+```bash
+git -C "$(chezmoi source-path)" remote set-url origin git@github.com:benniemosher/dotfiles.git
+```
+
+To try an unmerged branch, add `--branch <name>`.
 
 This asks for your git email and whether the machine is a work machine, then writes
 `~/.config/chezmoi/chezmoi.toml`. Answer carefully — the work answer decides which packages
