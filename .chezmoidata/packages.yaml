@@ -69,16 +69,24 @@ packages:
   linux:
     apts:
       work:
+        - "aria2"
         - "build-essential"
         - "ca-certificates"
+        # Matching darwin, where these sit in `work` rather than `personal`.
+        - "cowsay"
         - "curl"
+        - "figlet"
+        - "fortune"
         - "fzf"
         - "gcc"
-        - "gh"
         - "git"
         - "gnupg"
         - "jq"
         - "kubectx"
+        - "lolcat"
+        # darwin installs pinentry + pinentry-mac; this is the Linux half, and
+        # gpg-agent.conf points at /usr/bin/pinentry to reach whichever is set.
+        - "pinentry-curses"
         # mise builds language runtimes from source; these are
         # what those builds link against.
         - "libffi-dev"
@@ -99,18 +107,22 @@ packages:
         - "zsh-autosuggestions"
         - "zlib1g-dev"
       personal:
-        - "cowsay"
-        - "figlet"
-        - "fortune"
-        - "lolcat"
+        - "tmux"
     snaps:
       work:
+        - "aws-cli --classic"
         - "chezmoi"
+        - "code --classic"
         - "docker"
+        # Installed by the README bootstrap too; snap is idempotent about it.
+        - "gh --classic"
+        - "glab"
         - "k9s"
+        - "kustomize"
         # Unquoted in the install script, so the flag reaches snap
         # as its own argument.
         - "kubectl --classic"
+        - "yq"
       personal:
         - "1password"
         - "brave"

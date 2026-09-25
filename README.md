@@ -81,11 +81,13 @@ gh auth login
 sudo apt-get update
 sudo apt-get install -y curl git
 
-# chezmoi's own installer rather than apt -- the archived apt version lags badly.
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+# chezmoi's own installer rather than apt -- the packaged version lags badly.
+# sudo, because -b /usr/local/bin is root-owned.
+sudo sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
 
-# gh is not in Ubuntu's default repos
-sudo snap install gh
+# gh is not in Ubuntu's default repos. --classic is required: the snap is published
+# with classic confinement and snap refuses to install it without the flag.
+sudo snap install gh --classic
 gh auth login
 ```
 
@@ -125,6 +127,17 @@ Personal machines only — work machines use `~/.ssh/id_ed25519` instead.
 The agent socket differs by OS and the dotfiles already point at the right one —
 `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock` on macOS,
 `~/.1password/agent.sock` on Linux. Check it took with `ssh-add -l`.
+
+Then export the zCore public key from 1Password, since this repo deliberately does not ship
+any key material:
+
+```bash
+op read "op://Private/Github - zCore/public key" > ~/.ssh/github_zcore.pub
+```
+
+The `github-zcore` host alias uses `IdentitiesOnly`, which needs that file present to pick the
+right key. Without it, ssh offers every key in the agent and can authenticate as the wrong
+GitHub account.
 
 ### Phase 4: Final Apply
 

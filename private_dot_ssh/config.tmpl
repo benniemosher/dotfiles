@@ -16,7 +16,13 @@ Host *
 {{- else if and (eq .chezmoi.os "linux") (not (index . "work_platform")) -}}
 {{- /* Same shape as the darwin personal block above. 1Password's agent socket lives at a
        different path on Linux -- ~/.1password/agent.sock, matching SSH_AUTH_SOCK in
-       dot_zshrc.tmpl -- and there is no Group Containers directory to point at. */}}
+       dot_zshrc.tmpl -- and there is no Group Containers directory to point at.
+
+       github_zcore.pub is deliberately not shipped by this repo (see .gitignore): it is
+       public key material, but this repo is public and committing it ties a named work
+       identity to it. Export it from 1Password to ~/.ssh/github_zcore.pub on each machine.
+       Without it, IdentitiesOnly has nothing to select and the github-zcore alias falls back
+       to offering every agent key -- which can authenticate as the wrong GitHub account. */}}
 Host github-zcore
   HostName github.com
   User git
