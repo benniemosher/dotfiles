@@ -33,6 +33,16 @@ existing machine is quiet and keeps the answers already given.
 {{-   $rdp = promptBoolOnce . "enable_remote_desktop" "Enable GNOME Remote Desktop (RDP on port 3389)" -}}
 {{- end -}}
 
+{{- /* Said here, at the moment the answer is given, rather than only in the README. The
+       password cannot be automated -- grdctl takes it in plaintext -- so it is the one
+       manual step, and it is easy to forget it exists until an RDP client refuses to log in.
+       writeToStdout goes to the terminal, not into the config file being generated. */ -}}
+{{- if $rdp -}}
+{{-   writeToStdout "\nGNOME Remote Desktop will be configured on the next `chezmoi apply`.\nThe password is not automated; set it after that with:\n\n    grdctl rdp set-credentials \"$(id -un)\" '<password>'\n    grdctl status\n\nThen connect an RDP client to " -}}
+{{-   writeToStdout .chezmoi.hostname -}}
+{{-   writeToStdout ".local:3389 -- it will warn about the self-signed certificate.\n\n" -}}
+{{- end -}}
+
 [data]
 git_email = {{ $email | quote }}
 {{ if $work -}}
