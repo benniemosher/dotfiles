@@ -14,7 +14,48 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io/), featuring [Starsh
 - Apps: `1password`, `brave-browser`, `slack`, `notion`, `amethyst`, `grammarly-desktop`, `keybase`
 
 **Linux (apt/snap):**
-- Similar toolset adapted for Linux package managers
+- Terminal: `starship`, `neovim`, `fzf`, `zsh` with autosuggestions
+- DevOps: `kubectl`, `kubectx`, `k9s`, `docker`
+- Build: `build-essential`, `gcc`, and the `lib*-dev` headers mise needs to compile runtimes
+- Tools: `gh`, `chezmoi`, `mise`, `pre-commit`, `shellcheck`, `jq`, `gnupg`
+- Apps (snap): `brave`, `slack`, `keybase`, `obsidian`
+- 1Password desktop **and** CLI: from 1Password's apt repo, not snap
+  (`run_onchange_linux-install-1password.sh`) — the snap and flatpak builds are sandboxed
+  and cannot expose the SSH agent socket or talk to the CLI
+- Claude Code: installed from Anthropic's own installer, not npm (`run_onchange_linux-install-claude-code.sh`)
+
+### Profiles
+
+Every package list is split into `work` and `personal`. `work` installs everywhere; `personal`
+installs only on machines without `work_platform`, so a personal machine gets both. The
+profile is chosen once, when you run `chezmoi init`, and stored in
+`~/.config/chezmoi/chezmoi.toml`.
+
+`use_ssh_agent` defaults to yes. Answer no on a machine you reach over SSH while nobody is at
+its desktop: the 1Password agent asks for approval in the app, so an unattended `git push`
+hangs on a click that never comes, and after a reboot with no desktop session the agent is not
+running at all. That machine then needs two keys on disk — a GitHub SSH key belongs to exactly
+one account, and there are two:
+
+```bash
+ssh-keygen -t ed25519 -C "$(hostname)" -f ~/.ssh/id_ed25519 -N ""
+ssh-keygen -t ed25519 -C "$(hostname)-zcore" -f ~/.ssh/id_ed25519_zcore -N ""
+gh auth switch --user benniemosher       && gh ssh-key add ~/.ssh/id_ed25519.pub --title "$(hostname)"
+gh auth switch --user benniemosher-zcore && gh ssh-key add ~/.ssh/id_ed25519_zcore.pub --title "$(hostname)"
+op document create ~/.ssh/id_ed25519 --title "$(hostname) private key" --vault Private
+```
+
+A work machine also skips the Keybase GPG import (it generates its own signing key instead)
+and uses a plain `~/.ssh/id_ed25519` rather than the 1Password SSH agent.
+
+To change profile later, edit that file and re-apply:
+
+```toml
+[data]
+git_email = "you@company.com"
+work_platform = true
+work_workspace = "mycompany"    # the ~/Code/<name> directory
+```
 
 ### Configurations
 
@@ -44,33 +85,65 @@ Applies sensible defaults including:
 
 ### Phase 1: Bootstrap
 
+**macOS:**
+
 ```bash
-# Install Homebrew (macOS)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install essentials
 brew install gh chezmoi
+gh auth login
+```
 
-# Authenticate with GitHub
+**Ubuntu Desktop:**
+
+```bash
+sudo apt-get update
+sudo apt-get install -y curl git
+
+# chezmoi's own installer rather than apt -- the packaged version lags badly.
+# sudo, because -b /usr/local/bin is root-owned.
+sudo sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+
+# gh is not in Ubuntu's default repos. --classic is required: the snap is published
+# with classic confinement and snap refuses to install it without the flag.
+sudo snap install gh --classic
 gh auth login
 ```
 
 ### Phase 2: Initialize chezmoi
 
 ```bash
-# Clone and initialize dotfiles
-chezmoi init git@github.com:benniemosher/dotfiles-2024.git
+chezmoi init https://github.com/benniemosher/dotfiles.git
+```
 
-# Preview what will be changed (optional but recommended)
-chezmoi diff
+HTTPS, not SSH: there is no SSH key on the machine yet — that arrives with 1Password in
+Phase 3 — and `gh auth login` from Phase 1 already supplies HTTPS credentials. Switch the
+remote to SSH afterwards if you want:
 
-# Apply dotfiles
+```bash
+git -C "$(chezmoi source-path)" remote set-url origin git@github.com:benniemosher/dotfiles.git
+```
+
+To try an unmerged branch, add `--branch <name>`.
+
+This asks for your git email and whether the machine is a work machine, then writes
+`~/.config/chezmoi/chezmoi.toml`. Answer carefully — the work answer decides which packages
+install and how SSH and GPG are set up. It only asks once; re-running `init` later keeps your
+answers.
+
+```bash
+chezmoi diff     # preview (recommended)
 chezmoi apply
 ```
 
+On Ubuntu the first apply is slow: it installs the apt and snap lists, and snaps in particular
+take a few minutes.
+
 ### Phase 3: Configure 1Password (Required for SSH/GPG)
 
-1. Open **1Password** app
+Personal machines only — work machines use `~/.ssh/id_ed25519` instead.
+
+1. Open the **1Password** app (on Ubuntu the `.deb` is installed by Phase 2 — **not** the
+   snap, which is sandboxed and cannot serve the SSH agent)
 2. Go to **1Password Menu > Settings > Developer**
 3. Enable:
    - "Use the SSH agent"
@@ -80,6 +153,21 @@ chezmoi apply
    op signin
    ```
 
+The agent socket differs by OS and the dotfiles already point at the right one —
+`~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock` on macOS,
+`~/.1password/agent.sock` on Linux. Check it took with `ssh-add -l`.
+
+Then export the zCore public key from 1Password, since this repo deliberately does not ship
+any key material:
+
+```bash
+op read "op://Private/Github - zCore/public key" > ~/.ssh/github_zcore.pub
+```
+
+The `github-zcore` host alias uses `IdentitiesOnly`, which needs that file present to pick the
+right key. Without it, ssh offers every key in the agent and can authenticate as the wrong
+GitHub account.
+
 ### Phase 4: Final Apply
 
 ```bash
@@ -88,6 +176,29 @@ chezmoi apply
 
 # Restart your terminal (or start WezTerm)
 ```
+
+## Remote desktop (Linux, opt-in)
+
+Answering yes to the remote-desktop prompt at `chezmoi init` sets up GNOME Remote Desktop over
+RDP: a self-signed TLS pair is generated, RDP is enabled, and the user service is started.
+
+This exists to break a chicken-and-egg. 1Password's SSH agent only runs inside a live, unlocked
+desktop session, and its switch is in the GUI — so on a machine you reach over SSH there is no
+way to turn it on without a desktop first.
+
+The password is not automated, because `grdctl` takes it in plaintext and anything the script
+could read it from would store it in plaintext too. Set it once:
+
+```bash
+grdctl rdp set-credentials "$(id -un)" '<password>'
+grdctl status
+```
+
+Then connect with an RDP client — Microsoft Remote Desktop on macOS — to
+`<hostname>.local:3389`. It will warn about the self-signed certificate; that is expected.
+
+Turn it back off with `grdctl rdp disable`. Note this is RDP, not VNC: GNOME serves RDP, and
+on Wayland attaching `x11vnc` to the running session does not work.
 
 ## Post-Installation
 
@@ -135,14 +246,29 @@ chezmoi cd
 
 Edit `.chezmoidata/packages.yaml`:
 
+Every list is split by profile: `work` installs everywhere, `personal` only where
+`work_platform` is unset.
+
 ```yaml
 packages:
   darwin:
     brews:
-      - "new-package"
-    casks:
-      - "new-app"
+      work:
+        - "new-package"
+      personal:
+        - "new-package"
+  linux:
+    apts:
+      work:
+        - "new-package"
+    snaps:
+      work:
+        - "new-snap"
 ```
+
+Linux snap entries render unquoted so flags reach snap as arguments
+(`"kubectl --classic"`). apt installs as one batch, falling back to one at a time so a name
+missing from this Ubuntu release does not abort the rest.
 
 Then run `chezmoi apply`.
 

@@ -1,6 +1,17 @@
 #!/bin/bash
 
-{{ if eq .chezmoi.os "darwin" -}}
-eval "$(ssh-agent -s)"
-ssh-add --apple-use-keychain $HOME/.ssh/id_ed25519
+{{/* Work profile only. A personal machine keeps its keys in 1Password and reaches them
+     through its agent -- there is no ~/.ssh/id_ed25519 to add, so this ran and failed on
+     every apply. The work profile is the one that uses an on-disk key (see
+     private_dot_ssh/config.tmpl), and this loads its passphrase into the login keychain so
+     it is asked for once rather than every session.
+
+     darwin only: --apple-use-keychain has no Linux equivalent. A Linux work machine gets its
+     key into the agent from the desktop session's own keyring, so there is nothing useful to
+     do here at apply time. */ -}}
+{{ if and (eq .chezmoi.os "darwin") (index . "work_platform") -}}
+if [ -f "$HOME/.ssh/id_ed25519" ]; then
+  eval "$(ssh-agent -s)"
+  ssh-add --apple-use-keychain "$HOME/.ssh/id_ed25519"
+fi
 {{ end -}}

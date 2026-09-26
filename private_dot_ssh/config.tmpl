@@ -1,17 +1,54 @@
-{{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
+{{- /*
+Three cases, not four. The old layout branched on OS first and repeated the profile logic
+inside each, which hid that the only OS-specific parts are the agent socket path and
+UseKeychain.
+
+use_ssh_agent defaults to true when absent, so a machine configured before this flag existed
+keeps the 1Password agent with no change. Set it false on a machine you reach over SSH while
+nobody is at its desktop: the agent asks for approval in the 1Password app, so an unattended
+`git push` hangs waiting for a click, and after a reboot with no desktop session the agent is
+not running at all.
+*/ -}}
+{{- $useAgent := true -}}
+{{- if hasKey . "use_ssh_agent" -}}{{- $useAgent = .use_ssh_agent -}}{{- end -}}
+{{- $work := index . "work_platform" -}}
+{{- $sock := "~/.1password/agent.sock" -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{- $sock = "\"~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock\"" -}}
+{{- end -}}
+{{- if and (not $work) $useAgent -}}
+{{- /* Keys live in 1Password and never touch disk. github_zcore.pub is not shipped by this
+       repo -- export it from 1Password (see README); IdentitiesOnly needs it present to pick
+       the right key, or ssh offers every key in the agent and can authenticate as the wrong
+       GitHub account. */ -}}
 Host github-zcore
   HostName github.com
   User git
-  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+  IdentityAgent {{ $sock }}
   IdentityFile ~/.ssh/github_zcore.pub
   IdentitiesOnly yes
 
 Host *
-  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-{{- else if and (eq .chezmoi.os "darwin") (index . "work_platform") -}}
+  IdentityAgent {{ $sock }}
+{{- else if not $work -}}
+{{- /* Personal machine, on-disk keys. Two of them: a GitHub SSH key belongs to exactly one
+       account, and there are two accounts. No IdentityAgent at all -- with one set, ssh
+       offers agent keys first and you are back to waiting on an approval prompt. */ -}}
+Host github-zcore
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_zcore
+  IdentitiesOnly yes
+
 Host *
   AddKeysToAgent yes
-  UseKeychain yes
   IdentityFile ~/.ssh/id_ed25519
-{{- else if eq .chezmoi.os "linux" -}}
+{{- else -}}
+{{- /* Work machine: one on-disk key, no 1Password. */ -}}
+Host *
+  AddKeysToAgent yes
+{{- if eq .chezmoi.os "darwin" }}
+  UseKeychain yes
+{{- end }}
+  IdentityFile ~/.ssh/id_ed25519
 {{- end -}}

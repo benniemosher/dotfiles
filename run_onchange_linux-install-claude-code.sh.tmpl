@@ -1,0 +1,24 @@
+#!/bin/sh
+# Claude Code on Linux, via Anthropic's own installer.
+#
+# Not npm. mise pins node to "latest", and a global npm package installed against one node
+# version is orphaned when that version moves -- which would mean reinstalling Claude Code on
+# every node bump. The native build carries its own runtime and updates itself, so neither
+# mise nor npm needs to know about it.
+#
+# macOS gets it from the claude-code cask instead (see .chezmoidata/packages.yaml), so this is
+# Linux-only rather than a second installation path on a machine that already has one.
+{{ if and (eq .chezmoi.os "linux") (not (index . "work_platform")) -}}
+
+# Installs to ~/.local/bin, which dot_zshrc.tmpl already puts on PATH.
+if command -v claude >/dev/null 2>&1; then
+  exit 0
+fi
+
+echo "claude-code: installing"
+if curl -fsSL https://claude.ai/install.sh | bash; then
+  echo "claude-code: installed -- run \`claude\` to sign in"
+else
+  echo "claude-code: install failed, skipping" >&2
+fi
+{{ end -}}

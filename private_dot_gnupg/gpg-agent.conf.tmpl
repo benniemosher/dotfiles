@@ -1,0 +1,9 @@
+{{ if eq .chezmoi.os "darwin" -}}
+pinentry-program /opt/homebrew/bin/pinentry-mac
+{{ else if eq .chezmoi.os "linux" -}}
+# Debian and Ubuntu route pinentry through update-alternatives, so this follows whichever
+# flavour is installed -- gnome3 on a desktop, curses over SSH -- instead of pinning one that
+# may not be present. Pinning pinentry-mac here, as this file used to unconditionally, left
+# gpg on Linux pointing at a path that does not exist.
+pinentry-program /usr/bin/pinentry
+{{ end -}}
