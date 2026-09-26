@@ -14,8 +14,6 @@ packages:
       work:
         - "alexnabokikh/tfsort/tfsort"
         - "aria2"
-        - "awscli"
-        - "checkov"
         - "chezmoi"
         - "cowsay"
         - "defaultbrowser"
@@ -110,7 +108,11 @@ packages:
         - "tmux"
     snaps:
       work:
-        - "aws-cli --classic"
+        # awscli, checkov and k9s are absent from every list here on
+        # purpose: mise installs them (dot_config/mise/config.toml.tmpl).
+        # Naming them in both put two binaries on PATH and let the winner
+        # depend on ordering.
+        #
         # chezmoi is deliberately absent: the README bootstrap
         # installs it to /usr/local/bin with the project's own
         # installer, and the snap needs --classic anyway.
@@ -119,7 +121,6 @@ packages:
         # Installed by the README bootstrap too; snap is idempotent about it.
         - "gh --classic"
         - "glab"
-        - "k9s"
         - "kustomize"
         # Unquoted in the install script, so the flag reaches snap
         # as its own argument.
