@@ -67,15 +67,25 @@
   directory = /opt/homebrew
 {{ end -}}
 
+{{/* Resolved per machine rather than hardcoded per OS. The old darwin branch pointed at
+     /opt/homebrew/bin/gh, which does not exist on a Mac where gh came from Intel Homebrew or
+     an installer -- so every apply wrote a helper naming a missing binary, and `gh auth
+     setup-git` kept repairing it, which is what made this file flap. The linux branch had the
+     same problem in reverse: a snap-installed gh is at /snap/bin/gh, not /usr/bin/gh.
+     Falls back to bare `gh` so a machine that applies before installing gh still gets a
+     helper that works once gh is on PATH. */ -}}
+{{- $gh := lookPath "gh" | default "gh" -}}
+{{/* Emitted through printf so the output is byte-identical to what `gh auth setup-git`
+     writes: a tab indent, and `helper = ` with a trailing space. Git does not care, but
+     chezmoi compares bytes -- with two-space indentation here, every `gh auth login` rewrote
+     the file and the next `chezmoi diff` showed a change that was purely whitespace. The
+     printf also keeps that trailing space out of the template source, where the
+     trailing-whitespace hook would strip it.
+     The bare `helper =` resets the inherited `helper = cache` above, so gh is the only
+     credential helper consulted for these hosts -- again matching what gh writes itself. */ -}}
 [credential "https://github.com"]
-{{ if eq .chezmoi.os "darwin" -}}
-  helper = !/opt/homebrew/bin/gh auth git-credential
-{{ else if eq .chezmoi.os "linux" -}}
-  helper = !/usr/bin/gh auth git-credential
-{{ end -}}
+{{ printf "\thelper = " }}
+{{- printf "\n\thelper = !%s auth git-credential" $gh }}
 [credential "https://gist.github.com"]
-{{ if eq .chezmoi.os "darwin" -}}
-  helper = !/opt/homebrew/bin/gh auth git-credential
-{{ else if eq .chezmoi.os "linux" -}}
-  helper = !/usr/bin/gh auth git-credential
-{{ end -}}
+{{ printf "\thelper = " }}
+{{- printf "\n\thelper = !%s auth git-credential" $gh }}

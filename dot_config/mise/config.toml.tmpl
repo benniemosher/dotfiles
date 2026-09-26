@@ -1,0 +1,52 @@
+{{/* mise owns every runtime and every tool installed through one, npm packages included --
+     it already managed npm:wrangler. Global npm installs used to live in
+     run_onchange_a-install-packages.sh instead, which could not work on a fresh machine:
+     that script runs first (the `a-` prefix) and npm does not exist until mise installs
+     node, so the first apply always printed `npm: command not found`. Declaring them here
+     removes the ordering problem rather than working around it. */ -}}
+[tools]
+awscli = "latest"
+checkov = "latest"
+deno = "latest"
+golang = "latest"
+helm = "latest"
+infracost = "latest"
+java = "latest"
+k9s = "latest"
+node = "latest"
+pipx = "latest"
+python = "latest"
+ruby = "latest"
+rust = "latest"
+terraform = "latest"
+terraform-docs = "latest"
+terrascan = "latest"
+tflint = "latest"
+tfupdate = "latest"
+trivy = "latest"
+yarn = "latest"
+"npm:wrangler" = "latest"
+"pipx:ansible" = "latest"
+"pipx:ansible-core" = "latest"
+"pipx:datadog" = "latest"
+{{/* Moved off Homebrew: all six are in mise's registry, so one declaration covers macOS and
+     Linux instead of a brew formula on one and nothing on the other. */}}
+terraform-ls = "latest"
+stern = "latest"
+kubeseal = "latest"
+{{ if not (index . "work_platform") -}}
+argocd = "latest"
+cloudflared = "latest"
+supabase = "latest"
+{{ end -}}
+{{ range .packages.npm.work -}}
+{{ printf "\"npm:%s\" = \"latest\"" . }}
+{{ end -}}
+{{- if not (index . "work_platform") -}}
+{{ range .packages.npm.personal -}}
+{{ printf "\"npm:%s\" = \"latest\"" . }}
+{{ end -}}
+{{- end }}
+[settings]
+idiomatic_version_file_enable_tools = ["terraform", "ruby", "node"]
+ruby.compile = false

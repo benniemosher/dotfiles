@@ -1,9 +1,9 @@
 #!/bin/bash
-{{ if not (index . "work_platform") -}}
-{{ range .packages.npm.personal -}}
-npm install -g {{ . | quote }}
-{{ end }}
-{{ end }}
+{{/* Global npm packages are not installed here any more. This script runs first (the `a-`
+     prefix), and npm does not exist until mise installs node later in the same apply, so a
+     fresh machine could never install them on the first pass. They are declared in
+     dot_config/mise/config.toml.tmpl instead, from the same packages.npm lists, which mise
+     installs as npm: tools -- no ordering to get wrong. */}}
 {{ if eq .chezmoi.os "darwin" -}}
 # Add and trust third-party taps before installing packages
 {{ range .packages.darwin.taps.work -}}
@@ -45,10 +45,35 @@ cask {{ . | quote }}
 EOF
 {{ else if eq .chezmoi.os "linux" -}}
 sudo snap set system experimental.user-daemons=true
-{{ range .packages.linux.apts -}}
-sudo apt install {{ . | quote }}
-{{ end }}
-{{ range .packages.linux.snaps -}}
-sudo snap install {{ . }}
-{{ end }}
+sudo apt-get update
+
+apt_packages=(
+{{ range .packages.linux.apts.work }}  {{ . | quote }}
+{{ end -}}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.linux.apts.personal }}  {{ . | quote }}
+{{ end -}}
+{{ end -}}
+)
+
+# Batch first, so apt resolves dependencies in one pass. It aborts the whole transaction on a
+# single unknown name, though, so fall back to one at a time and say what was missing -- a
+# package renamed between Ubuntu releases should not stop the other thirty from installing.
+# -y throughout: this runs unattended from `chezmoi apply` and would otherwise sit on a prompt.
+if ! sudo apt-get install -y "${apt_packages[@]}"; then
+  echo "batch install failed; retrying individually" >&2
+  for pkg in "${apt_packages[@]}"; do
+    sudo apt-get install -y "$pkg" || echo "SKIPPED (unavailable): $pkg" >&2
+  done
+fi
+
+# Unquoted on purpose: an entry like "kubectl --classic" has to reach snap as two arguments.
+{{ range .packages.linux.snaps.work -}}
+sudo snap install {{ . }} || echo "SKIPPED: {{ . }}" >&2
+{{ end -}}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.linux.snaps.personal -}}
+sudo snap install {{ . }} || echo "SKIPPED: {{ . }}" >&2
+{{ end -}}
+{{ end -}}
 {{ end -}}

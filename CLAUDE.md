@@ -114,21 +114,38 @@ Templates have access to:
 
 ### Adding New Packages
 
-Edit `.chezmoidata/packages.yaml`:
+Edit `.chezmoidata/packages.yaml`. Every list is split by profile: `work` installs on every
+machine, `personal` only where `work_platform` is unset, so a personal machine gets both.
 
 ```yaml
 packages:
   darwin:
     brews:
-      - "package-name"
+      work:
+        - "package-name"
+      personal:
+        - "package-name"
     casks:
-      - "app-name"
+      work:
+        - "app-name"
+      personal:
+        - "app-name"
   linux:
     apts:
-      - "package-name"
+      work:
+        - "package-name"
+      personal:
+        - "package-name"
     snaps:
-      - "snap-name"
+      work:
+        - "snap-name"
+      personal:
+        - "snap-name"
 ```
+
+Linux snap entries are rendered unquoted so flags reach snap as arguments
+(`"kubectl --classic"`). apt packages install as one batch, falling back to one at a time so a
+name that does not exist on this Ubuntu release does not abort the rest.
 
 ## Development Workflow
 
