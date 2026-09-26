@@ -129,4 +129,7 @@ packages:
         - "1password"
         - "brave"
         - "keybase"
+        # Confirm the snap name on first install; Obsidian also ships a
+        # .deb and an AppImage if this is not it.
+        - "obsidian --classic"
         - "slack"

@@ -18,7 +18,8 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io/), featuring [Starsh
 - DevOps: `kubectl`, `kubectx`, `k9s`, `docker`
 - Build: `build-essential`, `gcc`, and the `lib*-dev` headers mise needs to compile runtimes
 - Tools: `gh`, `chezmoi`, `mise`, `pre-commit`, `shellcheck`, `jq`, `gnupg`
-- Apps (snap): `1password`, `brave`, `slack`, `keybase`
+- Apps (snap): `1password`, `brave`, `slack`, `keybase`, `obsidian`
+- Claude Code: installed from Anthropic's own installer, not npm (`run_onchange_linux-install-claude-code.sh`)
 
 ### Profiles
 
