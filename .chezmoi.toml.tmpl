@@ -23,6 +23,16 @@ existing machine is quiet and keeps the answers already given.
 {{-   $xcode = promptBoolOnce . "xcode_auto_update" "Keep Xcode updated automatically" -}}
 {{- end -}}
 
+{{- /* Defaults to yes, so answering nothing keeps the 1Password agent. Say no on a machine
+       you reach over SSH while nobody is at its desktop: the agent asks for approval in the
+       1Password app, so an unattended `git push` hangs on a click that never comes, and after
+       a reboot with no desktop session the agent is not running at all. Work machines never
+       use the agent, so they are not asked. */ -}}
+{{- $agent := true -}}
+{{- if not $work -}}
+{{-   $agent = promptBoolOnce . "use_ssh_agent" "Use the 1Password SSH agent for git, rather than keys on disk" true -}}
+{{- end -}}
+
 {{- /* Opt-in, and deliberately asked rather than defaulted: saying yes opens a
        password-authenticated RDP listener on port 3389. Useful on a machine you drive
        remotely -- the 1Password SSH agent only runs inside a live desktop session, so
@@ -54,4 +64,7 @@ xcode_auto_update = true
 {{ end -}}
 {{ if $rdp -}}
 enable_remote_desktop = true
+{{ end -}}
+{{ if not $agent -}}
+use_ssh_agent = false
 {{ end -}}

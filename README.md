@@ -31,6 +31,20 @@ installs only on machines without `work_platform`, so a personal machine gets bo
 profile is chosen once, when you run `chezmoi init`, and stored in
 `~/.config/chezmoi/chezmoi.toml`.
 
+`use_ssh_agent` defaults to yes. Answer no on a machine you reach over SSH while nobody is at
+its desktop: the 1Password agent asks for approval in the app, so an unattended `git push`
+hangs on a click that never comes, and after a reboot with no desktop session the agent is not
+running at all. That machine then needs two keys on disk — a GitHub SSH key belongs to exactly
+one account, and there are two:
+
+```bash
+ssh-keygen -t ed25519 -C "$(hostname)" -f ~/.ssh/id_ed25519 -N ""
+ssh-keygen -t ed25519 -C "$(hostname)-zcore" -f ~/.ssh/id_ed25519_zcore -N ""
+gh auth switch --user benniemosher       && gh ssh-key add ~/.ssh/id_ed25519.pub --title "$(hostname)"
+gh auth switch --user benniemosher-zcore && gh ssh-key add ~/.ssh/id_ed25519_zcore.pub --title "$(hostname)"
+op document create ~/.ssh/id_ed25519 --title "$(hostname) private key" --vault Private
+```
+
 A work machine also skips the Keybase GPG import (it generates its own signing key instead)
 and uses a plain `~/.ssh/id_ed25519` rather than the 1Password SSH agent.
 
