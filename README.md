@@ -18,8 +18,10 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io/), featuring [Starsh
 - DevOps: `kubectl`, `kubectx`, `k9s`, `docker`
 - Build: `build-essential`, `gcc`, and the `lib*-dev` headers mise needs to compile runtimes
 - Tools: `gh`, `chezmoi`, `mise`, `pre-commit`, `shellcheck`, `jq`, `gnupg`
-- Apps (snap): `1password`, `brave`, `slack`, `keybase`, `obsidian`
-- 1Password CLI: from 1Password's apt repo (`run_onchange_linux-install-1password-cli.sh`)
+- Apps (snap): `brave`, `slack`, `keybase`, `obsidian`
+- 1Password desktop **and** CLI: from 1Password's apt repo, not snap
+  (`run_onchange_linux-install-1password.sh`) — the snap and flatpak builds are sandboxed
+  and cannot expose the SSH agent socket or talk to the CLI
 - Claude Code: installed from Anthropic's own installer, not npm (`run_onchange_linux-install-claude-code.sh`)
 
 ### Profiles
@@ -126,7 +128,8 @@ take a few minutes.
 
 Personal machines only — work machines use `~/.ssh/id_ed25519` instead.
 
-1. Open the **1Password** app (on Ubuntu: `sudo snap install 1password`, installed by Phase 2)
+1. Open the **1Password** app (on Ubuntu the `.deb` is installed by Phase 2 — **not** the
+   snap, which is sandboxed and cannot serve the SSH agent)
 2. Go to **1Password Menu > Settings > Developer**
 3. Enable:
    - "Use the SSH agent"

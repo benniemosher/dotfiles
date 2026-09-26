@@ -120,7 +120,10 @@ packages:
         - "kubectl --classic"
         - "yq"
       personal:
-        - "1password"
+        # 1Password is NOT here: the snap and flatpak builds are sandboxed and
+        # cannot expose the SSH agent socket or talk to the CLI. The .deb from
+        # 1Password's own repo can, and that is what
+        # run_onchange_linux-install-1password.sh installs.
         - "brave"
         - "keybase"
         # Official publisher (obsidianmd); classic confinement is
