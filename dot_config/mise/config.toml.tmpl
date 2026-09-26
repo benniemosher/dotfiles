@@ -29,6 +29,11 @@ yarn = "latest"
 "pipx:ansible" = "latest"
 "pipx:ansible-core" = "latest"
 "pipx:datadog" = "latest"
+{{/* az was unmanaged on every machine and installed differently on each: pipx on this Mac,
+     with a shadowed Homebrew copy behind it. pipx already comes from mise, so declaring it
+     here adopts the existing install and covers Linux with the same line -- no Microsoft apt
+     repo, no second installer script. */}}
+"pipx:azure-cli" = "latest"
 {{/* Moved off Homebrew: all six are in mise's registry, so one declaration covers macOS and
      Linux instead of a brew formula on one and nothing on the other. */}}
 terraform-ls = "latest"
