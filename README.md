@@ -19,6 +19,7 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io/), featuring [Starsh
 - Build: `build-essential`, `gcc`, and the `lib*-dev` headers mise needs to compile runtimes
 - Tools: `gh`, `chezmoi`, `mise`, `pre-commit`, `shellcheck`, `jq`, `gnupg`
 - Apps (snap): `1password`, `brave`, `slack`, `keybase`, `obsidian`
+- 1Password CLI: from 1Password's apt repo (`run_onchange_linux-install-1password-cli.sh`)
 - Claude Code: installed from Anthropic's own installer, not npm (`run_onchange_linux-install-claude-code.sh`)
 
 ### Profiles

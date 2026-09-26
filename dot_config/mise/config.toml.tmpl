@@ -29,6 +29,16 @@ yarn = "latest"
 "pipx:ansible" = "latest"
 "pipx:ansible-core" = "latest"
 "pipx:datadog" = "latest"
+{{/* Moved off Homebrew: all six are in mise's registry, so one declaration covers macOS and
+     Linux instead of a brew formula on one and nothing on the other. */}}
+terraform-ls = "latest"
+stern = "latest"
+kubeseal = "latest"
+{{ if not (index . "work_platform") -}}
+argocd = "latest"
+cloudflared = "latest"
+supabase = "latest"
+{{ end -}}
 {{ range .packages.npm.work -}}
 {{ printf "\"npm:%s\" = \"latest\"" . }}
 {{ end -}}

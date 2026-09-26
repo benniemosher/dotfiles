@@ -9,7 +9,6 @@ packages:
         - "alexnabokikh/tfsort"
         - "hashicorp/tap"
       personal:
-        - "supabase/tap"
     brews:
       work:
         - "alexnabokikh/tfsort/tfsort"
@@ -26,7 +25,6 @@ packages:
         - "krew"
         - "kubernetes-cli"
         - "kubectx"
-        - "kubeseal"
         - "kustomize"
         - "lolcat"
         - "mas"
@@ -36,14 +34,9 @@ packages:
         - "pre-commit"
         - "shellcheck"
         - "starship"
-        - "stern"
-        - "terraform-ls"
         - "tree"
         - "yq"
       personal:
-        - "argocd"
-        - "cloudflared"
-        - "supabase"
         - "tmux"
     casks:
       work:
