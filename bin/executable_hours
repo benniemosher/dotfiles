@@ -153,14 +153,24 @@ dv.paragraph(`**${label}**`);
 BLOCKEOF
 
 # --- Remove any existing dataviewjs block (and trailing blank lines) so a
-#     new row can be appended to the true end of the file, not after it. ---
+#     new row can be appended to the true end of the file, not after it.
+#
+#     The block is re-inserted with a blank line on each side, but removing it
+#     only deletes the fenced lines -- both blanks stay. Left alone that grows
+#     the gap by two lines every run, and once it passes a screen the newest
+#     day section sits below the fold and the note looks empty. So collapse
+#     every run of blank lines to one here, which also heals a file that has
+#     already accumulated them. ---
 strip_dataviewjs_block() {
   local file="$1" stripped
   stripped=$(awk '
     /^```dataviewjs$/ { skip = 1 }
     !skip { print }
     /^```$/ && skip { skip = 0 }
-  ' "$file")
+  ' "$file" | awk '
+    /^[[:space:]]*$/ { pending = 1; next }
+    { if (pending && seen) print ""; pending = 0; seen = 1; print }
+  ')
   printf '%s\n' "$stripped" > "$file"
 }
 
@@ -195,6 +205,16 @@ insert_dataviewjs_block_at_top() {
       }
     }
   ' "$file" > "$tmp"
+
+  # Squeeze again after inserting: the block is written with a blank line on
+  # each side, and the H1 already had one under it, so without this the gap
+  # settles at three rather than one. The block itself holds no blank lines,
+  # so this cannot damage it.
+  awk '
+    /^[[:space:]]*$/ { pending = 1; next }
+    { if (pending && seen) print ""; pending = 0; seen = 1; print }
+  ' "$tmp" > "$tmp.sq" && mv "$tmp.sq" "$tmp"
+
   mv "$tmp" "$file"
   rm -f "$block_content"
 }
@@ -205,7 +225,7 @@ detect_workspace() {
   local code_dir="$HOME/Code"
 
   if [[ "$cwd" == "$code_dir/"* ]]; then
-    local relative="${cwd#$code_dir/}"
+    local relative="${cwd#"$code_dir"/}"
     echo "${relative%%/*}"
   elif [[ -n "${WORKSPACE:-}" ]]; then
     echo "$WORKSPACE"
