@@ -20,6 +20,14 @@ CLAUDE.md
 .kiro/context
 .kiro/steering
 
+{{- /* The agent definition itself is only deployed on a machine that has Kiro. Ignoring it
+       leaves it in the repo for the next machine that needs it, rather than deleting work
+       that took a while to get right. Flipping use_kiro off later stops future deploys but
+       won't remove an already-deployed copy — chezmoi leaves ignored paths alone. */}}
+{{- if not (index . "use_kiro") }}
+.kiro/agents
+{{- end }}
+
 # Claude local data
 .claude/settings.json
 .claude/credentials.json

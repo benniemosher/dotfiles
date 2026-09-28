@@ -55,9 +55,8 @@ dotfiles/
 │   ├── mise/                  # mise version manager config
 │   ├── nvim/                  # LazyVim configuration
 │   └── starship.toml          # Starship prompt config
-├── dot_kiro/                  # Kiro CLI config
-│   ├── agents/default.json.tmpl # Points to ai/ standards
-│   └── context.md            # Placeholder (workspace-specific locally)
+├── dot_kiro/                  # Kiro CLI config — only deployed when use_kiro is set
+│   └── agents/default.json.tmpl # Points to ai/ standards
 ├── dot_zshrc.tmpl             # Shell configuration (templated)
 ├── dot_gitconfig.tmpl         # Git configuration (templated)
 ├── dot_wezterm.lua            # WezTerm terminal config
@@ -69,7 +68,7 @@ dotfiles/
 
 ## AI Architecture (XDG: ~/.config/ai)
 
-All AI tools (Kiro, Claude Code, ChatGPT, etc.) read from a single canonical location:
+All AI tools (Claude Code, Kiro, ChatGPT, etc.) read from a single canonical location:
 
 ```
 ~/.config/ai/ → symlink to this repo's ai/ directory
@@ -78,7 +77,9 @@ All AI tools (Kiro, Claude Code, ChatGPT, etc.) read from a single canonical loc
 
 Tool-specific configs are thin wrappers that point here:
 - `~/.claude/CLAUDE.md` → references `~/.config/ai/` files
-- `~/.kiro/agents/default.json` → loads `~/.config/ai/` as resources
+- `~/.kiro/agents/default.json` → loads `~/.config/ai/` as resources, on machines where
+  `use_kiro` is set (asked on work machines only — `.chezmoiignore` skips it otherwise,
+  so the definition stays in the repo for the next machine that needs it)
 
 ### Workspace Pattern
 
@@ -223,6 +224,20 @@ SSH keys are managed via 1Password SSH agent:
 - Config: `dot_config/1Password/ssh/agent.toml`
 - Requires 1Password desktop app with SSH agent enabled
 - Keys referenced by 1Password item name, not file path
+
+`~/.config/git/allowed_signers` lets git verify SSH-signed commits
+(`git log --show-signature`). `dot_gitconfig.tmpl` points `gpg.ssh.allowedSignersFile`
+at it, but the file itself is **deliberately unmanaged** — it lists public keys against
+email addresses, including work ones, and this repo is public. Create it per machine,
+one `<email> <keytype> <key>` per line:
+
+```bash
+mkdir -p ~/.config/git
+printf '%s %s\n' "you@example.com" "$(op read 'op://Private/<ssh item>/public key')" \
+  >> ~/.config/git/allowed_signers
+```
+
+Without it, signing still works; only local verification of others' signatures fails.
 
 ### macOS Settings
 
