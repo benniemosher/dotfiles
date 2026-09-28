@@ -11,6 +11,10 @@
 # The setup URI carries CouchDB credentials, so it is never echoed, logged, or written to
 # disk — it goes straight from `op` to the URI handler.
 #
+# Setup is semi-attended: LiveSync encrypts the URI with a passphrase and prompts for it on
+# import, and that prompt can't be fed programmatically. When a passphrase ref is configured
+# this puts it on the clipboard so it's a paste, not a hunt.
+#
 # Re-run by hand after the first apply:
 #   chezmoi state delete-bucket --bucket=entryState && chezmoi apply
 
@@ -20,6 +24,7 @@ VAULT="$HOME/Code/obsidian-vault-setup"
 PLUGIN_ID="obsidian-livesync"
 PLUGIN_REPO="vrtmrz/obsidian-livesync"
 OP_REF="{{ if index . "obsidian_livesync_op_ref" }}{{ .obsidian_livesync_op_ref }}{{ else }}op://Private/Obsidian LiveSync/setup uri{{ end }}"
+PASS_OP_REF="{{ if index . "obsidian_livesync_passphrase_op_ref" }}{{ .obsidian_livesync_passphrase_op_ref }}{{ else }}{{ end }}"
 
 # work_platform is set in ~/.config/chezmoi/chezmoi.toml on work machines; WORK_WORKSPACE
 # in the shell is a runtime override for the same thing.
@@ -131,9 +136,33 @@ echo "obsidian-vault: opening the LiveSync setup URI in Obsidian"
 "$opener" "$uri" >/dev/null 2>&1 || true
 unset uri
 
+# Obsidian will prompt for the passphrase that encrypts the URI. Put it on the clipboard so
+# it's a paste rather than a hunt — never printed.
+clip=""
+case "$(uname -s)" in
+  Darwin) clip=pbcopy ;;
+  Linux)  for c in wl-copy xclip xsel; do command -v "$c" >/dev/null 2>&1 && { clip="$c"; break; }; done ;;
+esac
+[[ "$clip" == xclip ]] && clip="xclip -selection clipboard"
+[[ "$clip" == xsel  ]] && clip="xsel --clipboard --input"
+
+passphrase_on_clipboard=no
+if [[ -n "$PASS_OP_REF" && -n "$clip" ]]; then
+  if pass="$(op read "$PASS_OP_REF" 2>/dev/null)" && [[ -n "$pass" ]]; then
+    printf '%s' "$pass" | $clip >/dev/null 2>&1 && passphrase_on_clipboard=yes
+    unset pass
+  fi
+fi
+
 cat <<'EOFNEXT'
 obsidian-vault: LiveSync handed off. In Obsidian:
-  1. Accept the imported settings and let the first replication finish.
-  2. Once the vault has synced, run its own bin/install-obsidian-plugins.sh for the
+  1. Obsidian will ask for the setup-URI passphrase before it imports anything.
+  2. Accept the imported settings and let the first replication finish.
+  3. Once the vault has synced, run its own bin/install-obsidian-plugins.sh for the
      remaining plugins, and pick the Minimal theme under Appearance.
 EOFNEXT
+if [[ "$passphrase_on_clipboard" == yes ]]; then
+  echo "  The passphrase is on your clipboard — clear it once you're done."
+else
+  echo "  Passphrase not on the clipboard; read it from 1Password when prompted."
+fi

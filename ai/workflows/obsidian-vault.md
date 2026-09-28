@@ -50,10 +50,21 @@ Content syncs over **Self-hosted LiveSync** (`obsidian-livesync`) against a self
 CouchDB, not over git — see the vault's `SPEC.md` §1. The git repo is for local version
 history only, and it has no remote, so git is not a transport and not a backup.
 
-The LiveSync **setup URI** encodes the CouchDB URL and credentials. It lives in 1Password;
-`obsidian_livesync_op_ref` in `~/.config/chezmoi/chezmoi.toml` points at it, defaulting to
-`op://Private/Obsidian LiveSync/setup uri`. Treat it as a credential: never paste it into a
-note, a terminal you're sharing, or a repo.
+The LiveSync **setup URI** encodes the CouchDB URL and credentials, and LiveSync encrypts
+it with a passphrase of its own. Both live in 1Password, pointed at by two keys in
+`~/.config/chezmoi/chezmoi.toml` — kept there, not in the dotfiles repo, so the vault and
+item names stay private:
+
+```toml
+obsidian_livesync_op_ref = "op://<vault>/<item id>/setup-uri"
+obsidian_livesync_passphrase_op_ref = "op://<vault>/<item id>/passphrase"
+```
+
+Use the item **id** rather than its title; the id survives a rename. Treat the URI as a
+credential: never paste it into a note, a shared terminal, or a repo.
+
+Regenerate it from Obsidian → Settings → Self-hosted LiveSync → Setup wizard → Copy setup
+URI, which is also where you set the passphrase.
 
 ## Setting up a new machine
 
@@ -68,9 +79,12 @@ and branches on whether the machine is a work one:
    the vault has synced.
 3. Reads the setup URI from 1Password and hands it to Obsidian. The URI is never echoed
    or written to disk.
-4. Accept the imported settings in Obsidian and let the first replication finish. The rest
-   of the vault arrives over LiveSync.
-5. Then run the vault's `bin/install-obsidian-plugins.sh` for the remaining plugins, and
+4. Obsidian prompts for the setup-URI passphrase — this part is attended, since that prompt
+   can't be fed programmatically. The script puts the passphrase on the clipboard when the
+   passphrase ref is configured, so it's a paste. Clear the clipboard afterwards.
+5. Accept the imported settings and let the first replication finish. The rest of the vault
+   arrives over LiveSync.
+6. Then run the vault's `bin/install-obsidian-plugins.sh` for the remaining plugins, and
    pick the Minimal theme under Settings → Appearance.
 
 **Work** (`work_platform` or `WORK_WORKSPACE` set): no LiveSync, no 1Password, no billing.
