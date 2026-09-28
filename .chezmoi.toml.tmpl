@@ -33,6 +33,16 @@ existing machine is quiet and keeps the answers already given.
 {{-   $agent = promptBoolOnce . "use_ssh_agent" "Use the 1Password SSH agent for git, rather than keys on disk" true -}}
 {{- end -}}
 
+{{- /* Kiro was only ever used at one employer, but the agent definition took real work to
+       get right, so it stays in the repo rather than being deleted. Gated on its own flag
+       rather than on work_platform: a work machine without Kiro installed would otherwise get
+       an agent config nothing reads. Asked only on work machines, since no personal one has
+       used it. */ -}}
+{{- $kiro := false -}}
+{{- if $work -}}
+{{-   $kiro = promptBoolOnce . "use_kiro" "Does this machine use the Kiro CLI" -}}
+{{- end -}}
+
 {{- /* Billing and the Obsidian vault are personal-machine concerns, so work machines are
        not asked. Both answers are pointers, not secrets: a phone number that belongs on an
        invoice, and the 1Password item holding the LiveSync setup URI. They live here rather
@@ -82,6 +92,9 @@ use_ssh_agent = false
 {{ end -}}
 {{ if $phone -}}
 invoice_phone = {{ $phone | quote }}
+{{ end -}}
+{{ if $kiro -}}
+use_kiro = true
 {{ end -}}
 {{ if $lsItem -}}
 obsidian_livesync_op_item = {{ $lsItem | quote }}

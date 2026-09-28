@@ -1,4 +1,5 @@
-{{ $workspace := env "WORK_WORKSPACE" -}}
+{{/* From chezmoi data, not env: an apply from cron or a fresh shell has no WORK_WORKSPACE exported and would silently drop the workspace resources. */}}
+{{- $workspace := default "" (index . "work_workspace") -}}
 {
   "name": "default",
   "description": "Default agent with universal standards and workspace context",
