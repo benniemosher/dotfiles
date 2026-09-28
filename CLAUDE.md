@@ -225,6 +225,20 @@ SSH keys are managed via 1Password SSH agent:
 - Requires 1Password desktop app with SSH agent enabled
 - Keys referenced by 1Password item name, not file path
 
+`~/.config/git/allowed_signers` lets git verify SSH-signed commits
+(`git log --show-signature`). `dot_gitconfig.tmpl` points `gpg.ssh.allowedSignersFile`
+at it, but the file itself is **deliberately unmanaged** — it lists public keys against
+email addresses, including work ones, and this repo is public. Create it per machine,
+one `<email> <keytype> <key>` per line:
+
+```bash
+mkdir -p ~/.config/git
+printf '%s %s\n' "you@example.com" "$(op read 'op://Private/<ssh item>/public key')" \
+  >> ~/.config/git/allowed_signers
+```
+
+Without it, signing still works; only local verification of others' signatures fails.
+
 ### macOS Settings
 
 The `run_onchange_darwin-change-settings.sh.tmpl` script applies 400+ macOS
