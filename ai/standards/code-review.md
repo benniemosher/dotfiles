@@ -91,11 +91,10 @@ where it would read as blocking the PR.
 
 ## Origin
 
-This table format matches how reviews are run on zCore's va-llm-api project
-(PR #160, review by jtratner-zcore alongside GPT-6 and Claude Fable AI
-reviewers) — reuse it for any PR review at this depth, not just that
-project. See `~/Code/zcore/context.md` for that project's own PR template
-requirements (Summary, High-level description of approach & implementation,
-Diagrams or Visuals, Definition of Done, Testing criteria, Related tickets,
-Risk assessment) — those are that repo's PR *description* template, a
-separate but related convention from this review-*posting* format.
+This table format comes from a client infrastructure project where a large PR
+was reviewed at this depth by a teammate alongside two AI reviewers — reuse it
+for any PR review at that depth, not just that project. A repo may also have
+its own PR *description* template (Summary, High-level description of approach
+& implementation, Diagrams or Visuals, Definition of Done, Testing criteria,
+Related tickets, Risk assessment); check that workspace's `context.md`. That's
+a separate but related convention from this review-*posting* format.

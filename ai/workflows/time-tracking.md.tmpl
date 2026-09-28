@@ -2,7 +2,7 @@
 title: Time Tracking & Invoicing Workflow
 description: System for logging billable hours and generating client invoices
 tags: [workflow, productivity, billing]
-last_updated: 2026-09-01
+last_updated: 2026-09-27
 ---
 
 # Time Tracking & Invoicing Workflow
@@ -18,7 +18,7 @@ work-machine equivalent, since invoicing reads directly from the vault.
 Quick capture from terminal, auto-detects the client from the current workspace:
 
 ```bash
-cd ~/Code/zcore
+cd ~/Code/<workspace>
 hours 2.5 "Fixed CORS bug in tunnel config"
 ```
 
@@ -56,14 +56,20 @@ Right after the H1 header, the file carries a `dataviewjs` block that computes a
 running `hours` (so a manual edit or a mobile QuickAdd capture doesn't go stale), and it's the
 first thing visible on opening the note. The script keeps that block pinned there — right under
 the header, above every day section — whenever it appends a row; don't reorder it by hand, and
-if writing to `Hours.md` outside the script (e.g. marking rows `Invoiced: Yes` when generating
-an invoice, below), insert changes into the correct day's table, always *below* the
+if writing to `Hours.md` outside the script (e.g. marking rows `Invoiced: Yes` once an invoice
+has been sent, below), insert changes into the correct day's table, always *below* the
 ```` ```dataviewjs ```` block, never above it.
 
 ## Generating an Invoice
 
-When asked to generate an invoice (e.g. "generate my zcore invoice for August"), an AI
-assistant should:
+`bin/generate-invoice.py` in the vault does all of this for the client it's set up for — it
+reads `Hours.md`,
+assigns each row a category from its own `RULES` table, and writes the note. Run
+`bin/generate-invoice.py --dry-run` to see the rollup without writing. It refuses to write a
+partial invoice: any row it can't categorize is listed so you add a `RULES` entry and re-run,
+which is the maintenance point as new kinds of work get logged. It never writes `Hours.md`.
+
+Build it by hand only for a client the script doesn't cover. Either way:
 
 1. Read `02-Areas/Work-Ongoing/<client>/Hours.md`.
 2. Filter rows in the requested period where `Invoiced` = `No`.
@@ -73,22 +79,37 @@ assistant should:
    says otherwise for that invoice) — e.g. date `2026-09-01` + Net 15 → `2026-09-16`.
 5. Write a new note at `02-Areas/Work-Ongoing/<client>/Invoices/<invoice_number>.md`, following the shape
    in `03-Resources/Templates/invoice.md`. Sender block is fixed: Bennie Mosher /
-   benniemosher@gmail.com / 970-590-2040. Payment line reads "Direct deposit (arranged
-   separately)" — never print bank/account details in the note.
+   {{ .git_email }} / {{ if index . "invoice_phone" }}{{ .invoice_phone }}{{ else }}<set invoice_phone in ~/.config/chezmoi/chezmoi.toml>{{ end }}.
+   Payment line reads "Direct deposit (arranged separately)" — never print bank/account
+   details in the note.
 
-   The note is two parts, split by a hard page break, so **Export to PDF** always starts the
-   itemized detail on its own page:
-     - `.invoice-summary-page` — a "Summary" table with columns **Category, Hours, Rate,
+   The note is three parts, each split by a hard page break so **Export to PDF** starts each
+   on its own page (user's preference, 2026-09-25):
+     - `.invoice-week-page` — the first page, a "Summary by Week" table with columns **Week,
+       Hours, Rate, Amount**. One row per week that has logged time, the Week cell giving the
+       week number over the actual date range worked (`Week 2` / `Sep 8 – Sep 13, 2026` — the
+       days worked, not the calendar Mon–Sun bounds), weeks in date order, ending in the bold
+       `Total` row carrying Total Hours and the **grand total** for the whole invoice. Weeks
+       are Monday-anchored. Any flat line item with no hours behind it (see `EXTRAS` in the
+       script) gets a row here too, with `—` for Hours and Rate, so the grand total is
+       complete. The `**Payment:**` line lives on this page, directly below the Total row, so
+       the reader sees it on page one without turning a page.
+     - `.invoice-summary-page` — a "Summary by Category" table with columns **Category, Hours, Rate,
        Amount** (in that order — matches the standard invoicing convention of title → hours →
        rate → amount), one row per category, ordered by hours descending, ending in a bold
        `Total` row that gives Total Hours and Total Due **in one line** rather than as a
        separate banner (Rate is blank on the Total row — summing a rate is meaningless). Every
        category used here must come from the canonical list below — see "Rules for AI
-       Assistants" before inventing a new one. The `**Payment:**` line lives on this page too,
-       directly below the Total row — not at the bottom of the whole note — so the reader sees
-       it without turning to the detail pages. **Rate lives here, not on the detail pages.**
-     - `.invoice-detail-page` — one day-header bar + table per calendar day in the period
-       (mirroring `Hours.md`'s per-day sections), not one flat table for the whole period.
+       Assistants" before inventing a new one. **Rate lives on the two summary pages, not on
+       the detail pages.**
+     - `.invoice-detail-page` — one per week, each starting a new page
+       (`page-break-before:always;break-before:page;` on every block after the first) so a
+       week never continues onto the page its predecessor ended on (user's preference,
+       2026-09-25). Each opens with a week header rule — the week number, its date range, and
+       that week's hours and amount — then one day-header bar + table per calendar day in that
+       week (mirroring `Hours.md`'s per-day sections), and closes with a "Week N Total" bar
+       that must match the week's row on page one. Flat `EXTRAS` line items get their own
+       trailing block on the same pattern.
        Each day's table has columns **Category, Description, Hours, Amount** — no Rate column
        (that's on the Summary page only, since it's a constant per invoice and repeating it on
        every row added no information) — and ends with a bold "Day Total" row; day totals must
@@ -114,7 +135,11 @@ assistant should:
    nowrap;">` on the same line as itself, staying in the same paragraph as the Date/Due/Terms
    lines above it — this keeps the date range from wrapping without opening a `<div>` (a block
    element), which would start a new paragraph and add a visible blank-line gap before it.
-6. Update those same rows in `Hours.md` to `Invoiced: Yes` so they aren't billed twice — insert
+6. **Only once the invoice has actually been sent**, update those same rows in `Hours.md` to
+   `Invoiced: Yes` so they aren't billed twice. Never do this as part of generating a draft
+   (user's correction, 2026-09-25): a period stays open while there are still hours to log, and
+   flipping the flags early hides unbilled work from the `dataviewjs` banner and from the next
+   invoice. Regenerating a draft is cheap; recovering wrongly-flipped flags is not. Insert
    changes *above* the ```` ```dataviewjs ```` fence at the end of the file, never below it.
 7. Tell the user to open the new note in Obsidian and use **Export to PDF** (Command
    Palette → "Export to PDF") to produce the sendable file — no plugin needed, it's a core
@@ -134,6 +159,14 @@ category with slightly different wording each time:
   category, won't recur on every invoice.
 - **Tooling / CI Setup** — pre-commit config, CI/CD pipeline work, dev-tooling setup — distinct
   from feature/infra development.
+- **Observability / Grafana** — monitoring and alerting design: alert catalogs, dashboard and
+  Grafana research, tracker/gap analysis against the monitoring plan.
+- **User Documentation** — end-user docs work that isn't one ticket: the docs PDF build,
+  styling, cover/ToC, hosting, and rows spanning several doc issues at once. A doc ticket big
+  enough to stand alone still gets its own `PR#NN` line instead.
+- **Software / Subscriptions** — a pass-through tool or subscription cost billed at a flat
+  amount with no hours behind it. Hours and Rate render as `—`; it belongs in the script's
+  `EXTRAS`, not in `Hours.md`.
 - **`PR#NN` / `Issue#NN` (ad hoc)** — when a meaningful chunk of time centers on building out
   one specific ticket (not reviewing it — building it), break it out under its own
   ticket-numbered category instead of a generic bucket, e.g. `PR#95 (App Service Deploy)`.

@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+# Bootstraps the personal Obsidian vault on a new machine.
+#
+# Personal machines: installs the Self-hosted LiveSync plugin, then hands Obsidian the
+# LiveSync setup URI stored in 1Password, so the vault's contents replicate down from
+# CouchDB. Nothing is cloned — LiveSync is the transport (see SPEC.md §1 in the vault).
+#
+# Work machines: no LiveSync and no 1Password. Creates an empty local vault following the
+# PARA structure in the standards, and nothing syncs anywhere.
+#
+# The setup URI carries CouchDB credentials, so it is never echoed, logged, or written to
+# disk — it goes straight from `op` to the URI handler.
+#
+# Setup is semi-attended: LiveSync encrypts the URI with a passphrase and prompts for it on
+# import, and that prompt can't be fed programmatically. When a passphrase ref is configured
+# this puts it on the clipboard so it's a paste, not a hunt.
+#
+# Re-run by hand after the first apply:
+#   chezmoi state delete-bucket --bucket=entryState && chezmoi apply
+
+set -euo pipefail
+
+VAULT="$HOME/Code/obsidian-vault-setup"
+PLUGIN_ID="obsidian-livesync"
+PLUGIN_REPO="vrtmrz/obsidian-livesync"
+OP_REF="{{ if index . "obsidian_livesync_op_ref" }}{{ .obsidian_livesync_op_ref }}{{ else }}{{ end }}"
+PASS_OP_REF="{{ if index . "obsidian_livesync_passphrase_op_ref" }}{{ .obsidian_livesync_passphrase_op_ref }}{{ else }}{{ end }}"
+
+# work_platform is set in ~/.config/chezmoi/chezmoi.toml on work machines; WORK_WORKSPACE
+# in the shell is a runtime override for the same thing.
+MODE="{{ if index . "work_platform" }}work{{ else }}personal{{ end }}"
+[[ -n "${WORK_WORKSPACE:-}" ]] && MODE=work
+
+# PARA skeleton, per the vault standards.
+make_skeleton() {
+  local d
+  for d in 00-Inbox \
+           01-Projects/Work 01-Projects/Side-Business 01-Projects/Home-Projects \
+           02-Areas/Work-Ongoing 02-Areas/Fitness 02-Areas/Homelab 02-Areas/Family \
+           03-Resources/DevOps-Terraform-AWS 03-Resources/Reading 03-Resources/Templates \
+           04-Archive Attachments Daily MOCs Meta; do
+    mkdir -p "$VAULT/$d"
+  done
+}
+
+if [[ "$MODE" == work ]]; then
+  if [[ -d "$VAULT/.obsidian" ]]; then
+    echo "obsidian-vault: vault already present, leaving it alone"
+    exit 0
+  fi
+  echo "obsidian-vault: work machine — creating a local vault, no sync"
+  make_skeleton
+  cat > "$VAULT/README.md" <<'EOFREADME'
+# Vault (local)
+
+Created on a work machine, so nothing syncs: no LiveSync, no remote, no billing. Standup
+notes and learnings route to `<workspace>/notes/` here rather than into this vault — see
+`~/.config/ai/workflows/obsidian-vault.md` for the layout and which workflow owns what.
+EOFREADME
+  echo "obsidian-vault: created $VAULT (local only)"
+  exit 0
+fi
+
+# ---- personal machine: LiveSync bootstrap ----
+# Already configured on this machine? Then there is nothing to hand off — re-importing
+# settings would only prompt Obsidian to overwrite working ones.
+if [[ -f "$VAULT/.obsidian/plugins/$PLUGIN_ID/data.json" ]]; then
+  echo "obsidian-vault: LiveSync already configured, nothing to do"
+  exit 0
+fi
+
+for bin in curl jq op; do
+  if ! command -v "$bin" >/dev/null 2>&1; then
+    echo "obsidian-vault: $bin not found — skipping LiveSync setup" >&2
+    exit 0
+  fi
+done
+
+if ! op account list >/dev/null 2>&1; then
+  echo "obsidian-vault: 1Password CLI not signed in. Run 'op signin', then:" >&2
+  echo "  chezmoi state delete-bucket --bucket=entryState && chezmoi apply" >&2
+  exit 0
+fi
+
+mkdir -p "$VAULT"
+make_skeleton
+
+plugin_dir="$VAULT/.obsidian/plugins/$PLUGIN_ID"
+if [[ -f "$plugin_dir/main.js" ]]; then
+  echo "obsidian-vault: $PLUGIN_ID already installed"
+else
+  echo "obsidian-vault: installing $PLUGIN_ID"
+  mkdir -p "$plugin_dir"
+  curl_gh=(curl -fsSL -H "Accept: application/vnd.github+json")
+  [[ -n "${GITHUB_TOKEN:-}" ]] && curl_gh+=(-H "Authorization: Bearer $GITHUB_TOKEN")
+  if ! release_json="$("${curl_gh[@]}" "https://api.github.com/repos/$PLUGIN_REPO/releases/latest")"; then
+    echo "obsidian-vault: could not fetch the latest $PLUGIN_ID release" >&2
+    exit 0
+  fi
+  for asset in main.js manifest.json styles.css; do
+    url="$(jq -r --arg n "$asset" '.assets[]? | select(.name == $n) | .browser_download_url' <<<"$release_json")"
+    if [[ -n "$url" && "$url" != null ]]; then
+      curl -fsSL "$url" -o "$plugin_dir/$asset"
+    elif [[ "$asset" != styles.css ]]; then
+      echo "obsidian-vault: $PLUGIN_ID release is missing $asset" >&2
+      exit 0
+    fi
+  done
+fi
+
+# Enable it without clobbering anything already enabled.
+cpj="$VAULT/.obsidian/community-plugins.json"
+[[ -f "$cpj" ]] || echo '[]' > "$cpj"
+jq --arg id "$PLUGIN_ID" '. + [$id] | unique' "$cpj" > "$cpj.tmp" && mv "$cpj.tmp" "$cpj"
+
+# Hand the setup URI to Obsidian. Never printed.
+opener=""
+case "$(uname -s)" in
+  Darwin) opener=open ;;
+  Linux)  command -v xdg-open >/dev/null 2>&1 && opener=xdg-open ;;
+esac
+if [[ -z "$opener" || ( "$(uname -s)" == Linux && -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ) ]]; then
+  echo "obsidian-vault: no GUI session to open the setup URI." >&2
+  echo "  Open Obsidian on this machine, then re-run:" >&2
+  echo "  chezmoi state delete-bucket --bucket=entryState && chezmoi apply" >&2
+  exit 0
+fi
+
+if [[ -z "$OP_REF" ]]; then
+  echo "obsidian-vault: no LiveSync 1Password item configured, skipping sync setup"
+  echo "  Set one with: chezmoi init --prompt   (asks for op://<vault>/<item id>)"
+  exit 0
+fi
+
+if ! uri="$(op read "$OP_REF" 2>/dev/null)" || [[ -z "$uri" ]]; then
+  echo "obsidian-vault: nothing readable at $OP_REF" >&2
+  echo "  Check the item has a 'setup-uri' field, or re-run: chezmoi init --prompt" >&2
+  exit 0
+fi
+
+echo "obsidian-vault: opening the LiveSync setup URI in Obsidian"
+"$opener" "$uri" >/dev/null 2>&1 || true
+unset uri
+
+# Obsidian will prompt for the passphrase that encrypts the URI. Put it on the clipboard so
+# it's a paste rather than a hunt — never printed.
+clip=""
+case "$(uname -s)" in
+  Darwin) clip=pbcopy ;;
+  Linux)  for c in wl-copy xclip xsel; do command -v "$c" >/dev/null 2>&1 && { clip="$c"; break; }; done ;;
+esac
+[[ "$clip" == xclip ]] && clip="xclip -selection clipboard"
+[[ "$clip" == xsel  ]] && clip="xsel --clipboard --input"
+
+passphrase_on_clipboard=no
+if [[ -n "$PASS_OP_REF" && -n "$clip" ]]; then
+  if pass="$(op read "$PASS_OP_REF" 2>/dev/null)" && [[ -n "$pass" ]]; then
+    printf '%s' "$pass" | $clip >/dev/null 2>&1 && passphrase_on_clipboard=yes
+    unset pass
+  fi
+fi
+
+cat <<'EOFNEXT'
+obsidian-vault: LiveSync handed off. In Obsidian:
+  1. Obsidian will ask for the setup-URI passphrase before it imports anything.
+  2. Accept the imported settings and let the first replication finish.
+  3. Once the vault has synced, run its own bin/install-obsidian-plugins.sh for the
+     remaining plugins, and pick the Minimal theme under Appearance.
+EOFNEXT
+if [[ "$passphrase_on_clipboard" == yes ]]; then
+  echo "  The passphrase is on your clipboard — clear it once you're done."
+else
+  echo "  Passphrase not on the clipboard; read it from 1Password when prompted."
+fi
