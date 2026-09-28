@@ -72,7 +72,8 @@ When I'm working in a directory, detect which workspace I'm in and load the appr
 ## Tool-Specific Notes
 
 These generic instructions are consumed by multiple AI tools. Each tool has a thin wrapper that points here:
-- **Kiro:** `~/.kiro/agents/default.json` loads resources from `~/.config/ai/`
+- **Kiro:** `~/.kiro/agents/default.json` loads resources from `~/.config/ai/` — deployed
+  only on machines with `use_kiro` set
 - **Claude Code:** `~/.claude/CLAUDE.md` references `~/.config/ai/`
 - **Others:** Follow the same pattern — point to `~/.config/ai/` for standards
 
