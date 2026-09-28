@@ -51,16 +51,13 @@ CouchDB, not over git — see the vault's `SPEC.md` §1. The git repo is for loc
 history only, and it has no remote, so git is not a transport and not a backup.
 
 The LiveSync **setup URI** encodes the CouchDB URL and credentials, and LiveSync encrypts
-it with a passphrase of its own. Both live in 1Password, pointed at by two keys in
-`~/.config/chezmoi/chezmoi.toml` — kept there, not in the dotfiles repo, so the vault and
-item names stay private:
+it with a passphrase of its own. Both live in 1Password, in one item with a `setup-uri` field and a `passphrase` field.
 
-```toml
-obsidian_livesync_op_ref = "op://<vault>/<item id>/setup-uri"
-obsidian_livesync_passphrase_op_ref = "op://<vault>/<item id>/passphrase"
-```
-
-Use the item **id** rather than its title; the id survives a rename. Treat the URI as a
+`chezmoi init` asks for that item as `op://<vault>/<item id>` on personal machines and writes
+the refs into `~/.config/chezmoi/chezmoi.toml`. That file is never committed, so the vault and
+item names stay out of the dotfiles repo. Use the item **id**, not its title — the id survives
+a rename. Leave the answer blank on a machine that doesn't sync the vault, and the bootstrap
+script skips itself. Treat the URI as a
 credential: never paste it into a note, a shared terminal, or a repo.
 
 Regenerate it from Obsidian → Settings → Self-hosted LiveSync → Setup wizard → Copy setup

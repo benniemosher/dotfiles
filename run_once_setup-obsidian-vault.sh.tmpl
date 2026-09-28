@@ -23,7 +23,7 @@ set -euo pipefail
 VAULT="$HOME/Code/obsidian-vault-setup"
 PLUGIN_ID="obsidian-livesync"
 PLUGIN_REPO="vrtmrz/obsidian-livesync"
-OP_REF="{{ if index . "obsidian_livesync_op_ref" }}{{ .obsidian_livesync_op_ref }}{{ else }}op://Private/Obsidian LiveSync/setup uri{{ end }}"
+OP_REF="{{ if index . "obsidian_livesync_op_ref" }}{{ .obsidian_livesync_op_ref }}{{ else }}{{ end }}"
 PASS_OP_REF="{{ if index . "obsidian_livesync_passphrase_op_ref" }}{{ .obsidian_livesync_passphrase_op_ref }}{{ else }}{{ end }}"
 
 # work_platform is set in ~/.config/chezmoi/chezmoi.toml on work machines; WORK_WORKSPACE
@@ -126,9 +126,15 @@ if [[ -z "$opener" || ( "$(uname -s)" == Linux && -z "${DISPLAY:-}${WAYLAND_DISP
   exit 0
 fi
 
+if [[ -z "$OP_REF" ]]; then
+  echo "obsidian-vault: no LiveSync 1Password item configured, skipping sync setup"
+  echo "  Set one with: chezmoi init --prompt   (asks for op://<vault>/<item id>)"
+  exit 0
+fi
+
 if ! uri="$(op read "$OP_REF" 2>/dev/null)" || [[ -z "$uri" ]]; then
-  echo "obsidian-vault: no LiveSync setup URI at $OP_REF" >&2
-  echo "  Store it there, or set obsidian_livesync_op_ref in ~/.config/chezmoi/chezmoi.toml" >&2
+  echo "obsidian-vault: nothing readable at $OP_REF" >&2
+  echo "  Check the item has a 'setup-uri' field, or re-run: chezmoi init --prompt" >&2
   exit 0
 fi
 
