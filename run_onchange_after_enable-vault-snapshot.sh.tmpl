@@ -1,0 +1,20 @@
+{{- if not (index . "work_platform") -}}
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Starts the vault-snapshot timer (bin/vault-snapshot) after its units are deployed. Reruns
+# when a unit changes, via these hashes:
+{{- if eq .chezmoi.os "linux" }}
+# service {{ include "dot_config/systemd/user/vault-snapshot.service.tmpl" | sha256sum }}
+# timer   {{ include "dot_config/systemd/user/vault-snapshot.timer" | sha256sum }}
+# remote  {{ index . "obsidian_vault_backup_remote" | default "" | sha256sum }}
+systemctl --user daemon-reload
+systemctl --user enable --now vault-snapshot.timer
+{{- else if eq .chezmoi.os "darwin" }}
+# agent  {{ include "private_Library/private_LaunchAgents/com.local.vault-snapshot.plist.tmpl" | sha256sum }}
+# remote {{ index . "obsidian_vault_backup_remote" | default "" | sha256sum }}
+plist="$HOME/Library/LaunchAgents/com.local.vault-snapshot.plist"
+launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$plist"
+{{- end }}
+{{- end }}
