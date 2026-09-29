@@ -1,0 +1,11 @@
+# Runs vault-snapshot.service every 15 minutes; Persistent catches up after sleep or reboot.
+[Unit]
+Description=Snapshot the Obsidian vault to git every 15 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

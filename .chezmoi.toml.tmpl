@@ -44,15 +44,18 @@ existing machine is quiet and keeps the answers already given.
 {{- end -}}
 
 {{- /* Billing and the Obsidian vault are personal-machine concerns, so work machines are
-       not asked. Both answers are pointers, not secrets: a phone number that belongs on an
-       invoice, and the 1Password item holding the LiveSync setup URI. They live here rather
-       than in the repo because the repo is public. Leave the 1Password answer blank on a
-       machine that does not sync the vault -- the bootstrap script then skips itself. */ -}}
+       not asked. The answers are pointers, not secrets: a phone number that belongs on an
+       invoice, the 1Password item holding the LiveSync setup URI, and where vault snapshots
+       are pushed. They live here rather than in the repo because the repo is public. Leave
+       the 1Password answer blank on a machine that does not sync the vault -- the bootstrap
+       script then skips itself. */ -}}
 {{- $phone := "" -}}
 {{- $lsItem := "" -}}
+{{- $vaultRemote := "" -}}
 {{- if not $work -}}
 {{-   $phone = promptStringOnce . "invoice_phone" "Phone number for invoices" -}}
 {{-   $lsItem = promptStringOnce . "obsidian_livesync_op_item" "1Password item for Obsidian LiveSync, as op://<vault>/<item id> (blank to skip)" -}}
+{{-   $vaultRemote = promptStringOnce . "obsidian_vault_backup_remote" "Git remote for vault snapshots, e.g. /data/backups/obsidian-vault.git or ssh://host/path (blank: commit locally only)" -}}
 {{- end -}}
 
 {{- /* Opt-in, and deliberately asked rather than defaulted: saying yes opens a
@@ -95,6 +98,9 @@ invoice_phone = {{ $phone | quote }}
 {{ end -}}
 {{ if $kiro -}}
 use_kiro = true
+{{ end -}}
+{{ if $vaultRemote -}}
+obsidian_vault_backup_remote = {{ $vaultRemote | quote }}
 {{ end -}}
 {{ if $lsItem -}}
 obsidian_livesync_op_item = {{ $lsItem | quote }}

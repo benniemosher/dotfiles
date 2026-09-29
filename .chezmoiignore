@@ -48,3 +48,14 @@ Library/
 # gpg-agent.conf and the key import are no longer excluded here -- both work on Linux now,
 # the former via a per-OS pinentry path.
 {{- end }}
+
+{{- /* Vault snapshots (bin/vault-snapshot) are for personal machines, where the vault syncs
+       over LiveSync. systemd units only on Linux; the LaunchAgent is covered by Library/
+       above on Linux. */}}
+{{- if or (index . "work_platform") (ne .chezmoi.os "linux") }}
+.config/systemd/user/vault-snapshot.service
+.config/systemd/user/vault-snapshot.timer
+{{- end }}
+{{- if index . "work_platform" }}
+Library/LaunchAgents/com.local.vault-snapshot.plist
+{{- end }}

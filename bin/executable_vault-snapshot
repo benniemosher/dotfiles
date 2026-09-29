@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# vault-snapshot — Commit the Obsidian vault and push it to a backup remote
+#
+# LiveSync propagates deletions between devices, and a first "fetch from remote" replaces
+# local-only files, so the vault's git history is the only way back. This script runs on a
+# timer (systemd user timer on Linux, LaunchAgent on macOS) and commits whatever changed.
+#
+# It refuses to commit when more than VAULT_SNAPSHOT_MAX_DELETES tracked files have
+# disappeared since the last snapshot, and sends a desktop notification instead: a mass
+# deletion is what this exists to catch, so it must not become the new baseline. Restore
+# with `git -C <vault> ls-files --deleted -z | xargs -0 git -C <vault> checkout --`, or, if
+# the deletions were intended, run once with VAULT_SNAPSHOT_ALLOW_DELETES=1.
+#
+# Each machine pushes its own branch (its short hostname) to VAULT_BACKUP_REMOTE, so two
+# devices snapshotting the same synced vault never race on one branch. Blank remote: commit
+# locally only.
+#
+# Snapshot commits are unsigned (-c commit.gpgsign=false): they run unattended, and signing
+# here goes through 1Password, which needs a person present.
+#
+# Usage:
+#   vault-snapshot                                  # what the timer runs
+#   VAULT_SNAPSHOT_ALLOW_DELETES=1 vault-snapshot   # accept a large deletion once
+
+VAULT_DIR="${VAULT_DIR:-$HOME/Code/obsidian-vault-setup}"
+MAX_DELETES="${VAULT_SNAPSHOT_MAX_DELETES:-5}"
+REMOTE_URL="${VAULT_BACKUP_REMOTE:-}"
+HOST="$(hostname -s)"
+LOCK_DIR="${TMPDIR:-/tmp}/vault-snapshot.lock"
+
+notify() {
+  echo "vault-snapshot: $1" >&2
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send --urgency=critical "Obsidian vault" "$1" 2>/dev/null || true
+  elif command -v osascript >/dev/null 2>&1; then
+    osascript -e "display notification \"$1\" with title \"Obsidian vault\"" 2>/dev/null || true
+  fi
+}
+
+[[ -d "$VAULT_DIR/.git" ]] || exit 0
+
+# mkdir is atomic on both platforms; flock is not on macOS by default.
+mkdir "$LOCK_DIR" 2>/dev/null || exit 0
+trap 'rmdir "$LOCK_DIR"' EXIT
+
+git_v() { git -C "$VAULT_DIR" "$@"; }
+
+deleted=$(git_v ls-files --deleted | wc -l | tr -d ' ')
+if (( deleted > MAX_DELETES )) && [[ -z "${VAULT_SNAPSHOT_ALLOW_DELETES:-}" ]]; then
+  notify "$deleted files disappeared from the vault; not snapshotting. Check LiveSync, then restore from git."
+  exit 2
+fi
+
+git_v add -A
+if ! git_v diff --cached --quiet; then
+  git_v -c commit.gpgsign=false commit -q -m "snapshot: $HOST $(date '+%Y-%m-%d %H:%M')"
+fi
+
+[[ -n "$REMOTE_URL" ]] || exit 0
+if git_v remote get-url backup >/dev/null 2>&1; then
+  git_v remote set-url backup "$REMOTE_URL"
+else
+  git_v remote add backup "$REMOTE_URL"
+fi
+# BatchMode: an unattended run must fail, not hang, when the SSH agent is locked or the
+# backup host is offline. The next run pushes whatever this one could not.
+GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=10" \
+  git_v push -q backup "HEAD:refs/heads/$HOST" || echo "vault-snapshot: push to $REMOTE_URL failed; will retry next run" >&2

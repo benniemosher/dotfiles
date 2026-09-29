@@ -8,8 +8,8 @@ last_updated: 2026-09-27
 # Obsidian Vault
 
 The personal vault at `~/Code/obsidian-vault-setup` is where daily notes, learnings, and
-billing live on a personal machine. It's a git repo, but **local-only — no remote**, so it
-isn't backed up anywhere off this disk.
+billing live on a personal machine. It's a git repo that `vault-snapshot` commits every 15
+minutes and pushes to a backup remote (see Snapshots below).
 
 Only used when `WORK_WORKSPACE` is unset. On a work machine the standup and learning
 workflows write to `<workspace>/notes/` instead, and billing doesn't apply at all.
@@ -47,8 +47,8 @@ Those three are the detail; this file is just the map.
 ## Sync
 
 Content syncs over **Self-hosted LiveSync** (`obsidian-livesync`) against a self-hosted
-CouchDB, not over git — see the vault's `SPEC.md` §1. The git repo is for local version
-history only, and it has no remote, so git is not a transport and not a backup.
+CouchDB, not over git — see the vault's `SPEC.md` §1. Git is not a transport between
+devices; it is the history that lets you undo what LiveSync does.
 
 The LiveSync **setup URI** encodes the CouchDB URL and credentials, and LiveSync encrypts
 it with a passphrase of its own. Both live in 1Password, in one item with a `setup-uri` field and a `passphrase` field.
@@ -62,6 +62,29 @@ credential: never paste it into a note, a shared terminal, or a repo.
 
 Regenerate it from Obsidian → Settings → Self-hosted LiveSync → Setup wizard → Copy setup
 URI, which is also where you set the passphrase.
+
+## Snapshots
+
+LiveSync propagates deletions, and a first "fetch from remote" on a new device replaces the
+vault with the server's copy, dropping local-only files. Both have removed notes and invoices
+before (2026-09-25 and 09-27). `bin/vault-snapshot` guards against that:
+
+- A systemd user timer (Linux) or LaunchAgent (macOS) runs it every 15 minutes on personal
+  machines. It commits every change, unsigned, since no one is there to approve a signature.
+- It refuses to commit when more than 5 tracked files have disappeared since the last
+  snapshot, and sends a desktop notification instead. Restore with
+  `git -C ~/Code/obsidian-vault-setup ls-files --deleted -z | xargs -0 git -C ~/Code/obsidian-vault-setup checkout --`.
+  If the deletions were intended, run `VAULT_SNAPSHOT_ALLOW_DELETES=1 vault-snapshot` once.
+- It pushes to `obsidian_vault_backup_remote` (a `chezmoi init` prompt), one branch per
+  machine named for its short hostname. The remote is a bare repo on battlestation's `/data`
+  disk: `/data/backups/obsidian-vault.git` there, and
+  `ssh://battlestation-ubuntu.local/data/backups/obsidian-vault.git` from the Mac. Leave it
+  blank to commit locally only. It is deliberately not on GitHub.
+- The setup script commits the vault before handing LiveSync the setup URI, so a fetch that
+  drops local files can be undone.
+
+Check it: `systemctl --user list-timers vault-snapshot.timer` and
+`journalctl --user -u vault-snapshot` on Linux; `~/Library/Logs/vault-snapshot.log` on macOS.
 
 ## Setting up a new machine
 
