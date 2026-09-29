@@ -27,6 +27,13 @@ Host github-zcore
   IdentityAgent {{ $sock }}
   IdentityFile ~/.ssh/github_zcore.pub
   IdentitiesOnly yes
+{{- if eq .chezmoi.os "darwin" }}
+
+{{/* Forward 1Password to the Linux box so git there can sign commits. 1Password asks for
+     approval on this Mac for each use, which limits what the remote host can do with it. */ -}}
+Host battlestation-ubuntu battlestation-ubuntu.local
+  ForwardAgent {{ $sock }}
+{{- end }}
 
 Host *
   IdentityAgent {{ $sock }}

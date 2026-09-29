@@ -8,6 +8,8 @@
 {{ else -}}
   signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHiLyzXgt7jnveA00YXLH5euotmhiTJPLsxcLMbL1Qk/
 {{ end -}}
+{{ else if and (eq .chezmoi.os "linux") (not (index . "work_platform")) -}}
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHiLyzXgt7jnveA00YXLH5euotmhiTJPLsxcLMbL1Qk/
 {{ end -}}
 
 [includeIf "gitdir:~/Code/zcore/"]
@@ -26,6 +28,14 @@
 {{ if eq .chezmoi.os "darwin" -}}
 [commit]
   gpgsign = true
+{{ end -}}
+
+{{ if and (eq .chezmoi.os "linux") (not (index . "work_platform")) -}}
+# Linux is usually reached over SSH, so signing needs the Mac's 1Password agent
+# forwarded (see README, "Signing commits over SSH"). Sign only where it's required,
+# so commits elsewhere don't fail or prompt when no agent is forwarded.
+[includeIf "gitdir:~/Code/mosher-labs/"]
+  path = ~/.config/git/sign-commits.conf
 {{ end -}}
 
 [push]
@@ -51,6 +61,9 @@
   # public. Create it per machine -- see CLAUDE.md, "1Password Integration".
   allowedSignersFile = {{ .chezmoi.homeDir }}/.config/git/allowed_signers
 {{ end -}}
+{{ else if and (eq .chezmoi.os "linux") (not (index . "work_platform")) -}}
+[gpg]
+  format = ssh
 {{ end -}}
 
 [init]
