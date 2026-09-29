@@ -1,8 +1,8 @@
 ---
 title: Code Review Standards
-description: Nine-category framework for reviewing PRs and diffs at depth, plus posting format
+description: Ten-category framework for reviewing PRs and diffs at depth, plus posting format
 tags: [code-review, pull-requests, quality]
-last_updated: 2026-09-23
+last_updated: 2026-09-29
 ---
 
 # Code Review Standards
@@ -16,7 +16,7 @@ against these categories.
 
 ## Category Framework
 
-Nine categories, in this order. Give each a verdict of one or two sentences.
+Ten categories, in this order. Give each a verdict of one or two sentences.
 Use "N/A" plus a one-clause reason rather than omitting a row that doesn't
 apply — a missing row reads as "forgot to check," not "doesn't apply."
 
@@ -39,14 +39,21 @@ apply — a missing row reads as "forgot to check," not "doesn't apply."
    PR's own risk section describe that accurately? Verify claims like "only
    X is affected" against the actual dependency graph rather than trusting
    the PR body.
-7. **Conventions** — does it match the codebase's existing patterns (naming,
+7. **Observability** — once this ships, will we know whether it's working?
+   New failure modes should produce queryable signals (logs, metrics,
+   traces) with enough context to trace a request, and a failure that
+   matters should raise an owned alert on a sustained condition, not a
+   single spike. Check dashboards and runbooks for new behavior, and that
+   nothing logs secrets, PII/PHI, or identity headers. See
+   `observability.md`. "N/A — no runtime change" is a fine verdict.
+8. **Conventions** — does it match the codebase's existing patterns (naming,
    file layout, comment style, commit format)?
-8. **Testing** — what's covered vs. untested, especially the exact
+9. **Testing** — what's covered vs. untested, especially the exact
    bug-prone paths (error handling, auth boundaries, concurrency, the paths
    a prior review round flagged as untested).
-9. **SDLC** — process: docs-update bots/labels, deploy sequencing, manual
-   steps not yet automated or recorded, whether the PR follows the repo's
-   own PR template.
+10. **SDLC** — process: docs-update bots/labels, deploy sequencing, manual
+    steps not yet automated or recorded, whether the PR follows the repo's
+    own PR template.
 
 ## Posting Format
 
@@ -62,6 +69,7 @@ not a wall of text:
 | Documentation | ... |
 | Conciseness | ... |
 | Risk | ... |
+| Observability | ... |
 | Conventions | ... |
 | Testing | ... |
 | SDLC | ... |
