@@ -106,8 +106,15 @@ if [[ ( "$SSH_AUTH_SOCK" == "$HOME"/.ssh/agent/s.*.sshd.* || "$SSH_AUTH_SOCK" ==
 fi
 if [[ -S "$HOME/.ssh/agent.sock" ]]; then
   export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+{{- if or (not (hasKey . "use_ssh_agent")) .use_ssh_agent }}
 else
   export SSH_AUTH_SOCK=~/.1password/agent.sock
+{{- else }}
+else
+  # use_ssh_agent = false: no one unlocks this machine's 1Password, and a locked agent
+  # hangs, so use on-disk keys and let signing fail fast until an agent is forwarded.
+  unset SSH_AUTH_SOCK
+{{- end }}
 fi
 {{ end }}
 

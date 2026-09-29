@@ -1,0 +1,8 @@
+#!/bin/sh
+# Signs git commits with ssh-keygen through the forwarded agent linked at ~/.ssh/agent.sock
+# (see dot_zshrc.tmpl), so processes started before an SSH reconnect still reach it.
+if [ -S "$HOME/.ssh/agent.sock" ]; then
+  SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+  export SSH_AUTH_SOCK
+fi
+exec ssh-keygen "$@"
