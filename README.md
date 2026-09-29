@@ -212,9 +212,10 @@ agent:
 - On Linux, `.zshrc` links a forwarded socket to `~/.ssh/agent.sock` and points
   `SSH_AUTH_SOCK` at it, so tmux panes keep working after you reconnect. With no forwarded
   agent it falls back to the local 1Password socket.
-- `.gitconfig` signs with the same SSH key as the Mac (`gpg.format = ssh`), and turns on
-  `commit.gpgsign` only under `~/Code/mosher-labs/`, whose branch rules require signatures.
-  Elsewhere, sign one commit with `git commit -S`.
+- `.gitconfig` signs every commit with the same SSH key as the Mac (`gpg.format = ssh`),
+  through `~/bin/git-ssh-sign`, which uses `~/.ssh/agent.sock` whatever `SSH_AUTH_SOCK` a
+  process started with. With no forwarded agent, commits fail to sign; reconnect with
+  forwarding.
 
 Each signature asks for approval in 1Password on the Mac. Check the agent with
 `ssh-add -l`; after reconnecting, a pane started earlier may need `exec zsh`.

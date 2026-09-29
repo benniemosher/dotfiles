@@ -25,17 +25,11 @@
   excludesfile = ~/.gitignore_global
   ignorecase = false
 
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if or (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
+# Always sign. On a Linux box reached over SSH, that needs the Mac's 1Password agent
+# forwarded (see README, "Signing commits over SSH"); without it, commits fail.
 [commit]
   gpgsign = true
-{{ end -}}
-
-{{ if and (eq .chezmoi.os "linux") (not (index . "work_platform")) -}}
-# Linux is usually reached over SSH, so signing needs the Mac's 1Password agent
-# forwarded (see README, "Signing commits over SSH"). Sign only where it's required,
-# so commits elsewhere don't fail or prompt when no agent is forwarded.
-[includeIf "gitdir:~/Code/mosher-labs/"]
-  path = ~/.config/git/sign-commits.conf
 {{ end -}}
 
 [push]
@@ -64,6 +58,8 @@
 {{ else if and (eq .chezmoi.os "linux") (not (index . "work_platform")) -}}
 [gpg]
   format = ssh
+[gpg "ssh"]
+  program = {{ .chezmoi.homeDir }}/bin/git-ssh-sign
 {{ end -}}
 
 [init]
