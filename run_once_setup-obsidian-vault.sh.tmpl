@@ -138,6 +138,16 @@ if ! uri="$(op read "$OP_REF" 2>/dev/null)" || [[ -z "$uri" ]]; then
   exit 0
 fi
 
+# LiveSync's first sync can "fetch from remote", which replaces the vault with what the
+# server has and drops local-only files. When the vault is already a git repo, commit it
+# first so anything dropped can be restored with git.
+if [[ -d "$VAULT/.git" ]]; then
+  git -C "$VAULT" add -A
+  git -C "$VAULT" diff --cached --quiet \
+    || git -C "$VAULT" -c commit.gpgsign=false commit -q -m "snapshot: before LiveSync setup on $(hostname -s)"
+  echo "obsidian-vault: committed the vault before LiveSync setup"
+fi
+
 echo "obsidian-vault: opening the LiveSync setup URI in Obsidian"
 "$opener" "$uri" >/dev/null 2>&1 || true
 unset uri
@@ -163,7 +173,9 @@ fi
 cat <<'EOFNEXT'
 obsidian-vault: LiveSync handed off. In Obsidian:
   1. Obsidian will ask for the setup-URI passphrase before it imports anything.
-  2. Accept the imported settings and let the first replication finish.
+  2. Accept the imported settings and let the first replication finish. If this vault
+     already has notes, prefer merging over "fetch from remote"; a fetch drops local-only
+     files (restore them with git: see the vault-snapshot script).
   3. Once the vault has synced, run its own bin/install-obsidian-plugins.sh for the
      remaining plugins, and pick the Minimal theme under Appearance.
 EOFNEXT

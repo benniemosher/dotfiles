@@ -1,0 +1,9 @@
+# Commits the Obsidian vault and pushes it to the backup remote (bin/vault-snapshot).
+# Started by vault-snapshot.timer.
+[Unit]
+Description=Snapshot the Obsidian vault to git
+
+[Service]
+Type=oneshot
+Environment=VAULT_BACKUP_REMOTE={{ index . "obsidian_vault_backup_remote" | default "" }}
+ExecStart=%h/bin/vault-snapshot
