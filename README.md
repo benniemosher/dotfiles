@@ -211,14 +211,19 @@ agent:
   connect by another name. Until it's applied, `ssh -A` does the same.
 - On Linux, `.zshrc` links a forwarded socket to `~/.ssh/agent.sock` and points
   `SSH_AUTH_SOCK` at it, so tmux panes keep working after you reconnect. With no forwarded
-  agent it falls back to the local 1Password socket.
+  agent it falls back to the local 1Password socket, or with `use_ssh_agent = false` to no
+  agent.
+- Linux `~/.ssh/config` (on-disk key profile) sets `IdentityAgent ~/.ssh/agent.sock`, so every
+  ssh connection uses the Mac's 1Password while you're connected, whatever `SSH_AUTH_SOCK` a
+  process started with, and the on-disk keys otherwise. It never uses the Linux box's own
+  1Password, which hangs while locked.
 - `.gitconfig` signs every commit with the same SSH key as the Mac (`gpg.format = ssh`),
   through `~/bin/git-ssh-sign`, which uses `~/.ssh/agent.sock` whatever `SSH_AUTH_SOCK` a
   process started with. With no forwarded agent, commits fail to sign; reconnect with
   forwarding.
 
-Each signature asks for approval in 1Password on the Mac. Check the agent with
-`ssh-add -l`; after reconnecting, a pane started earlier may need `exec zsh`.
+Each signature and GitHub connection asks for approval in 1Password on the Mac. Check the
+forwarded agent with `SSH_AUTH_SOCK=~/.ssh/agent.sock ssh-add -l`.
 
 ## Post-Installation
 
