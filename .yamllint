@@ -1,0 +1,10 @@
+---
+extends: default
+
+rules:
+  # A pinned Action is a 40-character SHA plus the "# vX.Y.Z" comment that
+  # Renovate reads to update it. That cannot fit in 80 columns, and dropping
+  # the comment would stop Renovate tracking the pin.
+  line-length:
+    ignore:
+      - .github/workflows
