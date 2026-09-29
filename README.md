@@ -200,6 +200,25 @@ Then connect with an RDP client — Microsoft Remote Desktop on macOS — to
 Turn it back off with `grdctl rdp disable`. Note this is RDP, not VNC: GNOME serves RDP, and
 on Wayland attaching `x11vnc` to the running session does not work.
 
+## Signing commits over SSH (Linux)
+
+A Linux box you reach over SSH can't sign with its own 1Password: the agent only answers
+while the app is unlocked on that machine's screen. Instead, forward the Mac's 1Password
+agent:
+
+- macOS `~/.ssh/config` forwards the 1Password socket (`ForwardAgent <path>`) to
+  `battlestation-ubuntu` and `battlestation-ubuntu.local`. Add your host there if you
+  connect by another name. Until it's applied, `ssh -A` does the same.
+- On Linux, `.zshrc` links a forwarded socket to `~/.ssh/agent.sock` and points
+  `SSH_AUTH_SOCK` at it, so tmux panes keep working after you reconnect. With no forwarded
+  agent it falls back to the local 1Password socket.
+- `.gitconfig` signs with the same SSH key as the Mac (`gpg.format = ssh`), and turns on
+  `commit.gpgsign` only under `~/Code/mosher-labs/`, whose branch rules require signatures.
+  Elsewhere, sign one commit with `git commit -S`.
+
+Each signature asks for approval in 1Password on the Mac. Check the agent with
+`ssh-add -l`; after reconnecting, a pane started earlier may need `exec zsh`.
+
 ## Post-Installation
 
 ### Optional: GPG/Keybase Setup

@@ -96,7 +96,19 @@ source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 {{ if and (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
 export SSH_AUTH_SOCK=$HOME/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
 {{ else if eq .chezmoi.os "linux" }}
-export SSH_AUTH_SOCK=~/.1password/agent.sock
+# Over SSH with a forwarded agent (the Mac's 1Password), point a stable symlink at it so
+# tmux panes and long-running tools keep working across reconnects. Otherwise use this
+# machine's own 1Password agent.
+# sshd puts forwarded sockets in ~/.ssh/agent/s.*.sshd.* (OpenSSH 10.1+) or
+# /tmp/ssh-*/agent.* (older).
+if [[ ( "$SSH_AUTH_SOCK" == "$HOME"/.ssh/agent/s.*.sshd.* || "$SSH_AUTH_SOCK" == /tmp/ssh-*/agent.* ) && -S "$SSH_AUTH_SOCK" ]]; then
+  ln -sfn "$SSH_AUTH_SOCK" "$HOME/.ssh/agent.sock"
+fi
+if [[ -S "$HOME/.ssh/agent.sock" ]]; then
+  export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+else
+  export SSH_AUTH_SOCK=~/.1password/agent.sock
+fi
 {{ end }}
 
 {{ if eq .chezmoi.os "darwin" }}
