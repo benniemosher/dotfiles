@@ -14,8 +14,9 @@ set -euo pipefail
 # the deletions were intended, run once with VAULT_SNAPSHOT_ALLOW_DELETES=1.
 #
 # Each machine pushes its own branch (its short hostname) to VAULT_BACKUP_REMOTE, so two
-# devices snapshotting the same synced vault never race on one branch. Blank remote: commit
-# locally only.
+# devices snapshotting the same synced vault never race on one branch. The timer sets the
+# variable from chezmoi's obsidian_vault_backup_remote and the script saves it as the vault's
+# `backup` remote, so a manual run without it pushes there too. No remote: commit locally only.
 #
 # Snapshot commits are unsigned (-c commit.gpgsign=false): they run unattended, and signing
 # here goes through 1Password, which needs a person present.
@@ -39,10 +40,16 @@ notify() {
   fi
 }
 
-[[ -d "$VAULT_DIR/.git" ]] || exit 0
+if [[ ! -d "$VAULT_DIR/.git" ]]; then
+  echo "vault-snapshot: $VAULT_DIR is not a git repo; skipping" >&2
+  exit 0
+fi
 
 # mkdir is atomic on both platforms; flock is not on macOS by default.
-mkdir "$LOCK_DIR" 2>/dev/null || exit 0
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  echo "vault-snapshot: another run holds $LOCK_DIR; skipping (remove it if no run is active)" >&2
+  exit 0
+fi
 trap 'rmdir "$LOCK_DIR"' EXIT
 
 git_v() { git -C "$VAULT_DIR" "$@"; }
@@ -58,11 +65,16 @@ if ! git_v diff --cached --quiet; then
   git_v -c commit.gpgsign=false commit -q -m "snapshot: $HOST $(date '+%Y-%m-%d %H:%M')"
 fi
 
-[[ -n "$REMOTE_URL" ]] || exit 0
-if git_v remote get-url backup >/dev/null 2>&1; then
+if [[ -z "$REMOTE_URL" ]]; then
+  REMOTE_URL=$(git_v remote get-url backup 2>/dev/null || true)
+elif git_v remote get-url backup >/dev/null 2>&1; then
   git_v remote set-url backup "$REMOTE_URL"
 else
   git_v remote add backup "$REMOTE_URL"
+fi
+if [[ -z "$REMOTE_URL" ]]; then
+  echo "vault-snapshot: no backup remote (set obsidian_vault_backup_remote and chezmoi apply); committed locally only" >&2
+  exit 0
 fi
 # BatchMode: an unattended run must fail, not hang, when the SSH agent is locked or the
 # backup host is offline. The next run pushes whatever this one could not.
