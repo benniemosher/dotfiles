@@ -41,20 +41,25 @@ Host *
 {{- /* Personal machine, on-disk keys. Two of them: a GitHub SSH key belongs to exactly one
        account, and there are two accounts. No IdentityAgent at all -- with one set, ssh
        offers agent keys first and you are back to waiting on an approval prompt. */ -}}
+{{/* IdentityAgent is the Mac's 1Password, forwarded and linked at ~/.ssh/agent.sock by
+     .zshrc, so every ssh uses it while you're connected -- including processes started
+     before a reconnect. With nothing forwarded the link dangles and ssh falls back to the
+     on-disk keys. This machine's own 1Password is never used: nobody unlocks it, and a
+     locked agent hangs instead of failing. */ -}}
+{{/* The zCore 1Password key only while the forwarded agent is up; without an agent, ssh
+     would try to read the .pub file as a private key. */ -}}
+Match originalhost github-zcore exec "test -S ~/.ssh/agent.sock"
+  IdentityFile ~/.ssh/github_zcore.pub
+
 Host github-zcore
   HostName github.com
   User git
+  IdentityAgent ~/.ssh/agent.sock
   IdentityFile ~/.ssh/id_ed25519_zcore
   IdentitiesOnly yes
 
-{{/* IdentitiesOnly, so git never asks an agent (a forwarded Mac agent or a locked local
-     1Password) to sign; a locked agent hangs instead of failing. */ -}}
-Host github.com
-  IdentityFile ~/.ssh/id_ed25519
-  IdentitiesOnly yes
-
 Host *
-  AddKeysToAgent yes
+  IdentityAgent ~/.ssh/agent.sock
   IdentityFile ~/.ssh/id_ed25519
 {{- else -}}
 {{- /* Work machine: one on-disk key, no 1Password. */ -}}
