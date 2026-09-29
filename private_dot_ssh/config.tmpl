@@ -47,6 +47,12 @@ Host github-zcore
   IdentityFile ~/.ssh/id_ed25519_zcore
   IdentitiesOnly yes
 
+{{/* IdentitiesOnly, so git never asks an agent (a forwarded Mac agent or a locked local
+     1Password) to sign; a locked agent hangs instead of failing. */ -}}
+Host github.com
+  IdentityFile ~/.ssh/id_ed25519
+  IdentitiesOnly yes
+
 Host *
   AddKeysToAgent yes
   IdentityFile ~/.ssh/id_ed25519
