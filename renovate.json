@@ -62,25 +62,16 @@
       "groupName": "npm dependencies (non-major)"
     },
     {
-      "description": "Pre-commit hooks - major/minor only (skip patches)",
+      "description": "Pre-commit hooks - major, minor, and patch",
       "matchManagers": [
         "pre-commit"
       ],
       "matchUpdateTypes": [
         "major",
-        "minor"
-      ],
-      "groupName": "pre-commit hooks"
-    },
-    {
-      "description": "Pre-commit hooks - ignore patch updates",
-      "matchManagers": [
-        "pre-commit"
-      ],
-      "matchUpdateTypes": [
+        "minor",
         "patch"
       ],
-      "enabled": false
+      "groupName": "pre-commit hooks"
     }
   ]
 }
