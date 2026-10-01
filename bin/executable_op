@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# op — Run the 1Password CLI on the Mac this machine is reached from, so the
+# Mac's 1Password app authorizes it (Touch ID) instead of `op signin` here.
+#
+# SSH agent forwarding already gives this machine the Mac's 1Password SSH keys,
+# but the CLI's link to the 1Password app is a local socket that can't be
+# forwarded. So this runs each `op` command on the Mac over SSH and streams its
+# output back. It's the same command and the same exit code, and nothing is stored here.
+#
+# The Mac is the client address in SSH_CONNECTION, read from tmux when inside
+# tmux (tmux refreshes it on attach), else from this shell. Connections are
+# reused for 10 minutes (ControlPersist) to keep repeated calls fast.
+#
+# Falls back to the local op when not reached over SSH, when the Mac doesn't
+# answer, or when OP_FORWARD=0. OP_FORWARD_HOST overrides the Mac's address.
+#
+# One-time setup on the Mac: turn on Remote Login, and authorize your SSH key:
+#   ssh-add -L | grep personal-mbp-ssh-key >> ~/.ssh/authorized_keys
+
+self="$(readlink -f "${BASH_SOURCE[0]}")"
+real=""
+while IFS= read -r candidate; do
+  if [[ "$(readlink -f "$candidate")" != "$self" ]]; then real="$candidate"; break; fi
+done < <(type -ap op)
+[[ -n "$real" ]] || { echo "op: the 1Password CLI is not installed" >&2; exit 127; }
+
+host="${OP_FORWARD_HOST:-}"
+if [[ -z "$host" ]]; then
+  conn=""
+  if [[ -n "${TMUX:-}" ]]; then
+    conn="$({ tmux show-environment SSH_CONNECTION 2>/dev/null || true; } | sed -n 's/^SSH_CONNECTION=//p')"
+  fi
+  conn="${conn:-${SSH_CONNECTION:-}}"
+  host="${conn%% *}"
+fi
+
+if [[ -n "$host" && "${OP_FORWARD:-1}" != 0 ]]; then
+  ssh_opts=(-o BatchMode=yes -o ConnectTimeout=3
+            -o ControlMaster=auto -o "ControlPath=$HOME/.ssh/op-forward-%C" -o ControlPersist=10m)
+  target="${OP_FORWARD_USER:-$USER}@$host"
+  if ssh "${ssh_opts[@]}" "$target" true 2>/dev/null; then
+    # printf %q quoting is understood by the Mac's zsh.
+    exec ssh "${ssh_opts[@]}" -T "$target" \
+      "export PATH=/opt/homebrew/bin:/usr/local/bin:\$PATH; exec op $(printf '%q ' "$@")"
+  fi
+fi
+exec "$real" "$@"
