@@ -20,8 +20,8 @@ set -euo pipefail
 #   strava activities --date 2026-09-28  # one day (local time)
 #   strava lifttrace-import <activity-id> [--unit km|mi] [--dry-run]
 #
-# lifttrace-import logs in to LiftTrace with the Login item in 1Password whose
-# title contains "lifttrace" (override with LIFTTRACE_ITEM=<item id>), reaches
+# lifttrace-import logs in to LiftTrace with the 1Password Login item saved for a
+# LiftTrace URL (override with LIFTTRACE_ITEM=<item id>), reaches
 # the app through `kubectl port-forward` (skipping Cloudflare Access), and
 # skips an activity already imported on that day.
 #
@@ -104,9 +104,15 @@ cmd_activities() {
 
 lifttrace_item() {
   if [[ -n "${LIFTTRACE_ITEM:-}" ]]; then echo "$LIFTTRACE_ITEM"; return; fi
-  local matches
-  matches="$(op item list --categories Login --format json |
-    jq -r '[.[] | select(.title | test("lifttrace"; "i"))]')"
+  # Prefer a login saved with a LiftTrace URL; fall back to the title, skipping
+  # the lifttrace-strava-sync Worker's own credentials.
+  local logins matches
+  logins="$(op item list --categories Login --format json)"
+  matches="$(jq '[.[] | select(any(.urls[]?; .href | test("lifttrace"; "i")))]' <<<"$logins")"
+  if [[ "$(jq length <<<"$matches")" == 0 ]]; then
+    matches="$(jq '[.[] | select((.title | test("lifttrace"; "i"))
+                                 and (.title | test("strava|webhook|worker"; "i") | not))]' <<<"$logins")"
+  fi
   if [[ "$(jq length <<<"$matches")" != 1 ]]; then
     echo "LiftTrace logins in 1Password:" >&2
     jq -r '.[] | "  \(.id)  \(.title)"' <<<"$matches" >&2
