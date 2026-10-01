@@ -85,30 +85,30 @@ Build it by hand only for a client the script doesn't cover. Either way:
 
    The note is three parts, each split by a hard page break so **Export to PDF** starts each
    on its own page (user's preference, 2026-09-25):
-     - `.invoice-week-page` — the first page, a "Summary by Week" table with columns **Week,
-       Hours, Rate, Amount**. One row per week that has logged time, the Week cell giving the
-       week number over the actual date range worked (`Week 2` / `Sep 8 – Sep 13, 2026` — the
-       days worked, not the calendar Mon–Sun bounds), weeks in date order, ending in the bold
-       `Total` row carrying Total Hours and the **grand total** for the whole invoice. Weeks
-       are Monday-anchored. Any flat line item with no hours behind it (see `EXTRAS` in the
-       script) gets a row here too, with `—` for Hours and Rate, so the grand total is
-       complete. The `**Payment:**` line lives on this page, directly below the Total row, so
-       the reader sees it on page one without turning a page.
-     - `.invoice-summary-page` — a "Summary by Category" table with columns **Category, Hours, Rate,
+     - `.invoice-summary-page` — the first page (user's preference, 2026-10-01), a "Summary by Category" table with columns **Category, Hours, Rate,
        Amount** (in that order — matches the standard invoicing convention of title → hours →
        rate → amount), one row per category, ordered by hours descending, ending in a bold
        `Total` row that gives Total Hours and Total Due **in one line** rather than as a
        separate banner (Rate is blank on the Total row — summing a rate is meaningless). Every
        category used here must come from the canonical list below — see "Rules for AI
        Assistants" before inventing a new one. **Rate lives on the two summary pages, not on
-       the detail pages.**
+       the detail pages.** The `**Payment:**` line lives on this page, directly below the
+       Total row, so the reader sees it on page one without turning a page.
+     - `.invoice-week-page` — the second page, a "Summary by Week" table with columns **Week,
+       Hours, Rate, Amount**. One row per week that has logged time, the Week cell giving the
+       week number over the actual date range worked (`Week 2` / `Sep 8 – Sep 13, 2026` — the
+       days worked, not the calendar Mon–Sun bounds), weeks in date order, ending in the bold
+       `Total` row carrying Total Hours and the **grand total** for the whole invoice. Weeks
+       are Monday-anchored. Any flat line item with no hours behind it (see `EXTRAS` in the
+       script) gets a row here too, with `—` for Hours and Rate, so the grand total is
+       complete.
      - `.invoice-detail-page` — one per week, each starting a new page
        (`page-break-before:always;break-before:page;` on every block after the first) so a
        week never continues onto the page its predecessor ended on (user's preference,
        2026-09-25). Each opens with a week header rule — the week number, its date range, and
        that week's hours and amount — then one day-header bar + table per calendar day in that
        week (mirroring `Hours.md`'s per-day sections), and closes with a "Week N Total" bar
-       that must match the week's row on page one. Flat `EXTRAS` line items get their own
+       that must match the week's row on the week summary page. Flat `EXTRAS` line items get their own
        trailing block on the same pattern.
        Each day's table has columns **Category, Description, Hours, Amount** — no Rate column
        (that's on the Summary page only, since it's a constant per invoice and repeating it on
@@ -117,7 +117,11 @@ Build it by hand only for a client the script doesn't cover. Either way:
        one outer `<div style="page-break-inside:avoid;break-inside:avoid;">` — without it,
        Obsidian's PDF pagination can strand a day's header bar at the bottom of a page and push
        its table onto the next one. Wrap the pair, not just the table, so they always move
-       together.
+       together. The week's last day shares that wrapper with the "Week N Total" bar, so the
+       total never lands alone on a page. A day with more than 8 rows is the exception: it may
+       split across pages (its bar gets `break-after:avoid` and the column header repeats),
+       since keeping it whole leaves most of the previous page blank. Detail tables use
+       `table-layout:fixed` with shared column widths so every day's columns line up.
 
    **Styling is inline, not just the CSS snippet.** `.obsidian/snippets/invoice.css` exists and
    is enabled, but Obsidian's "Export to PDF" has been observed dropping it entirely (symptom:
@@ -126,11 +130,14 @@ Build it by hand only for a client the script doesn't cover. Either way:
    header colors, zebra-striping, and the Total row as `style="..."` attributes directly on
    each element for this reason — copy that pattern rather than reintroducing bare classed
    `<div>`/`<span>` layouts that only look right if the snippet happens to load. Color scheme
-   is a single royal purple, `#4c1d95` (user's preference, 2026-09-09: "purple and black is my
-   Harley color" — a follow-up dropped the black variant, then a second follow-up replaced the
-   first, brighter purple `#6d28d9` for something deeper/less neon — "royal purple like Jesus
-   would wear"): header banner, table header accents, day-header bars, and the summary Total
-   row all use it — don't drift back to blue, black, or the brighter violet.
+   is a single dark royal purple, `#3b1a6e` (user's preference, 2026-09-09: "purple and black is
+   my Harley color" — a follow-up dropped the black variant, a second replaced the first,
+   brighter `#6d28d9` with `#4c1d95` — "royal purple like Jesus would wear" — and on 2026-10-01
+   that was still "a little bright to the eye", so it went darker and more metallic). The
+   header banner and day-header bars add a diagonal sheen,
+   `linear-gradient(135deg,#2c1254 0%,#4b2a85 50%,#2c1254 100%)`, over the solid color; table
+   header accents and the summary Total rows use the solid color. Don't drift back to blue,
+   black, or the brighter violets.
    The `**Period:**` line in `invoice-dates` is wrapped in an inline `<span style="white-space:
    nowrap;">` on the same line as itself, staying in the same paragraph as the Date/Due/Terms
    lines above it — this keeps the date range from wrapping without opening a `<div>` (a block
