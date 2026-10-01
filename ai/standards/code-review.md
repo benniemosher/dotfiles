@@ -57,34 +57,40 @@ apply — a missing row reads as "forgot to check," not "doesn't apply."
 
 ## Posting Format
 
-Post as a single markdown table, verdict-only per row — a sentence or two,
-not a wall of text:
+The ten categories are the reviewer's checklist. Don't post the table: the author
+reads findings, not a scorecard (team feedback, 2026-10-01, modeled on a teammate's
+reviews the lead singled out).
 
-```
-| Category | Verdict |
-|---|---|
-| Definition of Done | ... |
-| Correctness | ... |
-| Efficiency | ... |
-| Documentation | ... |
-| Conciseness | ... |
-| Risk | ... |
-| Observability | ... |
-| Conventions | ... |
-| Testing | ... |
-| SDLC | ... |
-```
+**Review body:** one or two sentences, no praise or preamble. The bottom-line call
+(mergeable now, needs a split, or blocked) and the single biggest risk, if any.
 
-Follow the table with one or two sentences giving the bottom-line call: is
-this mergeable now, does it need to be split, what's the single biggest
-risk if any.
+**Inline comments**, one issue each:
+
+- **Start with a severity label:** `Must fix before merge:`, `Non-blocking:`,
+  `Nit:`, or a qualified form (`Security nit:`, `A11y, non-blocking:`,
+  `Test, non-blocking:`). The author should be able to triage from the first words.
+- **Name the rule** when it comes from the repo's conventions, e.g.
+  `Nit (typed assertions rule):`.
+- **Give the concrete failure:** the input or state, and what goes wrong.
+- **Say how you verified it** in one clause: "checked at this head", "ran X", or
+  "per `lib/file.js:63`".
+- **Use a ` ```suggestion ` block** whenever the fix is a concrete edit, so it's one
+  click to apply.
+- **Outside the diff:** anchor the comment on the nearest changed line and say so.
+
+**Before writing**, read the existing threads (Codex, Copilot, humans). Extend a
+thread ("follows up Codex thread (a)") rather than repeating it. For docs PRs, check
+the change against the other open docs PRs for contradictions.
 
 ### Non-blocking debt
 
 Debt found along the way — duplication, a follow-up worth doing but not in
-this PR — goes in its own paragraph below the table, explicitly marked "not
-a required change" or "non-blocking." Don't fold it into a category verdict
-where it would read as blocking the PR.
+this PR — goes in an inline comment labeled `Non-blocking:`, or in the review
+body marked "not a required change". Don't word it so it reads as blocking.
+
+If a non-blocking item won't be done in this PR, open a GitHub issue for it, add the
+issue to the program tracker, and link the issue in the comment (team lead's ask,
+2026-09-30). A non-blocking comment should end up either fixed in the PR or tracked.
 
 ## Before Posting to GitHub
 
@@ -99,7 +105,7 @@ where it would read as blocking the PR.
 
 ## Origin
 
-This table format comes from a client infrastructure project where a large PR
+The category checklist comes from a client infrastructure project where a large PR
 was reviewed at this depth by a teammate alongside two AI reviewers — reuse it
 for any PR review at that depth, not just that project. A repo may also have
 its own PR *description* template (Summary, High-level description of approach
