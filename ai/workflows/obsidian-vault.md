@@ -19,7 +19,8 @@ workflows write to `<workspace>/notes/` instead, and billing doesn't apply at al
 | Path | What's in it |
 |------|--------------|
 | `Daily/YYYY-MM-DD.md` | Daily notes, including the `## Standup` section |
-| `02-Areas/Work-Ongoing/<client>/Hours.md` | Billable time, one dated section per day |
+| `02-Areas/Work-Ongoing/<client>/Hours.md` | Unbilled time, one dated section per day |
+| `02-Areas/Work-Ongoing/<client>/Hours/YYYY-MM.md` | Closed months, archived by `--close` |
 | `02-Areas/Work-Ongoing/<client>/Invoices/` | Generated invoice notes, one per invoice |
 | `03-Resources/Learnings/YYYY-MM-DD.md` | Captured reusable knowledge |
 | `03-Resources/Templates/` | Note templates, including the invoice layout |
@@ -30,8 +31,9 @@ workflows write to `<workspace>/notes/` instead, and billing doesn't apply at al
 
 ## Scripts
 
-- `bin/generate-invoice.py` — builds an invoice note from a client's `Hours.md`. Never writes
-  `Hours.md`. See `time-tracking.md`.
+- `bin/generate-invoice.py` — builds an invoice note from a client's `Hours.md`. Generating
+  never writes `Hours.md`; `--close YYYY-MM`, run once the invoice is sent, marks that month
+  billed and moves it to `Hours/YYYY-MM.md`. See `time-tracking.md`.
 - `bin/install-obsidian-plugins.sh` — installs and enables the community plugins listed in
   `obsidian-plugins.yaml`. Plugin code and settings are deliberately untracked, so this
   script is what reproduces them on a new machine.
