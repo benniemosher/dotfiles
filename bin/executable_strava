@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# strava — Read Strava activities and import them into LiftTrace as cardio
+#
+# Credentials live in 1Password, never on disk. Sign in first:
+#   eval $(op signin)
+#
+# One-time setup:
+#   1. In 1Password, create an item titled "Strava API" with fields client_id
+#      and client_secret, copied from strava.com/settings/api (the
+#      lifttrace-strava-sync app). Strava always allows a localhost callback,
+#      so the app's callback domain doesn't need changing.
+#   2. strava auth-url            # open the printed URL and approve
+#   3. strava auth '<url>'        # paste the http://localhost/... URL Strava
+#                                 # redirected to; saves refresh_token
+#
+# Usage:
+#   strava activities                    # today's activities, as JSON
+#   strava activities --date 2026-09-28  # one day (local time)
+#   strava lifttrace-import <activity-id> [--unit km|mi] [--dry-run]
+#
+# lifttrace-import logs in to LiftTrace with the Login item in 1Password whose
+# title contains "lifttrace" (override with LIFTTRACE_ITEM=<item id>), reaches
+# the app through `kubectl port-forward` (skipping Cloudflare Access), and
+# skips an activity already imported on that day.
+#
+# Requires: op, curl, jq; kubectl with ~/k3s.yaml for lifttrace-import.
+
+ITEM="${STRAVA_ITEM:-Strava API}"
+REDIRECT_URI="http://localhost/exchange"
+API="https://www.strava.com/api/v3"
+
+die() { echo "strava: $*" >&2; exit 1; }
+
+for cmd in op curl jq; do
+  command -v "$cmd" >/dev/null || die "$cmd is not installed"
+done
+
+field() { op item get "$ITEM" --fields "label=$1" --reveal 2>/dev/null; }
+
+save_refresh_token() {
+  op item edit "$ITEM" "refresh_token[concealed]=$1" >/dev/null
+}
+
+# Prints a fresh access token. Strava may rotate the refresh token on every
+# refresh, so a changed one is written back to 1Password.
+access_token() {
+  local refresh resp new_refresh
+  refresh="$(field refresh_token)" || true
+  [[ -n "$refresh" ]] || die "no refresh_token in \"$ITEM\"; run: strava auth-url"
+  resp="$(curl -fsS -X POST https://www.strava.com/oauth/token \
+    -d client_id="$(field client_id)" \
+    -d client_secret="$(field client_secret)" \
+    -d grant_type=refresh_token \
+    -d refresh_token="$refresh")" || die "token refresh failed"
+  new_refresh="$(jq -r .refresh_token <<<"$resp")"
+  [[ "$new_refresh" != "$refresh" ]] && save_refresh_token "$new_refresh"
+  jq -r .access_token <<<"$resp"
+}
+
+cmd_auth_url() {
+  local id
+  id="$(field client_id)" || die "no client_id in \"$ITEM\"; see the setup steps in this script"
+  echo "https://www.strava.com/oauth/authorize?client_id=${id}&response_type=code&redirect_uri=${REDIRECT_URI}&approval_prompt=force&scope=read,activity:read_all"
+}
+
+cmd_auth() {
+  local input="${1:-}" code resp scope
+  [[ -n "$input" ]] || die "usage: strava auth '<redirect URL or code>'"
+  code="$(sed -nE 's/.*[?&]code=([^&]+).*/\1/p' <<<"$input")"
+  [[ -n "$code" ]] || code="$input"
+  resp="$(curl -fsS -X POST https://www.strava.com/oauth/token \
+    -d client_id="$(field client_id)" \
+    -d client_secret="$(field client_secret)" \
+    -d code="$code" \
+    -d grant_type=authorization_code)" || die "code exchange failed (codes are single-use and expire quickly)"
+  scope="$(sed -nE 's/.*[?&]scope=([^&]+).*/\1/p' <<<"$input")"
+  if [[ -n "$scope" && "$scope" != *activity:read_all* ]]; then
+    die "Strava granted only '$scope'; approve again and leave 'View data about your private activities' checked"
+  fi
+  save_refresh_token "$(jq -r .refresh_token <<<"$resp")"
+  echo "Saved refresh_token to 1Password item \"$ITEM\" for $(jq -r '.athlete.firstname + " " + .athlete.lastname' <<<"$resp")"
+}
+
+cmd_activities() {
+  local day after before
+  day="$(date +%F)"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --date) day="$2"; shift 2 ;;
+      *) die "unknown argument: $1" ;;
+    esac
+  done
+  after="$(date -d "$day 00:00" +%s)" || die "bad date: $day"
+  before="$(date -d "$day 00:00 +1 day" +%s)"
+  curl -fsS -H "Authorization: Bearer $(access_token)" \
+    "$API/athlete/activities?after=${after}&before=${before}&per_page=50" |
+    jq '[.[] | {id, name, sport_type, start_date_local,
+                distance_km: ((.distance / 10) | round / 100),
+                moving_min: ((.moving_time / 60) | round),
+                average_heartrate}]'
+}
+
+lifttrace_item() {
+  if [[ -n "${LIFTTRACE_ITEM:-}" ]]; then echo "$LIFTTRACE_ITEM"; return; fi
+  local matches
+  matches="$(op item list --categories Login --format json |
+    jq -r '[.[] | select(.title | test("lifttrace"; "i"))]')"
+  if [[ "$(jq length <<<"$matches")" != 1 ]]; then
+    echo "LiftTrace logins in 1Password:" >&2
+    jq -r '.[] | "  \(.id)  \(.title)"' <<<"$matches" >&2
+    die "expected exactly one; set LIFTTRACE_ITEM=<id>"
+  fi
+  jq -r '.[0].id' <<<"$matches"
+}
+
+cmd_lifttrace_import() {
+  local id="" unit="mi" dry_run=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --unit) unit="$2"; shift 2 ;;
+      --dry-run) dry_run=1; shift ;;
+      -*) die "unknown argument: $1" ;;
+      *) id="$1"; shift ;;
+    esac
+  done
+  [[ -n "$id" ]] || die "usage: strava lifttrace-import <activity-id> [--unit km|mi] [--dry-run]"
+  [[ "$unit" == km || "$unit" == mi ]] || die "--unit must be km or mi"
+
+  local act body
+  act="$(curl -fsS -H "Authorization: Bearer $(access_token)" "$API/activities/$id")" ||
+    die "could not fetch activity $id"
+  body="$(jq --arg unit "$unit" --arg id "$id" '
+    def activity: {Run: "Running", TrailRun: "Running", VirtualRun: "Running",
+                   Ride: "Cycling", VirtualRide: "Cycling", Walk: "Walking",
+                   Hike: "Hiking", Swim: "Swimming", Rowing: "Rowing"}[.sport_type] // .sport_type;
+    {date: .start_date_local[0:10],
+     activity: activity,
+     duration_min: ([((.moving_time / 60) | round), 1] | max),
+     distance: (if $unit == "mi" then .distance / 1609.344 else .distance / 1000 end
+                | . * 100 | round / 100),
+     distance_unit: $unit,
+     avg_hr: (.average_heartrate | if . then round else null end),
+     notes: "\(.name). Imported from Strava: https://www.strava.com/activities/\($id)"}' <<<"$act")"
+
+  if (( dry_run )); then
+    jq . <<<"$body"
+    return
+  fi
+
+  command -v kubectl >/dev/null || die "kubectl is not installed"
+  export KUBECONFIG="${KUBECONFIG:-$HOME/k3s.yaml}"
+  local port=13002 pf_pid
+  kubectl -n lifttrace port-forward deploy/lifttrace "$port:3002" >/dev/null 2>&1 &
+  pf_pid=$!
+  trap 'kill "$pf_pid" 2>/dev/null || true' RETURN
+  for _ in $(seq 1 20); do
+    curl -fsS -o /dev/null "http://127.0.0.1:$port/" 2>/dev/null && break
+    sleep 0.5
+  done
+
+  local item creds token date existing
+  item="$(lifttrace_item)"
+  creds="$(op item get "$item" --fields label=username,label=password --reveal --format json |
+    jq '{username: (.[] | select(.label == "username") | .value),
+         password: (.[] | select(.label == "password") | .value)}')"
+  token="$(curl -fsS -H 'Content-Type: application/json' -d "$creds" \
+    "http://127.0.0.1:$port/api/auth/login" | jq -r .token)" || die "LiftTrace login failed"
+
+  date="$(jq -r .date <<<"$body")"
+  existing="$(curl -fsS -H "Authorization: Bearer $token" "http://127.0.0.1:$port/api/cardio/$date")"
+  if jq -e --arg id "$id" 'any(.[]; (.notes // "") | contains("strava.com/activities/" + $id))' <<<"$existing" >/dev/null; then
+    echo "Already in LiftTrace on $date; skipped."
+    return
+  fi
+
+  curl -fsS -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
+    -d "$body" "http://127.0.0.1:$port/api/cardio" |
+    jq '{id, date, activity, duration_min, distance, distance_unit, avg_hr}'
+}
+
+case "${1:-}" in
+  auth-url) shift; cmd_auth_url "$@" ;;
+  auth) shift; cmd_auth "$@" ;;
+  activities) shift; cmd_activities "$@" ;;
+  lifttrace-import) shift; cmd_lifttrace_import "$@" ;;
+  *) sed -n '4,30p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+esac
