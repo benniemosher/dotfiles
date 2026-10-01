@@ -2,7 +2,7 @@
 title: Time Tracking & Invoicing Workflow
 description: System for logging billable hours and generating client invoices
 tags: [workflow, productivity, billing]
-last_updated: 2026-09-27
+last_updated: 2026-10-01
 ---
 
 # Time Tracking & Invoicing Workflow
@@ -56,8 +56,7 @@ Right after the H1 header, the file carries a `dataviewjs` block that computes a
 running `hours` (so a manual edit or a mobile QuickAdd capture doesn't go stale), and it's the
 first thing visible on opening the note. The script keeps that block pinned there — right under
 the header, above every day section — whenever it appends a row; don't reorder it by hand, and
-if writing to `Hours.md` outside the script (e.g. marking rows `Invoiced: Yes` once an invoice
-has been sent, below), insert changes into the correct day's table, always *below* the
+if writing to `Hours.md` outside the script (e.g. fixing a row by hand), insert changes into the correct day's table, always *below* the
 ```` ```dataviewjs ```` block, never above it.
 
 ## Generating an Invoice
@@ -67,7 +66,8 @@ reads `Hours.md`,
 assigns each row a category from its own `RULES` table, and writes the note. Run
 `bin/generate-invoice.py --dry-run` to see the rollup without writing. It refuses to write a
 partial invoice: any row it can't categorize is listed so you add a `RULES` entry and re-run,
-which is the maintenance point as new kinds of work get logged. It never writes `Hours.md`.
+which is the maintenance point as new kinds of work get logged. Generating never writes
+`Hours.md`; closing a month (step 6) is a separate command.
 
 Build it by hand only for a client the script doesn't cover. Either way:
 
@@ -135,49 +135,48 @@ Build it by hand only for a client the script doesn't cover. Either way:
    nowrap;">` on the same line as itself, staying in the same paragraph as the Date/Due/Terms
    lines above it — this keeps the date range from wrapping without opening a `<div>` (a block
    element), which would start a new paragraph and add a visible blank-line gap before it.
-6. **Only once the invoice has actually been sent**, update those same rows in `Hours.md` to
-   `Invoiced: Yes` so they aren't billed twice. Never do this as part of generating a draft
-   (user's correction, 2026-09-25): a period stays open while there are still hours to log, and
-   flipping the flags early hides unbilled work from the `dataviewjs` banner and from the next
-   invoice. Regenerating a draft is cheap; recovering wrongly-flipped flags is not. Insert
-   changes *above* the ```` ```dataviewjs ```` fence at the end of the file, never below it.
+6. **Only once the invoice has actually been sent**, close the month:
+   `bin/generate-invoice.py --close YYYY-MM` (add `--dry-run` to preview). It marks that
+   month's rows `Invoiced: Yes` and moves its day sections out of `Hours.md` into
+   `<client>/Hours/YYYY-MM.md` (year first, so archives sort in order). Days from the next
+   month already logged stay in `Hours.md`, so it holds only unbilled time and the
+   `dataviewjs` banner stays accurate. It refuses to overwrite an existing archive, and the
+   generator refuses to build an invoice for a month with no unbilled rows, so a sent invoice
+   can't be regenerated over. Never close as part of generating a draft (user's correction,
+   2026-09-25): a period stays open while there are still hours to log, and closing early hides
+   unbilled work from the banner and from the next invoice. Regenerating a draft is cheap;
+   un-closing a month is a manual merge. A row backdated into a closed month lands in
+   `Hours.md` as unbilled and isn't picked up by the next month's invoice — bill it by hand.
+   For a client the script doesn't cover, do the same by hand.
 7. Tell the user to open the new note in Obsidian and use **Export to PDF** (Command
    Palette → "Export to PDF") to produce the sendable file — no plugin needed, it's a core
    Obsidian command.
 
 ## Summary Categories
 
-Reuse these across invoices so the rollup stays comparable period to period — don't reinvent a
-category with slightly different wording each time:
+Five categories, reused on every invoice so the rollup stays comparable period to period (user's
+preference, 2026-09-30, replacing an earlier list of ~10 buckets plus per-ticket ones). The PR
+or ticket detail belongs in each row's description, not in the category:
 
 - **Meetings** — standups, syncs, 1:1s, team/project meetings.
 - **Code Review** — reviewing, approving, or merging *someone else's* PR; also covers
   reviewing an infra/config PR (e.g. Terraform) even when the subject matter isn't code per se.
-- **Admin** — paperwork, Slack triage, general overhead, and travel/appointments (travel time
-  is folded in here rather than given its own bucket, per user preference 2026-09-09).
-- **Onboarding / Setup** — one-off account/environment/machine setup; mostly a new-engagement
-  category, won't recur on every invoice.
-- **Tooling / CI Setup** — pre-commit config, CI/CD pipeline work, dev-tooling setup — distinct
-  from feature/infra development.
-- **Observability / Grafana** — monitoring and alerting design: alert catalogs, dashboard and
-  Grafana research, tracker/gap analysis against the monitoring plan.
-- **User Documentation** — end-user docs work that isn't one ticket: the docs PDF build,
-  styling, cover/ToC, hosting, and rows spanning several doc issues at once. A doc ticket big
-  enough to stand alone still gets its own `PR#NN` line instead.
-- **Software / Subscriptions** — a pass-through tool or subscription cost billed at a flat
-  amount with no hours behind it. Hours and Rate render as `—`; it belongs in the script's
-  `EXTRAS`, not in `Hours.md`.
-- **`PR#NN` / `Issue#NN` (ad hoc)** — when a meaningful chunk of time centers on building out
-  one specific ticket (not reviewing it — building it), break it out under its own
-  ticket-numbered category instead of a generic bucket, e.g. `PR#95 (App Service Deploy)`.
-- Client- or project-specific buckets (e.g. **Azure E2E Testing**) are fine to add when a
-  cluster of work is real and recurring — add it here once agreed so later invoices reuse the
-  same label instead of drifting (e.g. "Azure/Dev" vs "Azure Testing" vs "E2E work").
+- **Engineering** — building things: feature and infrastructure work on a PR or ticket you
+  own, testing, CI/CD and dev tooling, monitoring and alerting design, and documentation. A PR
+  you take over and finish counts here, not under Code Review.
+- **Admin** — paperwork, Slack triage, general overhead, account/machine setup, and
+  travel/appointments (travel time is folded in here, per user preference 2026-09-09).
+- **Software** — a pass-through tool or subscription cost billed at a flat amount with no hours
+  behind it. Hours and Rate render as `—`; it belongs in the script's `EXTRAS`, not in
+  `Hours.md`.
+
+Don't add a sixth without asking. If one ever earns its place (Documentation is the likeliest
+split from Engineering), add it here so later invoices reuse the same label.
 
 ## Rules for AI Assistants
 
-- Never mark a row `Invoiced: Yes` without the user having actually requested (or approved)
-  the invoice generation — this changes billing state.
+- Never run `--close` (or mark a row `Invoiced: Yes` by hand) until the user confirms the
+  invoice was sent — this changes billing state.
 - Keep invoice notes idempotent-safe: check `Invoices/` for an existing draft covering the
   same period before creating a duplicate.
 - If `rate` isn't set for a client, still generate the invoice with hours only and ask for a
@@ -185,4 +184,4 @@ category with slightly different wording each time:
 - When a line item's category isn't obviously covered by the list above — it's genuinely
   ambiguous, or two activities are jammed into one logged row (e.g. "reviewed the Terraform PR
   and prepped the pre-commit PR") — ask the user which bucket it belongs in rather than
-  guessing silently. Add the resolved category to the list above if it'll recur.
+  guessing silently.
