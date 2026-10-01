@@ -79,6 +79,7 @@ Build it by hand only for a client the script doesn't cover. Either way:
    says otherwise for that invoice) — e.g. date `2026-09-01` + Net 15 → `2026-09-16`.
 5. Write a new note at `02-Areas/Work-Ongoing/<client>/Invoices/<invoice_number>.md`, following the shape
    in `03-Resources/Templates/invoice.md`. Sender block is fixed: Bennie Mosher /
+   {{ if index . "invoice_address" }}{{ .invoice_address }}{{ else }}<set invoice_address in ~/.config/chezmoi/chezmoi.toml>{{ end }} /
    {{ .git_email }} / {{ if index . "invoice_phone" }}{{ .invoice_phone }}{{ else }}<set invoice_phone in ~/.config/chezmoi/chezmoi.toml>{{ end }}.
    Payment line reads "Direct deposit (arranged separately)" — never print bank/account
    details in the note.

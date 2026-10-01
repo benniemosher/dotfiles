@@ -50,10 +50,12 @@ existing machine is quiet and keeps the answers already given.
        the 1Password answer blank on a machine that does not sync the vault -- the bootstrap
        script then skips itself. */ -}}
 {{- $phone := "" -}}
+{{- $address := "" -}}
 {{- $lsItem := "" -}}
 {{- $vaultRemote := "" -}}
 {{- if not $work -}}
 {{-   $phone = promptStringOnce . "invoice_phone" "Phone number for invoices" -}}
+{{-   $address = promptStringOnce . "invoice_address" "Mailing address for invoices, one line" -}}
 {{-   $lsItem = promptStringOnce . "obsidian_livesync_op_item" "1Password item for Obsidian LiveSync, as op://<vault>/<item id> (blank to skip)" -}}
 {{-   $vaultRemote = promptStringOnce . "obsidian_vault_backup_remote" "Git remote for vault snapshots, e.g. /data/backups/obsidian-vault.git or ssh://host/path (blank: commit locally only)" -}}
 {{- end -}}
@@ -95,6 +97,9 @@ use_ssh_agent = false
 {{ end -}}
 {{ if $phone -}}
 invoice_phone = {{ $phone | quote }}
+{{ end -}}
+{{ if $address -}}
+invoice_address = {{ $address | quote }}
 {{ end -}}
 {{ if $kiro -}}
 use_kiro = true
