@@ -59,3 +59,8 @@ Library/
 {{- if index . "work_platform" }}
 Library/LaunchAgents/com.local.vault-snapshot.plist
 {{- end }}
+
+# The op wrapper forwards the 1Password CLI to the Mac; on the Mac it would call itself.
+{{ if eq .chezmoi.os "darwin" }}
+bin/op
+{{ end }}

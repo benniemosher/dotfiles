@@ -3,8 +3,9 @@ set -euo pipefail
 
 # strava — Read Strava activities and import them into LiftTrace as cardio
 #
-# Credentials live in 1Password, never on disk. Sign in first:
-#   eval $(op signin)
+# Credentials live in 1Password, never on disk. Over SSH from the Mac, the op
+# wrapper in this repo runs 1Password on the Mac (Touch ID); otherwise sign in
+# first with: eval $(op signin)
 #
 # One-time setup:
 #   1. In 1Password, create an item titled "Strava API" with fields client_id
