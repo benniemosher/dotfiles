@@ -148,13 +148,20 @@ Build it by hand only for a client the script doesn't cover. Either way:
    month's rows `Invoiced: Yes` and moves its day sections out of `Hours.md` into
    `<client>/Hours/YYYY-MM.md` (year first, so archives sort in order). Days from the next
    month already logged stay in `Hours.md`, so it holds only unbilled time and the
-   `dataviewjs` banner stays accurate. It refuses to overwrite an existing archive, and the
-   generator refuses to build an invoice for a month with no unbilled rows, so a sent invoice
-   can't be regenerated over. Never close as part of generating a draft (user's correction,
+   `dataviewjs` banner stays accurate. It refuses to overwrite an existing archive, and a
+   plain generate refuses a month with no unbilled rows, so a sent invoice can't be
+   regenerated over by accident. Never close as part of generating a draft (user's correction,
    2026-09-25): a period stays open while there are still hours to log, and closing early hides
-   unbilled work from the banner and from the next invoice. Regenerating a draft is cheap;
-   un-closing a month is a manual merge. A row backdated into a closed month lands in
-   `Hours.md` as unbilled and isn't picked up by the next month's invoice — bill it by hand.
+   unbilled work from the banner and from the next invoice.
+
+   Closing keeps everything needed to revise a sent invoice (user's requirement, 2026-10-01 —
+   a client may ask for changes). To revise: edit the rows in `Hours/YYYY-MM.md` (or the
+   script's `RULES`), then run `bin/generate-invoice.py --reissue YYYY-MM`. It reads the
+   archive instead of `Hours.md`, bills its rows even though they're marked `Yes`, and rewrites
+   the same invoice number and date (taken from the existing full-month invoice note; pass
+   `--date` if there's more than one). Git history keeps the version that was sent. A row
+   backdated into a closed month lands in `Hours.md` as unbilled; move it into the archive and
+   reissue, or bill it next month by hand.
    For a client the script doesn't cover, do the same by hand.
 7. Tell the user to open the new note in Obsidian and use **Export to PDF** (Command
    Palette → "Export to PDF") to produce the sendable file — no plugin needed, it's a core
