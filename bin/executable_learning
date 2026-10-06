@@ -20,6 +20,14 @@ set -euo pipefail
 
 VAULT_DIR="$HOME/Code/obsidian-vault-setup"
 
+# In-place sed that works with both BSD (macOS) and GNU (Linux) sed. BSD needs
+# `-i ''`, while GNU reads that '' as a filename. Both accept an attached
+# backup suffix, so write one and delete it.
+sed_inplace() {
+  local expr="$1" file="$2"
+  sed -i.bak "$expr" "$file" && rm -f "$file.bak"
+}
+
 # --- Detect workspace ---
 detect_workspace() {
   local cwd="$PWD"
@@ -68,8 +76,8 @@ EOF
     CONTENT="$*"
 
     if ! grep -q "$TAG" "$LEARNING_FILE" 2>/dev/null; then
-      sed -i '' "s/^tags: \[/tags: [$TAG, /" "$LEARNING_FILE"
-      sed -i '' 's/tags: \[, /tags: [/' "$LEARNING_FILE"
+      sed_inplace "s/^tags: \[/tags: [$TAG, /" "$LEARNING_FILE"
+      sed_inplace 's/tags: \[, /tags: [/' "$LEARNING_FILE"
     fi
 
     cat >> "$LEARNING_FILE" <<EOF
@@ -121,9 +129,9 @@ if [[ $# -ge 2 ]]; then
 
   # Add tag to frontmatter if not already there
   if ! grep -q "$TAG" "$LEARNING_FILE" 2>/dev/null; then
-    sed -i '' "s/^tags: \[/tags: [$TAG, /" "$LEARNING_FILE"
+    sed_inplace "s/^tags: \[/tags: [$TAG, /" "$LEARNING_FILE"
     # Clean up empty leading comma if tags was empty
-    sed -i '' 's/tags: \[, /tags: [/' "$LEARNING_FILE"
+    sed_inplace 's/tags: \[, /tags: [/' "$LEARNING_FILE"
   fi
 
   # Append the learning
