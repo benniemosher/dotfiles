@@ -39,6 +39,10 @@ yarn = "latest"
 terraform-ls = "latest"
 stern = "latest"
 kubeseal = "latest"
+{{/* PowerShell for Microsoft Graph (Connect-MgGraph, read access to the zCore SharePoint
+     program tracker) and VA's scripts/va/*.ps1. mise installs it from PowerShell's GitHub
+     releases on macOS and Linux, with no sudo and no Microsoft package repo. */}}
+powershell = "latest"
 {{ if not (index . "work_platform") -}}
 argocd = "latest"
 cloudflared = "latest"
