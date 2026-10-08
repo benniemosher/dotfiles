@@ -43,6 +43,9 @@ packages:
       work:
         - "amethyst"
         - "docker-desktop"
+        # Every machine, work included: workspace-init sets each workspace's
+        # notes/ up as an Obsidian vault.
+        - "obsidian"
         - "sequel-ace"
         - "sourcetree"
         - "visual-studio-code@insiders"
