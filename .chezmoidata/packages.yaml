@@ -122,6 +122,10 @@ packages:
         # Unquoted in the install script, so the flag reaches snap
         # as its own argument.
         - "kubectl --classic"
+        # Official publisher (obsidianmd); classic confinement is
+        # required. Verified on Ubuntu 26.04. In work, matching the darwin
+        # cask: workspace-init sets each workspace's notes/ up as a vault.
+        - "obsidian --classic"
         - "yq"
       personal:
         # 1Password is NOT here: the snap and flatpak builds are sandboxed and
@@ -130,7 +134,4 @@ packages:
         # run_onchange_linux-install-1password.sh installs.
         - "brave"
         - "keybase"
-        # Official publisher (obsidianmd); classic confinement is
-        # required. Verified on Ubuntu 26.04.
-        - "obsidian --classic"
         - "slack"
