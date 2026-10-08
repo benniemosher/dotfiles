@@ -11,7 +11,7 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io/), featuring [Starsh
 - DevOps: `awscli`, `argocd`, `kubernetes-cli`, `kubectx`, `kustomize`, `kubeseal`, `stern`, `docker-desktop`
 - Infrastructure: `checkov`, `tfsort`, `terraform` (via mise)
 - Tools: `gh`, `chezmoi`, `mise`, `pre-commit`, `gnupg`, `1password-cli`
-- Apps: `1password`, `brave-browser`, `slack`, `notion`, `amethyst`, `grammarly-desktop`, `keybase`
+- Apps: `1password`, `brave-browser`, `slack`, `notion`, `amethyst`, `grammarly-desktop`, `keybase`, `obsidian`
 
 **Linux (apt/snap):**
 - Terminal: `starship`, `neovim`, `fzf`, `zsh` with autosuggestions
