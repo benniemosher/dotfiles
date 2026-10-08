@@ -34,7 +34,8 @@ dotfiles/
 │   │   ├── kubernetes.md      # Right-sizing, probes, deployments
 │   │   ├── git.md             # Branch naming, commits, safety
 │   │   ├── ci-cd.md           # Pipeline patterns, caching
-│   │   └── observability.md   # Monitoring, APM, dashboards
+│   │   ├── observability.md   # Monitoring, APM, dashboards
+│   │   └── writing-voice.md   # How to sound like me in public writing
 │   └── templates/             # File templates
 │       ├── standup-daily.md   # Daily standup template
 │       ├── learning-entry.md  # Learning capture template
