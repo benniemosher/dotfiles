@@ -34,14 +34,16 @@ profile is chosen once, when you run `chezmoi init`, and stored in
 `use_ssh_agent` defaults to yes. Answer no on a machine you reach over SSH while nobody is at
 its desktop: the 1Password agent asks for approval in the app, so an unattended `git push`
 hangs on a click that never comes, and after a reboot with no desktop session the agent is not
-running at all. That machine then needs two keys on disk — a GitHub SSH key belongs to exactly
-one account, and there are two:
+running at all. That machine then needs keys on disk. A GitHub SSH key belongs to exactly one
+account, so a second GitHub account (an employer's or a client's, say) needs a key of its own.
+Replace the angle-bracket names with yours. The host alias and key file names come from
+`private_dot_ssh/config.tmpl`, so change them there if you want different ones:
 
 ```bash
 ssh-keygen -t ed25519 -C "$(hostname)" -f ~/.ssh/id_ed25519 -N ""
-ssh-keygen -t ed25519 -C "$(hostname)-zcore" -f ~/.ssh/id_ed25519_zcore -N ""
-gh auth switch --user benniemosher       && gh ssh-key add ~/.ssh/id_ed25519.pub --title "$(hostname)"
-gh auth switch --user benniemosher-zcore && gh ssh-key add ~/.ssh/id_ed25519_zcore.pub --title "$(hostname)"
+ssh-keygen -t ed25519 -C "$(hostname)-<alias>" -f ~/.ssh/id_ed25519_<alias> -N ""
+gh auth switch --user <primary-account> && gh ssh-key add ~/.ssh/id_ed25519.pub --title "$(hostname)"
+gh auth switch --user <second-account>  && gh ssh-key add ~/.ssh/id_ed25519_<alias>.pub --title "$(hostname)"
 op document create ~/.ssh/id_ed25519 --title "$(hostname) private key" --vault Private
 ```
 
@@ -125,10 +127,28 @@ git -C "$(chezmoi source-path)" remote set-url origin git@github.com:benniemoshe
 
 To try an unmerged branch, add `--branch <name>`.
 
-This asks for your git email and whether the machine is a work machine, then writes
-`~/.config/chezmoi/chezmoi.toml`. Answer carefully — the work answer decides which packages
-install and how SSH and GPG are set up. It only asks once; re-running `init` later keeps your
-answers.
+`chezmoi init` asks the questions below and writes the answers to
+`~/.config/chezmoi/chezmoi.toml`. It does not install anything. Answer carefully: the work
+answer decides which packages install and how SSH and GPG are set up. It only asks each
+question once, so re-running `init` later keeps your answers. Which questions you see depends
+on the machine.
+
+| Question | Asked on | Setting | What it does |
+| --- | --- | --- | --- |
+| Git commit email | every machine | `git_email` | Goes in the global gitconfig |
+| Is this a work machine | every machine | `work_platform` | Work skips the personal packages and the GPG key import, and uses a plain `~/.ssh/id_ed25519` |
+| Workspace name | work machines | `work_workspace` | The `~/Code/<name>` directory, created on apply with `notes/`, `context.md` and the other files from `workspace-init` |
+| Use the 1Password SSH agent | personal machines (default yes) | `use_ssh_agent` | Say no on a machine you reach over SSH while nobody is at its desktop (see Profiles) |
+| Does this machine use the Kiro CLI | work machines | `use_kiro` | Deploys the Kiro agent config |
+| Keep Xcode updated automatically | macOS | `xcode_auto_update` | Updates Xcode in the background |
+| Phone number for invoices | personal machines | `invoice_phone` | Used by the invoice scripts. Kept here because this repo is public |
+| 1Password item for Obsidian LiveSync | personal machines | `obsidian_livesync_op_item` | `op://<vault>/<item id>`. Blank skips the vault bootstrap |
+| Git remote for vault snapshots | personal machines | `obsidian_vault_backup_remote` | Where `vault-snapshot` pushes. Blank commits locally only |
+| Enable GNOME Remote Desktop | Linux | `enable_remote_desktop` | Opens an RDP listener on port 3389 (see Remote desktop) |
+
+Then preview and apply. `chezmoi apply` is the step that installs packages and runs the setup
+scripts. One of them creates `~/Code`, links this repo at `~/Code/dotfiles`, and creates the
+workspace you named. If `~/Code` or the workspace is missing, `apply` has not run yet.
 
 ```bash
 chezmoi diff     # preview (recommended)
@@ -157,15 +177,16 @@ The agent socket differs by OS and the dotfiles already point at the right one �
 `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock` on macOS,
 `~/.1password/agent.sock` on Linux. Check it took with `ssh-add -l`.
 
-Then export the zCore public key from 1Password, since this repo deliberately does not ship
-any key material:
+Then export the second GitHub account's public key from 1Password, since this repo
+deliberately does not ship any key material. The names are the ones in
+`private_dot_ssh/config.tmpl`:
 
 ```bash
-op read "op://Private/Github - zCore/public key" > ~/.ssh/github_zcore.pub
+op read "op://Private/<item>/public key" > ~/.ssh/github_<alias>.pub
 ```
 
-The `github-zcore` host alias uses `IdentitiesOnly`, which needs that file present to pick the
-right key. Without it, ssh offers every key in the agent and can authenticate as the wrong
+The `github-<alias>` host alias uses `IdentitiesOnly`, which needs that file present to pick
+the right key. Without it, ssh offers every key in the agent and can authenticate as the wrong
 GitHub account.
 
 ### Phase 4: Final Apply
@@ -241,7 +262,7 @@ Then run `chezmoi apply` again.
 
 ### Symlink for Development
 
-The repo is cloned to `~/.local/share/chezmoi`. A symlink is automatically created at `~/Code/dotfiles`.
+The repo is cloned to `~/.local/share/chezmoi`. `chezmoi apply` creates a symlink to it at `~/Code/dotfiles`.
 
 ## Usage
 

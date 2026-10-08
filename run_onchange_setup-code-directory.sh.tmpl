@@ -1,5 +1,15 @@
 #!/bin/sh
+# Runs on `chezmoi apply`, not on `chezmoi init`: creates ~/Code, links this repo into it, and
+# creates the workspace named at init. Safe to run again.
+set -eu
 
-mkdir -p $HOME/Code
+mkdir -p "$HOME/Code"
 
-ln -s $HOME/.local/share/chezmoi $HOME/Code/dotfiles
+# Leave a real directory alone: `ln -sfn` would put the link inside it.
+if [ ! -e "$HOME/Code/dotfiles" ] || [ -L "$HOME/Code/dotfiles" ]; then
+  ln -sfn "$HOME/.local/share/chezmoi" "$HOME/Code/dotfiles"
+fi
+{{ if index . "work_workspace" }}
+# The workspace asked about at init. workspace-init skips one that already has notes/.
+"$HOME/bin/workspace-init" {{ .work_workspace | quote }}
+{{ end -}}
