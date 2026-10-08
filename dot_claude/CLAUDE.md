@@ -22,6 +22,7 @@ into this one at session start, so they are always loaded. Follow them.
 - @~/.config/ai/standards/observability.md — monitoring/alerting
 - @~/.config/ai/standards/tooling.md — mise runtime version management
 - @~/.config/ai/standards/documentation.md — technical writing style (concise, plain language)
+- @~/.config/ai/standards/writing-voice.md — how to sound like me in PRs, Slack, email, and posts
 
 ## Workspace Detection
 
