@@ -10,6 +10,7 @@ if [ ! -e "$HOME/Code/dotfiles" ] || [ -L "$HOME/Code/dotfiles" ]; then
   ln -sfn "$HOME/.local/share/chezmoi" "$HOME/Code/dotfiles"
 fi
 {{ if index . "work_workspace" }}
-# The workspace asked about at init. workspace-init skips one that already has notes/.
+# The workspace asked about at init. workspace-init skips one that already has a
+# .workspace.yaml, and writes its context note into the vault rather than the workspace.
 "$HOME/bin/workspace-init" {{ .work_workspace | quote }}
 {{ end -}}
