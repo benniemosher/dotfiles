@@ -32,6 +32,9 @@ sed_inplace() {
 }
 
 # --- Detect workspace ---
+# $PWD first, then an explicit WORKSPACE override, then WORK_WORKSPACE. The last one is
+# what a work-issued machine already sets to name its single workspace, so capturing from
+# outside ~/Code (or from a workspace whose repos aren't cloned yet) still works there.
 detect_workspace() {
   local cwd="$PWD"
   local code_dir="$HOME/Code"
@@ -41,6 +44,8 @@ detect_workspace() {
     echo "${relative%%/*}"
   elif [[ -n "${WORKSPACE:-}" ]]; then
     echo "$WORKSPACE"
+  elif [[ -n "${WORK_WORKSPACE:-}" ]]; then
+    echo "$WORK_WORKSPACE"
   else
     echo ""
   fi
@@ -49,7 +54,8 @@ detect_workspace() {
 WORKSPACE_NAME=$(detect_workspace)
 
 if [[ -z "$WORKSPACE_NAME" ]]; then
-  echo "Error: Could not detect workspace. Either cd into ~/Code/<workspace>/ or set WORKSPACE env var."
+  echo "Error: Could not detect workspace. cd into ~/Code/<workspace>/, or set WORKSPACE for" >&2
+  echo "a one-off, or WORK_WORKSPACE in ~/.zshrc.local on a machine with a single workspace." >&2
   exit 1
 fi
 
