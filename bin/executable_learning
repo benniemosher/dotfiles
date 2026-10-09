@@ -5,12 +5,15 @@ set -euo pipefail
 #
 # Auto-detects workspace from current directory.
 #
-# On personal machines (no WORK_WORKSPACE set), entries route into the
-# Obsidian vault at 03-Resources/Learnings/, one file per day, tagged
-# `learning` per the vault's frontmatter schema — so it's searchable and
-# synced across devices. On work machines (WORK_WORKSPACE set in
-# ~/.zshrc.local), entries stay in the per-workspace notes/learnings/ files,
-# unsynced, as before.
+# Entries route into the Obsidian vault at 03-Resources/Learnings/, one file
+# per day, tagged `learning` per the vault's frontmatter schema — so it's
+# searchable alongside every other learning.
+#
+# This is the destination on every machine that has a vault, work or personal.
+# A work machine's vault is simply local-only (no LiveSync, no remote) rather
+# than a different location — one set of commands, one place notes live. The
+# per-workspace notes/learnings/ path below is the fallback for a machine with
+# no vault at all.
 #
 # Usage:
 #   learning "terraform" "for_each requires map or set, not list of objects"
@@ -53,7 +56,7 @@ fi
 TODAY=$(date +%Y-%m-%d)
 TIMESTAMP=$(date +%H:%M)
 
-if [[ -z "${WORK_WORKSPACE:-}" && -d "$VAULT_DIR" ]]; then
+if [[ -d "$VAULT_DIR" ]]; then
   LEARNING_DIR="$VAULT_DIR/03-Resources/Learnings"
   LEARNING_FILE="$LEARNING_DIR/$TODAY.md"
   mkdir -p "$LEARNING_DIR"

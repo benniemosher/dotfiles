@@ -11,22 +11,23 @@ last_updated: 2026-09-01
 
 Daily standup notes track what was accomplished, what's planned, and serve as an audit trail of decisions and debugging. AI assistants update these throughout the day as work happens — not just at the end.
 
-## Routing: Personal vs Work Machine
+## Routing: the vault, on every machine
 
-Where entries land depends on whether `WORK_WORKSPACE` is set (in `~/.zshrc.local` on a
-work-issued machine):
+Entries route into the Obsidian vault at
+`~/Code/obsidian-vault-setup/Daily/YYYY-MM-DD.md`, under a `## Standup` section, grouped by
+workspace as `### <workspace-name>` subsections. This lets a single workspace's updates — a
+client's, say — be read straight off in a meeting without scrolling past every other project
+worked on that day.
 
-- **No `WORK_WORKSPACE` (personal machine):** entries route into the Obsidian vault at
-  `~/Code/obsidian-vault-setup/Daily/YYYY-MM-DD.md`, under a `## Standup` section, grouped by
-  workspace as `### <workspace-name>` subsections. This lets a single workspace's updates — a
-  client's, say — be read straight off in a meeting without scrolling past every other
-  project worked on that day. Synced to every device via LiveSync.
-- **`WORK_WORKSPACE` set (work machine):** entries stay in the per-workspace
-  `<workspace>/notes/standups/` files described below — unsynced, git-tracked per repo, exactly
-  as before. This never changes based on the personal-vault behavior above.
+This is the destination on **work and personal machines alike** (changed 2026-10-08; it used
+to branch on `WORK_WORKSPACE`). A work machine's vault is local-only — no LiveSync, no git
+remote — rather than a different location, so there's one command and one place notes live.
+`WORK_WORKSPACE` still marks the machine as work-issued for workspace detection and for
+disabling the billing workflow; it no longer changes where notes go.
 
-The rest of this doc describes the work-machine format; see the vault's own `Meta/Schema.md`
-for the personal-vault `daily` note frontmatter.
+The per-workspace `<workspace>/notes/standups/` layout described below is the fallback for a
+machine with no vault at all. See the vault's `Meta/Schema.md` for the `daily` note
+frontmatter.
 
 ## File Structure
 

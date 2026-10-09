@@ -3,14 +3,16 @@
 {
   "name": "default",
   "description": "Default agent with universal standards and workspace context",
-  "prompt": "At the start of every conversation, read ~/.config/ai/AGENT.md for your instructions. Detect the active workspace from the user's working directory (~/Code/<workspace>/) and load <workspace>/context.md for business-specific context. Use ~/.config/ai/workflows/ and ~/.config/ai/standards/ as your reference for how to work.",
+  "prompt": "At the start of every conversation, read ~/.config/ai/AGENT.md for your instructions and ~/.config/ai/standards/knowledge-base.md for where everything lives. Detect the active workspace from the user's working directory (~/Code/<workspace>/) and load ~/Code/obsidian-vault-setup/02-Areas/Work-Ongoing/<workspace>/Context.md for business-specific context. Log work with the `standup` command and capture knowledge with `learning` — both write into the vault, never into a per-workspace notes/ tree. Use ~/.config/ai/workflows/ and ~/.config/ai/standards/ as your reference for how to work. Before solving an infrastructure problem, search ~/Code/obsidian-vault-setup/03-Resources/Learnings/ — most of it has been debugged once already and written up with the root cause; Learnings-Index.md groups every note by technology. All prose output follows ~/.config/ai/standards/documentation.md: plain, clear language, linear flow, no hyperbole or metaphor.",
   "resources": [
     "file://{{ .chezmoi.homeDir }}/.config/ai/AGENT.md",
     "file://{{ .chezmoi.homeDir }}/.config/ai/workflows/**/*",
-    "file://{{ .chezmoi.homeDir }}/.config/ai/standards/**/*"{{ if $workspace }},
-    "file://{{ .chezmoi.homeDir }}/Code/{{ $workspace }}/context.md",
-    "file://{{ .chezmoi.homeDir }}/Code/{{ $workspace }}/notes/learnings/**/*",
-    "file://{{ .chezmoi.homeDir }}/Code/{{ $workspace }}/notes/standups/**/*"{{ end }}
+    "file://{{ .chezmoi.homeDir }}/.config/ai/standards/**/*",
+    "file://{{ .chezmoi.homeDir }}/Code/obsidian-vault-setup/03-Resources/Learnings/**/*",
+    "file://{{ .chezmoi.homeDir }}/Code/obsidian-vault-setup/MOCs/**/*",
+    "file://{{ .chezmoi.homeDir }}/Code/obsidian-vault-setup/Meta/**/*",
+    "file://{{ .chezmoi.homeDir }}/Code/obsidian-vault-setup/Daily/**/*"{{ if $workspace }},
+    "file://{{ .chezmoi.homeDir }}/Code/obsidian-vault-setup/02-Areas/Work-Ongoing/{{ $workspace }}/**/*"{{ end }}
   ],
   "toolsSettings": {
     "fs_write": {
@@ -30,8 +32,8 @@
         "description": "Load universal agent instructions"
       }{{ if $workspace }},
       {
-        "command": "echo '--- TODAY: '$(date +%Y-%m-%d)' | Standup file: ~/Code/{{ $workspace }}/notes/standups/'$(date +%Y-%m-%d)'.md ---'",
-        "description": "Show today's date and standup file path"
+        "command": "echo '--- TODAY: '$(date +%Y-%m-%d)' | Log work with: standup \"<entry>\" | Capture knowledge with: learning \"<tag>\" \"<entry>\" | Both write into the vault at ~/Code/obsidian-vault-setup ---'",
+        "description": "Show today's date and the standup/learning commands to use"
       }{{ end }}
     ]
   },

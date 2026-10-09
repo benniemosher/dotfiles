@@ -6,12 +6,16 @@ set -euo pipefail
 # Auto-detects workspace from current directory (~/Code/<workspace>/).
 # Falls back to $WORKSPACE env var if not in a workspace directory.
 #
-# On personal machines (no WORK_WORKSPACE set), entries route into the
-# Obsidian vault's Daily note under "## Standup", grouped by workspace as
-# "### <name>" subsections — so one workspace's (e.g. a client's) updates can
-# be read straight off in a meeting without wading through other projects'
-# entries. On work machines (WORK_WORKSPACE set in ~/.zshrc.local), entries
-# stay in the per-workspace notes/standups/ files, unsynced, as before.
+# Entries route into the Obsidian vault's Daily note under "## Standup",
+# grouped by workspace as "### <name>" subsections — so one workspace's
+# (e.g. a client's) updates can be read straight off in a meeting without
+# wading through other projects' entries.
+#
+# This is the destination on every machine that has a vault, work or personal.
+# A work machine's vault is simply local-only (no LiveSync, no remote) rather
+# than a different location — one set of commands, one place notes live. The
+# per-workspace notes/standups/ path below is the fallback for a machine with
+# no vault at all.
 #
 # Usage:
 #   standup "TICKET-123: Fixed the flaky test"
@@ -77,7 +81,7 @@ append_under_heading() {
   mv "$file.tmp" "$file"
 }
 
-if [[ -z "${WORK_WORKSPACE:-}" && -d "$VAULT_DIR" ]]; then
+if [[ -d "$VAULT_DIR" ]]; then
   STANDUP_FILE="$VAULT_DIR/Daily/$TODAY.md"
   mkdir -p "$VAULT_DIR/Daily"
 
