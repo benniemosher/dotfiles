@@ -61,13 +61,14 @@ You are working with a staff platform engineer / SRE who values efficiency, corr
 
 ## Workspace Detection
 
-I organize work into workspaces under `~/Code/<workspace>/`. Each workspace has:
+I organize work into workspaces under `~/Code/<workspace>/` — that's where the repos live. Each workspace has:
 - `.workspace.yaml` — metadata (org name, conventions)
-- `notes/standups/` — daily standup notes (YYYY-MM-DD.md format)
-- `notes/learnings/` — knowledge captured during work
-- `context.md` — workspace-specific AI context (tools, repos, accounts)
+- `.mise.toml` — workspace-pinned runtime versions
+- `tmp/` — scratch working docs
 
-When I'm working in a directory, detect which workspace I'm in and load the appropriate context. The workspace context file has business-specific details (repo locations, account IDs, team info) that complement these universal standards.
+Notes don't live in the workspace. Standups and learnings go into the Obsidian vault on every machine (see `workflows/standup-notes.md` and `workflows/learnings.md`), and the workspace's context note lives there too, at `~/Code/obsidian-vault-setup/02-Areas/Work-Ongoing/<workspace>/Context.md`. Older workspaces may still keep it at `<workspace>/context.md` — check both.
+
+When I'm working in a directory, detect which workspace I'm in and load that context note. It has the business-specific details (repo locations, account IDs, team info) that complement these universal standards.
 
 ## Tool-Specific Notes
 
