@@ -11,9 +11,10 @@ set -euo pipefail
 mkdir -p "$HOME/.claude"
 
 {{ if and (index . "use_kiro") (index . "work_workspace") -}}
-# Kiro machine: point its context at the workspace's own context.md. Read from chezmoi data
+# Kiro machine: point its context at the workspace's context note in the vault, which is where
+# it lives now — notes no longer sit in a per-workspace notes/ tree. Read from chezmoi data
 # rather than the environment, so an apply from cron or a fresh shell behaves the same.
-WORKSPACE_CONTEXT="$HOME/Code/{{ .work_workspace }}/context.md"
+WORKSPACE_CONTEXT="$HOME/Code/obsidian-vault-setup/02-Areas/Work-Ongoing/{{ .work_workspace }}/Context.md"
 KIRO_CONTEXT="$HOME/.kiro/context.md"
 if [[ -f "$WORKSPACE_CONTEXT" ]] && [[ ! -L "$KIRO_CONTEXT" ]]; then
   mkdir -p "$(dirname "$KIRO_CONTEXT")"

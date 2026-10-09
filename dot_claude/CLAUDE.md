@@ -8,6 +8,7 @@ These files are the canonical source of truth. Each `@` line imports the file's 
 into this one at session start, so they are always loaded. Follow them.
 
 - @~/.config/ai/AGENT.md — personality, communication style, working preferences
+- @~/.config/ai/standards/knowledge-base.md — where instructions and learnings live, shared by every agent
 - @~/.config/ai/workflows/obsidian-vault.md — what's in the personal Obsidian vault
 - @~/.config/ai/workflows/standup-notes.md — how I track daily work
 - @~/.config/ai/workflows/learnings.md — how I capture knowledge
@@ -26,23 +27,27 @@ into this one at session start, so they are always loaded. Follow them.
 
 ## Workspace Detection
 
-I work in `~/Code/<workspace>/` directories. Detect the active workspace from pwd and look for:
-- `<workspace>/context.md` — workspace-specific context (repos, accounts, team info)
-- `<workspace>/notes/standups/` — daily standup notes (work machines only — see below)
-- `<workspace>/notes/learnings/` — accumulated knowledge (work machines only — see below)
+I work in `~/Code/<workspace>/` directories — that's where the repos live. Detect the active
+workspace from pwd, then read its context note in the vault:
+`~/Code/obsidian-vault-setup/02-Areas/Work-Ongoing/<workspace>/Context.md`. It holds the
+business-specific details (team, repos, accounts, credentials paths) that complement the
+generic standards above. Some older workspaces still keep it at `<workspace>/context.md`;
+check both.
 
-The workspace `context.md` contains business-specific details (team, repos, accounts, credentials paths) that complement the generic standards above.
-
-**Personal vs work machine:** if `WORK_WORKSPACE` is not set (personal machine), standup and
-learning tracking route into the Obsidian vault at `~/Code/obsidian-vault-setup` instead of the
-per-workspace `notes/` paths above — see `standup-notes.md` and `learnings.md` for the exact
-destinations. Billable hours and invoicing (`time-tracking.md`) are personal-machine-only,
-always in that same vault.
+**Notes always go in the vault**, on work and personal machines alike — standups to
+`Daily/YYYY-MM-DD.md` under `## Standup` → `### <workspace>`, learnings to
+`03-Resources/Learnings/`. See `standup-notes.md` and `learnings.md`. A work machine's vault
+is local-only (no LiveSync, no remote) rather than a different location, so there's one set
+of commands and one place notes live. `WORK_WORKSPACE` marks the machine as work-issued for
+workspace detection and for disabling billing; it does not change where notes go. Billable
+hours and invoicing (`time-tracking.md`) remain personal-machine-only.
 
 ## Key Behaviors
 
-- Update standup notes as we work throughout the day (vault `Daily/` note on a personal
-  machine, `notes/standups/YYYY-MM-DD.md` on a work machine)
+- Update standup notes as we work throughout the day, via the `standup` command — it writes
+  to the vault's `Daily/YYYY-MM-DD.md` under `### <workspace>` on every machine
+- Search `~/Code/obsidian-vault-setup/03-Resources/Learnings/` before solving an infra problem
+  — most of it has been debugged once already and written up with the root cause
 - Capture learnings when we discover reusable patterns
 - Log billable hours (`hours <amount> "<brief description>"`) when doing paid client work on a
   personal machine, so it's ready to invoice later
