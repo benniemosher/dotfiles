@@ -11,17 +11,21 @@ last_updated: 2026-09-01
 
 Learnings capture reusable knowledge discovered during daily work. They serve as a personal knowledge base that AI assistants can reference in future sessions, preventing re-discovery of solutions.
 
-## Routing: Personal vs Work Machine
+## Routing: the vault, on every machine
 
-Where entries land depends on whether `WORK_WORKSPACE` is set (in `~/.zshrc.local` on a
-work-issued machine):
+Entries route into the Obsidian vault at
+`~/Code/obsidian-vault-setup/03-Resources/Learnings/YYYY-MM-DD.md`, tagged `type: learning`
+per the vault's frontmatter schema (`Meta/Schema.md`).
 
-- **No `WORK_WORKSPACE` (personal machine):** entries route into the Obsidian vault at
-  `~/Code/obsidian-vault-setup/03-Resources/Learnings/YYYY-MM-DD.md`, tagged `type: learning`
-  per the vault's frontmatter schema (`Meta/Schema.md`). Synced to every device via LiveSync.
-- **`WORK_WORKSPACE` set (work machine):** entries stay in the per-workspace
-  `<workspace>/notes/learnings/` files described below — unsynced, git-tracked per repo,
-  exactly as before.
+This is the destination on **work and personal machines alike** (changed 2026-10-08; it used
+to branch on `WORK_WORKSPACE`). A work machine's vault is local-only — no LiveSync, no git
+remote — rather than a different location, so every learning ends up searchable in one place
+regardless of which machine found it. The per-workspace `<workspace>/notes/learnings/` layout
+described below is the fallback for a machine with no vault at all.
+
+Long-lived topic notes live in the same folder, named for the topic rather than a date — see
+the 250 extracted Charter notes and `Learnings-Index.md` for the shape. Dated files are the
+capture surface; topic notes are what gets read later.
 
 The Portable vs Business-Specific classification below still applies either way — it's about
 where a *pattern* belongs long-term, independent of which machine captured it.
