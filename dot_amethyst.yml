@@ -1,0 +1,13 @@
+---
+# SEE: https://github.com/ianyh/Amethyst/blob/development/.amethyst.sample.yml
+layouts:
+  - tall
+  - fullscreen
+  - widescreen-tall-right
+
+disable-padding-on-builtin-display: true
+window-margins: true
+smart-window-margins: true
+window-margin-size: 10
+float-small-windows: true
+use-canary-build: true

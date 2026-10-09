@@ -43,6 +43,7 @@ packages:
       work:
         - "amethyst"
         - "docker-desktop"
+        - "freelens"
         # Every machine, work included: workspace-init sets each workspace's
         # notes/ up as an Obsidian vault.
         - "obsidian"
