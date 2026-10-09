@@ -62,14 +62,27 @@ append_under_heading() {
   local file="$1" marker_line="$2" heading="$3" entry="$4"
 
   if ! grep -qxF "$heading" "$file"; then
+    # `prev != ""` guards the blank line before the new heading. The preceding workspace
+    # block may have no trailing blank of its own -- notes written before the spacing fix
+    # end their last entry flush against the next heading -- and without this the new
+    # heading inherits that, ending up flush against the entry above it.
     awk -v marker="$marker_line" -v heading="$heading" '
-      BEGIN { in_block = 0; inserted = 0 }
+      BEGIN { in_block = 0; inserted = 0; prev = "" }
       {
-        if (in_block && !inserted && $0 ~ /^## /) { print heading; print ""; inserted = 1 }
+        if (in_block && !inserted && $0 ~ /^## /) {
+          if (prev != "") print ""
+          print heading; print ""; inserted = 1
+        }
         print
         if ($0 == marker) in_block = 1
+        prev = $0
       }
-      END { if (in_block && !inserted) { print heading; print "" } }
+      END {
+        if (in_block && !inserted) {
+          if (prev != "") print ""
+          print heading; print ""
+        }
+      }
     ' "$file" > "$file.tmp"
     mv "$file.tmp" "$file"
   fi
