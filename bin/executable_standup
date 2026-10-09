@@ -3,8 +3,8 @@ set -euo pipefail
 
 # standup — Add a quick entry to today's standup notes
 #
-# Auto-detects workspace from current directory (~/Code/<workspace>/).
-# Falls back to $WORKSPACE env var if not in a workspace directory.
+# Auto-detects workspace from current directory (~/Code/<workspace>/), falling back to
+# $WORKSPACE, then $WORK_WORKSPACE.
 #
 # Entries route into the Obsidian vault's Daily note under "## Standup",
 # grouped by workspace as "### <name>" subsections — so one workspace's
@@ -25,6 +25,9 @@ set -euo pipefail
 VAULT_DIR="$HOME/Code/obsidian-vault-setup"
 
 # --- Detect workspace ---
+# $PWD first, then an explicit WORKSPACE override, then WORK_WORKSPACE. The last one is
+# what a work-issued machine already sets to name its single workspace, so logging from
+# outside ~/Code (or from a workspace whose repos aren't cloned yet) still works there.
 detect_workspace() {
   local cwd="$PWD"
   local code_dir="$HOME/Code"
@@ -34,6 +37,8 @@ detect_workspace() {
     echo "${relative%%/*}"
   elif [[ -n "${WORKSPACE:-}" ]]; then
     echo "$WORKSPACE"
+  elif [[ -n "${WORK_WORKSPACE:-}" ]]; then
+    echo "$WORK_WORKSPACE"
   else
     echo ""
   fi
@@ -42,7 +47,8 @@ detect_workspace() {
 WORKSPACE_NAME=$(detect_workspace)
 
 if [[ -z "$WORKSPACE_NAME" ]]; then
-  echo "Error: Could not detect workspace. Either cd into ~/Code/<workspace>/ or set WORKSPACE env var."
+  echo "Error: Could not detect workspace. cd into ~/Code/<workspace>/, or set WORKSPACE for" >&2
+  echo "a one-off, or WORK_WORKSPACE in ~/.zshrc.local on a machine with a single workspace." >&2
   exit 1
 fi
 
@@ -68,13 +74,27 @@ append_under_heading() {
     mv "$file.tmp" "$file"
   fi
 
+  # The entry has to land straight after the last existing one, with the block's trailing
+  # blank line kept before the next heading. Printing it directly before that heading (the
+  # obvious way) puts the blank *between* two entries and leaves none before the heading,
+  # which is what produced `- [09:00] ...` butted against `## Log`.
+  #
+  # So: once the block has real content, blank lines are held instead of printed, and the
+  # held ones are dropped when the entry goes in — a single blank is emitted after it. The
+  # blank that follows the heading itself is printed as normal, before any content is seen.
   awk -v heading="$heading" -v entry="$entry" '
-    BEGIN { in_block = 0; inserted = 0 }
+    BEGIN { in_block = 0; inserted = 0; held = 0; seen = 0 }
     {
-      if (in_block && !inserted && ($0 ~ /^##+ /)) { print entry; inserted = 1 }
+      if (in_block && !inserted && $0 ~ /^##+ /) {
+        print entry; print ""; inserted = 1; held = 0
+      }
+      if (in_block && seen && $0 == "") { held++; next }
+      for (i = 1; i <= held; i++) print ""
+      held = 0
       print
-      if ($0 == heading) in_block = 1
+      if ($0 == heading) { in_block = 1; seen = 0 }
       else if ($0 ~ /^##+ /) in_block = 0
+      else if (in_block && $0 != "") seen = 1
     }
     END { if (in_block && !inserted) print entry }
   ' "$file" > "$file.tmp"
