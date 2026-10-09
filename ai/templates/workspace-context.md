@@ -32,9 +32,10 @@ description: Copy this to ~/Code/<workspace>/context.md and fill in business-spe
 - AWS login: (SSO command or profile names)
 
 ## Notes & Files
-- Standup notes: ~/Code/{{workspace}}/notes/standups/
-- Learnings: ~/Code/{{workspace}}/notes/learnings/
-- Tmp working docs: ~/Code/{{workspace}}/tmp/
+- Standup notes: `~/Code/obsidian-vault-setup/Daily/YYYY-MM-DD.md`, under `## Standup` → `### {{workspace}}` (via the `standup` command)
+- Learnings: `~/Code/obsidian-vault-setup/03-Resources/Learnings/` (via the `learning` command)
+- This note: `~/Code/obsidian-vault-setup/02-Areas/Work-Ongoing/{{workspace}}/Context.md`
+- Tmp working docs: `~/Code/{{workspace}}/tmp/`
 
 ## Runtime Versions
 

@@ -7,12 +7,14 @@ last_updated: 2026-09-27
 
 # Obsidian Vault
 
-The personal vault at `~/Code/obsidian-vault-setup` is where daily notes, learnings, and
-billing live on a personal machine. It's a git repo that `vault-snapshot` commits every 15
-minutes and pushes to a backup remote (see Snapshots below).
+The vault at `~/Code/obsidian-vault-setup` is where daily notes, learnings, and billing live.
+It's a git repo that `vault-snapshot` commits every 15 minutes and pushes to a backup remote
+(see Snapshots below).
 
-Only used when `WORK_WORKSPACE` is unset. On a work machine the standup and learning
-workflows write to `<workspace>/notes/` instead, and billing doesn't apply at all.
+Every machine has one, and daily notes and learnings route into it everywhere (changed
+2026-10-08; it used to branch on `WORK_WORKSPACE`). What differs is the plumbing around it,
+not the location: a personal machine gets LiveSync and the backup remote, while a work-issued
+machine's vault is local-only — no LiveSync, no remote — and billing doesn't apply there.
 
 ## Layout
 
@@ -110,8 +112,9 @@ and branches on whether the machine is a work one:
    pick the Minimal theme under Settings → Appearance.
 
 **Work** (`work_platform` or `WORK_WORKSPACE` set): no LiveSync, no 1Password, no billing.
-It creates the same PARA skeleton locally and stops. Standups and learnings route to
-`<workspace>/notes/` on a work machine anyway.
+It creates the same PARA skeleton locally and stops — so the vault exists and `standup` and
+`learning` write into it, but nothing leaves the machine. Populating it beyond the skeleton
+is manual: there's no sync to pull history down.
 
 The script skips its work if LiveSync is already configured, so it's safe to re-run. To
 force it:
