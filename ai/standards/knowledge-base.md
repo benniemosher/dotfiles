@@ -36,10 +36,16 @@ workspace carries the account IDs, profiles, repo list, branch and commit conven
 Guessing these wastes a round trip; worse, acting on a stale guess can touch the wrong
 account.
 
-**One writing style everywhere.** `standards/documentation.md` governs all prose output —
-docs, PR/MR descriptions, commit messages, Slack and email updates. Plain, clear language,
-linear flow, no hyperbole or metaphor, Hemingway not Faulkner. It applies to every agent, not
-just the one that happens to be writing the doc.
+**One writing style everywhere.** Two files, and they stack:
+
+- `standards/writing-voice.md` — how anything going out under his name should sound: PR
+  comments and reviews, Slack, email, issue comments, posts. First person, full sentences,
+  context before detail, honest about gaps.
+- `standards/documentation.md` — layered on top for technical docs, PR/MR descriptions and
+  commit messages: plain language, linear flow, no hyperbole or metaphor, Hemingway not
+  Faulkner.
+
+Both apply to every agent, not just whichever one happens to be drafting.
 
 **Treat notes as last-known-good, not truth.** A note records what was true when it was
 written. If one names a file, flag, ticket state or account, verify it still holds before

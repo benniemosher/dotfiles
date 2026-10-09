@@ -101,9 +101,9 @@ Quick entry from any terminal:
 standup "TICKET-123: Fixed the flaky test by mocking the clock"
 ```
 
-This appends a timestamped entry to today's standup file in the current workspace — the
-vault's `Daily/YYYY-MM-DD.md` under `### <workspace>` on a personal machine, or
-`<workspace>/notes/standups/YYYY-MM-DD.md` on a work machine (see Routing above).
+This appends a timestamped entry to the vault's `Daily/YYYY-MM-DD.md` under
+`### <workspace>`, with the workspace detected from the current directory. Same on every
+machine (see Routing above).
 
 ## Obsidian Compatibility
 

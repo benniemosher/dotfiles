@@ -104,9 +104,8 @@ Quick capture from terminal:
 learning "terraform" "for_each requires map or set, not list of objects"
 ```
 
-Creates or appends to today's learning file with a timestamp and the provided tags/content —
-the vault's `03-Resources/Learnings/YYYY-MM-DD.md` on a personal machine, or
-`<workspace>/notes/learnings/YYYY-MM-DD.md` on a work machine (see Routing above).
+Creates or appends to today's learning file with a timestamp and the provided tags/content, at
+the vault's `03-Resources/Learnings/YYYY-MM-DD.md`. Same on every machine (see Routing above).
 
 ## Obsidian Compatibility
 

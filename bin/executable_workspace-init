@@ -3,7 +3,12 @@ set -euo pipefail
 
 # workspace-init — Bootstrap a new workspace under ~/Code/
 #
-# Creates the standard directory structure and context files.
+# Creates the repo-side scaffolding (.workspace.yaml, .mise.toml, tmp/) and the workspace's
+# context note in the vault at 02-Areas/Work-Ongoing/<name>/Context.md.
+#
+# It deliberately does not create a notes/ tree. Standups and learnings go into the vault
+# via the `standup` and `learning` commands on every machine, so a per-workspace notes/
+# directory would be a second, competing note store.
 #
 # Usage:
 #   workspace-init homelab
@@ -15,29 +20,31 @@ if [[ -z "$WORKSPACE_NAME" ]]; then
   echo "Usage: workspace-init <workspace-name>"
   echo ""
   echo "Creates ~/Code/<workspace-name>/ with standard structure:"
-  echo "  notes/standups/     — daily standup notes"
-  echo "  notes/learnings/    — captured knowledge"
-  echo "  notes/.obsidian/    — Obsidian vault config"
-  echo "  context.md          — AI workspace context"
+  echo "  tmp/                — scratch working docs"
   echo "  .workspace.yaml     — workspace metadata"
   echo "  .mise.toml          — workspace-pinned runtime versions"
+  echo ""
+  echo "and the workspace's context note in the vault:"
+  echo "  02-Areas/Work-Ongoing/<workspace-name>/Context.md"
   exit 1
 fi
 
 BASE_DIR="$HOME/Code/$WORKSPACE_NAME"
+VAULT_AREA="$HOME/Code/obsidian-vault-setup/02-Areas/Work-Ongoing/$WORKSPACE_NAME"
+CONTEXT_FILE="$VAULT_AREA/Context.md"
 
-if [[ -d "$BASE_DIR/notes" ]]; then
-  echo "Workspace '$WORKSPACE_NAME' already has notes/ directory. Skipping creation."
-  echo "To reinitialize, remove $BASE_DIR/notes first."
+if [[ -f "$BASE_DIR/.workspace.yaml" ]]; then
+  echo "Workspace '$WORKSPACE_NAME' already initialized. Skipping creation."
+  echo "To reinitialize, remove $BASE_DIR/.workspace.yaml first."
   exit 0
 fi
 
 echo "Creating workspace: $BASE_DIR"
 
 # --- Create directory structure ---
-mkdir -p "$BASE_DIR/notes/standups"
-mkdir -p "$BASE_DIR/notes/learnings"
-mkdir -p "$BASE_DIR/notes/.obsidian"
+# No notes/ tree: standups and learnings go into the vault via the `standup` and
+# `learning` commands, on every machine. A per-workspace notes/ directory would be a
+# second, competing note store — see workflows/standup-notes.md.
 mkdir -p "$BASE_DIR/tmp"
 
 # --- Create .workspace.yaml ---
@@ -50,12 +57,25 @@ created: $(date +%Y-%m-%d)
 # git_host: github.com
 EOF
 
-# --- Create context.md from template ---
-TEMPLATE="$HOME/.config/ai/templates/workspace-context.md"
-if [[ -f "$TEMPLATE" ]]; then
-  sed "s/{{workspace}}/$WORKSPACE_NAME/g" "$TEMPLATE" > "$BASE_DIR/context.md"
+# --- Create the workspace's context note in the vault ---
+# This is what Kiro and Claude load for business-specific context, so it lives with the
+# rest of the notes rather than in the repo directory.
+mkdir -p "$VAULT_AREA"
+if [[ -f "$CONTEXT_FILE" ]]; then
+  echo "Context note already exists, leaving it alone: $CONTEXT_FILE"
 else
-  cat > "$BASE_DIR/context.md" <<EOF
+  TEMPLATE="$HOME/.config/ai/templates/workspace-context.md"
+  if [[ -f "$TEMPLATE" ]]; then
+    sed "s/{{workspace}}/$WORKSPACE_NAME/g" "$TEMPLATE" > "$CONTEXT_FILE"
+  else
+    cat > "$CONTEXT_FILE" <<EOF
+---
+type: area
+status: active
+created: $(date +%Y-%m-%d)
+tags: [$WORKSPACE_NAME, context]
+---
+
 # $WORKSPACE_NAME Workspace Context
 
 ## Team
@@ -69,6 +89,7 @@ else
 ## Conventions
 - (fill in workspace-specific conventions)
 EOF
+  fi
 fi
 
 # --- Create .mise.toml for workspace-pinned versions ---
@@ -82,34 +103,15 @@ cat > "$BASE_DIR/.mise.toml" <<EOF
 # python = "3.12"
 EOF
 
-# --- Create Obsidian vault config ---
-cat > "$BASE_DIR/notes/.obsidian/app.json" <<EOF
-{
-  "showLineNumber": true,
-  "strictLineBreaks": false,
-  "useMarkdownLinks": false,
-  "newLinkFormat": "shortest"
-}
-EOF
-
-# --- Create .gitignore for notes (if you git init the notes dir) ---
-cat > "$BASE_DIR/notes/.gitignore" <<EOF
-# Obsidian workspace (machine-specific, not content)
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-.obsidian/plugins/
-.obsidian/community-plugins.json
-
-# OS files
-.DS_Store
-Thumbs.db
-EOF
+# No per-workspace Obsidian config or notes/.gitignore any more: there's one vault, and it
+# carries its own .obsidian/ and .gitignore.
 
 echo ""
 echo "✓ Workspace '$WORKSPACE_NAME' initialized at $BASE_DIR"
 echo ""
 echo "Next steps:"
-echo "  1. Edit $BASE_DIR/context.md with your workspace-specific details"
+echo "  1. Fill in $CONTEXT_FILE with the workspace's accounts, repos and conventions"
 echo "  2. Edit $BASE_DIR/.workspace.yaml with metadata"
-echo "  3. (Optional) cd $BASE_DIR/notes && git init for disaster recovery"
-echo "  4. Open $BASE_DIR/notes/ in Obsidian as a vault"
+echo "  3. Clone the repos into $BASE_DIR/ and pin runtimes in .mise.toml"
+echo ""
+echo "Standups and learnings go to the vault via 'standup' and 'learning' — nothing to set up."
