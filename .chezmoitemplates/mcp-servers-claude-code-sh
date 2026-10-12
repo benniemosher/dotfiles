@@ -1,0 +1,44 @@
+{{- /*
+mcp-servers-claude-code-sh: emit shell that registers every registry server with
+Claude Code at user scope, idempotently.
+
+Call with a dict giving chezmoi's source dir:
+
+    {{- includeTemplate "mcp-servers-claude-code-sh" (dict "sourceDir" .chezmoi.sourceDir) }}
+
+Claude Code keeps user-scoped MCP servers in ~/.claude.json, a large stateful file
+(project history, auth) that dotfiles must not own wholesale. So instead of writing that
+file, this drives `claude mcp add-json`, which edits only the mcpServers entries. Each
+server is removed first (ignore failure) then re-added, so re-running converges on the
+registry — add-json alone errors if the name already exists.
+
+Claude Code is stdio-first at user scope here; remote (http) servers are bridged through
+`npx mcp-remote <url>`, matching the other stdio-only clients. The per-server JSON is the
+Claude Code shape: {"command","args","env"} for stdio.
+*/ -}}
+{{- $src := joinPath .sourceDir "ai" "mcp" "servers.yaml" -}}
+{{- $reg := include $src | fromYaml -}}
+{{- range $name := sortAlpha (keys $reg.servers) }}
+  {{- $cfg := index $reg.servers $name -}}
+  {{- $enabled := dig "enabled" true $cfg -}}
+  {{- $only := dig "tools" (list) $cfg -}}
+  {{- if and $enabled (or (eq (len $only) 0) (has "claude-code" $only)) -}}
+    {{- $transport := dig "transport" "stdio" $cfg -}}
+    {{- $runtime := dig "runtime" "uvx" $cfg -}}
+    {{- $extra := dig "args" (list) $cfg -}}
+    {{- $env := dig "env" (dict) $cfg -}}
+    {{- $spec := dict -}}
+    {{- if eq $transport "http" -}}
+      {{- $spec = dict "command" "npx" "args" (list "-y" "mcp-remote" (dig "url" "" $cfg)) -}}
+    {{- else if eq $runtime "docker" -}}
+      {{- $spec = dict "command" "docker" "args" (concat (list "run" "-i" "--rm" (dig "image" "" $cfg)) $extra) -}}
+    {{- else -}}
+      {{- $spec = dict "command" "uvx" "args" (concat (list (dig "package" "" $cfg)) $extra) -}}
+    {{- end -}}
+    {{- if and (ne $transport "http") (gt (len $env) 0) -}}
+      {{- $spec = set $spec "env" $env -}}
+    {{- end }}
+claude mcp remove {{ $name }} --scope user >/dev/null 2>&1 || true
+claude mcp add-json {{ $name }} {{ $spec | toJson | squote }} --scope user >/dev/null && echo "  + {{ $name }}"
+  {{- end -}}
+{{- end }}

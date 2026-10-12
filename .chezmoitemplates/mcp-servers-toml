@@ -1,0 +1,44 @@
+{{- /*
+mcp-servers-toml: render ai/mcp/servers.yaml into Codex's [mcp_servers.NAME] TOML tables.
+
+Call with a dict giving the source dir:
+
+    {{- includeTemplate "mcp-servers-toml" (dict "sourceDir" .chezmoi.sourceDir) }}
+
+Codex launches stdio servers only (command + args + env), so remote
+(http) servers are bridged through `npx mcp-remote <url>`. Emits a sequence of
+[mcp_servers.<name>] tables; the caller owns the rest of config.toml.
+*/ -}}
+{{- $src := joinPath .sourceDir "ai" "mcp" "servers.yaml" -}}
+{{- $reg := include $src | fromYaml -}}
+{{- $names := list -}}
+{{- range $name, $cfg := $reg.servers -}}
+  {{- $enabled := dig "enabled" true $cfg -}}
+  {{- $only := dig "tools" (list) $cfg -}}
+  {{- if and $enabled (or (eq (len $only) 0) (has "codex" $only)) -}}
+    {{- $names = append $names $name -}}
+  {{- end -}}
+{{- end -}}
+{{- range $name := sortAlpha $names }}
+  {{- $cfg := index $reg.servers $name -}}
+  {{- $transport := dig "transport" "stdio" $cfg -}}
+  {{- $runtime := dig "runtime" "uvx" $cfg -}}
+  {{- $extra := dig "args" (list) $cfg -}}
+  {{- $env := dig "env" (dict) $cfg }}
+
+[mcp_servers.{{ $name }}]
+  {{- if eq $transport "http" }}
+command = "npx"
+args = {{ list "-y" "mcp-remote" (dig "url" "" $cfg) | toJson }}
+  {{- else if eq $runtime "docker" }}
+command = "docker"
+args = {{ concat (list "run" "-i" "--rm" (dig "image" "" $cfg)) $extra | toJson }}
+  {{- else }}
+command = "uvx"
+args = {{ concat (list (dig "package" "" $cfg)) $extra | toJson }}
+    {{- if gt (len $env) 0 }}
+{{ range $k, $v := $env }}env.{{ $k }} = {{ $v | quote }}
+{{ end -}}
+    {{- end }}
+  {{- end }}
+{{- end }}

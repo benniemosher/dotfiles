@@ -1,0 +1,132 @@
+---
+# Canonical MCP server registry — the single source of truth for every AI tool.
+#
+# This file is plain data. It is deployed verbatim to
+# ~/.config/ai/mcp/servers.yaml (ai/ -> ~/ai, and ~/.config/ai is a symlink to
+# ~/ai). Each AI tool gets its own config *generated* from this file, so a
+# server is defined once here and appears everywhere:
+#
+#   Kiro CLI       -> ~/.kiro/settings/mcp.json
+#                       (via run_onchange_setup-ai-config.sh.tmpl)
+#   Claude Code    -> registered with `claude mcp add-json` at user scope
+#                       (same run_onchange script, when `claude` is installed)
+#   Codex          -> ~/.codex/config.toml  (prepped, inactive until licensed)
+#
+# To add a server: add an entry below, run `chezmoi apply`, restart the AI tool.
+# See ai/mcp/README.md for the full design and the per-field reference.
+#
+# ---------------------------------------------------------------------------
+# Schema (per entry under `servers:`)
+#   transport:  stdio | http            (how the client talks to the server)
+#   runtime:    uvx | docker | remote   (stdio: uvx/docker; http: remote)
+#   package:    uvx package spec        (runtime: uvx)
+#   image:      docker image ref        (runtime: docker)
+#   url:        endpoint                (transport: http)
+#   args:       extra argv appended after the package/image
+#   env:        environment variables (map)
+#   autoApprove: tool-name globs the client may run without prompting
+#   enabled:    false parks a server in the registry without deploying it
+#   tools:      which clients get it; omit = all. e.g. [kiro, claude, codex]
+#
+# AWS auth: the awslabs servers use ambient AWS credentials. AWS_PROFILE is left
+# unset here on purpose so each machine/session uses its own default profile or
+# whatever is exported; set it per-machine if you need a fixed profile.
+# ---------------------------------------------------------------------------
+
+servers:
+  # --- IaC -----------------------------------------------------------------
+  terraform:
+    transport: stdio
+    runtime: docker
+    image: "hashicorp/terraform-mcp-server:latest"
+    autoApprove: []
+
+  # --- AWS docs / knowledge (remote, no local runtime, no creds) -----------
+  aws-knowledge:
+    transport: http
+    runtime: remote
+    url: "https://knowledge-mcp.global.api.aws"
+    autoApprove: []
+
+  # --- AWS: general API access --------------------------------------------
+  aws-api:
+    transport: stdio
+    runtime: uvx
+    package: "awslabs.aws-api-mcp-server@latest"
+    env:
+      FASTMCP_LOG_LEVEL: "ERROR"
+    autoApprove: []
+
+  # --- AWS: cost & billing -------------------------------------------------
+  billing-cost:
+    transport: stdio
+    runtime: uvx
+    package: "awslabs.billing-cost-management-mcp-server@latest"
+    env:
+      FASTMCP_LOG_LEVEL: "ERROR"
+    autoApprove: []
+
+  # --- AWS: compute / Kubernetes ------------------------------------------
+  eks:
+    transport: stdio
+    runtime: uvx
+    package: "awslabs.eks-mcp-server@latest"
+    env:
+      FASTMCP_LOG_LEVEL: "ERROR"
+    autoApprove: []
+
+  # --- AWS: observability --------------------------------------------------
+  cloudwatch:
+    transport: stdio
+    runtime: uvx
+    package: "awslabs.cloudwatch-mcp-server@latest"
+    env:
+      FASTMCP_LOG_LEVEL: "ERROR"
+    autoApprove: []
+
+  # --- AWS: audit / API history -------------------------------------------
+  cloudtrail:
+    transport: stdio
+    runtime: uvx
+    package: "awslabs.cloudtrail-mcp-server@latest"
+    env:
+      FASTMCP_LOG_LEVEL: "ERROR"
+    autoApprove: []
+
+  # --- AWS: secrets ---------------------------------------------------------
+  # NOTE: AWS Labs has no dedicated secrets-manager MCP server. Secrets Manager
+  # operations are reachable through `aws-api` (it fronts the full AWS CLI).
+
+  # --- AWS: networking (VPC/Route53/etc.) ----------------------------------
+  aws-network:
+    transport: stdio
+    runtime: uvx
+    package: "awslabs.aws-network-mcp-server@latest"
+    env:
+      FASTMCP_LOG_LEVEL: "ERROR"
+    autoApprove: []
+
+  # --- AWS: databases ------------------------------------------------------
+  documentdb:
+    transport: stdio
+    runtime: uvx
+    package: "awslabs.documentdb-mcp-server@latest"
+    env:
+      FASTMCP_LOG_LEVEL: "ERROR"
+    autoApprove: []
+
+  aurora-mysql:
+    transport: stdio
+    runtime: uvx
+    package: "awslabs.mysql-mcp-server@latest"
+    env:
+      FASTMCP_LOG_LEVEL: "ERROR"
+    autoApprove: []
+
+  aurora-postgres:
+    transport: stdio
+    runtime: uvx
+    package: "awslabs.postgres-mcp-server@latest"
+    env:
+      FASTMCP_LOG_LEVEL: "ERROR"
+    autoApprove: []

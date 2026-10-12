@@ -28,6 +28,13 @@ CLAUDE.md
 .kiro/agents
 {{- end }}
 
+{{- /* Codex MCP config is prepped but inactive: no Codex license yet. Ignoring .codex unless
+       use_codex is set keeps the template in the repo (ready for the licensed machine) without
+       dropping an empty ~/.codex/config.toml everywhere. Same gating idea as .kiro/agents. */}}
+{{- if not (index . "use_codex") }}
+.codex
+{{- end }}
+
 # Claude local data
 .claude/settings.json
 .claude/credentials.json

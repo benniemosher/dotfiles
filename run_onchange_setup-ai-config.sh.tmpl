@@ -10,7 +10,27 @@ set -euo pipefail
 # Claude reads ~/.claude/CLAUDE.md; the directory has to exist before that lands.
 mkdir -p "$HOME/.claude"
 
-{{ if and (index . "use_kiro") (index . "work_workspace") -}}
+{{ if index . "use_kiro" -}}
+# Kiro's global MCP config. This can't be a tracked chezmoi template: .chezmoiignore
+# excludes .kiro/settings (Kiro rewrites that tree with machine-local state). So it's
+# generated here instead, from the shared registry in ai/mcp/servers.yaml. Because the
+# rendered JSON is embedded below, this run_onchange script's hash changes whenever the
+# registry changes, which is exactly when Kiro's config should be regenerated.
+#
+# Only the mcpServers key is managed. If you keep per-machine Kiro MCP settings elsewhere,
+# note this file is overwritten wholesale on change.
+KIRO_SETTINGS="$HOME/.kiro/settings"
+mkdir -p "$KIRO_SETTINGS"
+cat > "$KIRO_SETTINGS/mcp.json" <<'KIRO_MCP_EOF'
+{
+  "mcpServers": {
+{{ includeTemplate "mcp-servers-json" (dict "client" "kiro" "sourceDir" .chezmoi.sourceDir) }}
+  }
+}
+KIRO_MCP_EOF
+echo "Wrote ~/.kiro/settings/mcp.json from shared MCP registry"
+
+{{ if index . "work_workspace" -}}
 # Kiro machine: point its context at the workspace's context note in the vault, which is where
 # it lives now — notes no longer sit in a per-workspace notes/ tree. Read from chezmoi data
 # rather than the environment, so an apply from cron or a fresh shell behaves the same.
@@ -23,5 +43,17 @@ if [[ -f "$WORKSPACE_CONTEXT" ]] && [[ ! -L "$KIRO_CONTEXT" ]]; then
   echo "Linked ~/.kiro/context.md -> workspace context"
 fi
 {{ end -}}
+{{ end -}}
+
+# Claude Code (CLI) user-scoped MCP servers, from the shared registry. Claude Code stores
+# user MCP servers in ~/.claude.json, a large stateful file (project history, auth) that
+# dotfiles must not own wholesale — so this drives `claude mcp add-json` instead, which
+# edits only the mcpServers entries. The commands are embedded below, so this run_onchange
+# script's hash changes whenever the registry changes. Skipped when Claude Code isn't
+# installed (e.g. a Kiro-only work machine).
+if command -v claude >/dev/null 2>&1; then
+  echo "Registering MCP servers with Claude Code (user scope):"
+{{ includeTemplate "mcp-servers-claude-code-sh" (dict "sourceDir" .chezmoi.sourceDir) }}
+fi
 
 echo "✓ AI config setup complete"
