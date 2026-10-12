@@ -1,0 +1,18 @@
+{{- /*
+Codex CLI config, generated from the shared registry ai/mcp/servers.yaml.
+
+INACTIVE BY DEFAULT. This only deploys on a machine whose chezmoi data sets
+`use_codex = true`. There's no Codex license yet, so no machine sets it — the template
+sits here ready. When Codex is licensed, add `use_codex = true` to the machine's
+~/.config/chezmoi/chezmoi.toml [data] block (or add a prompt to .chezmoi.toml.tmpl) and
+run `chezmoi apply`.
+
+Codex is stdio-only like Claude Desktop, so remote (http) servers are bridged through
+`npx mcp-remote`. See .chezmoitemplates/mcp-servers-toml.
+
+Target: ~/.codex/config.toml
+*/ -}}
+{{- if dig "use_codex" false . }}
+# Managed by chezmoi from ai/mcp/servers.yaml. Edit the registry, not this file.
+{{ includeTemplate "mcp-servers-toml" (dict "sourceDir" .chezmoi.sourceDir) }}
+{{- end -}}

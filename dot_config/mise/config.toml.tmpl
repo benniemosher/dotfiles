@@ -24,6 +24,12 @@ terrascan = "latest"
 tflint = "latest"
 tfupdate = "latest"
 trivy = "latest"
+{{/* uv provides uvx, which runs the AWS Labs MCP servers (uvx awslabs.*-mcp-server).
+     The shared MCP registry (ai/mcp/servers.yaml) is rendered into every AI tool's config
+     and every awslabs server launches via uvx, so uv has to be on PATH on every machine.
+     In mise rather than Homebrew/snap: one line covers macOS and Linux, and Ubuntu has no
+     apt uv anyway. */ -}}
+uv = "latest"
 yarn = "latest"
 "npm:wrangler" = "latest"
 "pipx:ansible" = "latest"
