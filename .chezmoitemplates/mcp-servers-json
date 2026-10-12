@@ -1,0 +1,68 @@
+{{- /*
+mcp-servers-json: render ai/mcp/servers.yaml into an mcpServers JSON object for
+JSON-config clients. Currently used by Kiro (~/.kiro/settings/mcp.json).
+
+Call with a dict giving the client name, chezmoi's source dir, and whether the
+client is stdio-only (bridgeHttp). Per-client `tools:` gating also works:
+
+    {{- includeTemplate "mcp-servers-json" (dict "client" "kiro" "sourceDir" .chezmoi.sourceDir) }}
+    {{- includeTemplate "mcp-servers-json" (dict "client" "claude" "sourceDir" .chezmoi.sourceDir "bridgeHttp" true) }}
+
+Emits the VALUE of mcpServers (the inner object), without surrounding braces,
+so callers can splice it into their own file structure. Produces valid JSON:
+keys are quoted, entries comma-separated, no trailing comma.
+
+stdio+uvx    -> command "uvx",  args [package, ...extra]
+stdio+docker -> command "docker", args ["run","-i","--rm", image, ...extra]
+http+remote  -> type "http", url "<url>"                 (native http clients)
+             -> command "npx", args ["-y","mcp-remote","<url>"]  (bridgeHttp: true)
+
+bridgeHttp exists for any JSON client whose config is stdio-only: a raw url/type
+entry would be dropped, so remote servers are bridged through mcp-remote. Kiro
+supports http natively, so it leaves bridgeHttp unset.
+*/ -}}
+{{- $client := .client -}}
+{{- $bridgeHttp := dig "bridgeHttp" false . -}}
+{{- $src := joinPath .sourceDir "ai" "mcp" "servers.yaml" -}}
+{{- $reg := include $src | fromYaml -}}
+{{- $names := list -}}
+{{- range $name, $cfg := $reg.servers -}}
+  {{- $enabled := dig "enabled" true $cfg -}}
+  {{- $only := dig "tools" (list) $cfg -}}
+  {{- if and $enabled (or (eq (len $only) 0) (has $client $only)) -}}
+    {{- $names = append $names $name -}}
+  {{- end -}}
+{{- end -}}
+{{- $names = sortAlpha $names -}}
+{{- range $i, $name := $names -}}
+  {{- $cfg := index $reg.servers $name -}}
+  {{- $transport := dig "transport" "stdio" $cfg -}}
+  {{- $runtime := dig "runtime" "uvx" $cfg -}}
+  {{- $extra := dig "args" (list) $cfg -}}
+  {{- $env := dig "env" (dict) $cfg -}}
+  {{- $auto := dig "autoApprove" (list) $cfg -}}
+  {{- if $i }},{{ end }}
+      {{ $name | quote }}: {
+  {{- if eq $transport "http" }}
+    {{- if $bridgeHttp }}
+        "command": "npx",
+        "args": [{{ list "-y" "mcp-remote" (dig "url" "" $cfg) | toJson | trimAll "[]" }}]
+    {{- else }}
+        "type": "http",
+        "url": {{ (dig "url" "" $cfg) | quote }}
+    {{- end }}
+  {{- else if eq $runtime "docker" }}
+        "command": "docker",
+        "args": [{{ concat (list "run" "-i" "--rm" (dig "image" "" $cfg)) $extra | toJson | trimAll "[]" }}]
+  {{- else }}
+        "command": "uvx",
+        "args": [{{ concat (list (dig "package" "" $cfg)) $extra | toJson | trimAll "[]" }}]
+  {{- end -}}
+  {{- if and (ne $transport "http") (gt (len $env) 0) }},
+        "env": {{ $env | toJson }}
+  {{- end -}}
+  {{- if gt (len $auto) 0 }},
+        "autoApprove": {{ $auto | toJson }}
+  {{- end }}
+      }
+{{- end }}
