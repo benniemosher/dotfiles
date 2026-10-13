@@ -62,6 +62,7 @@ Library/
 {{- if or (index . "work_platform") (ne .chezmoi.os "linux") }}
 .config/systemd/user/vault-snapshot.service
 .config/systemd/user/vault-snapshot.timer
+.config/autostart/obsidian.desktop
 {{- end }}
 {{- if index . "work_platform" }}
 Library/LaunchAgents/com.local.vault-snapshot.plist
