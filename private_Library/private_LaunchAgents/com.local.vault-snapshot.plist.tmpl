@@ -16,8 +16,15 @@
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
   </dict>
-  <key>StartInterval</key>
-  <integer>900</integer>
+  <!-- StartCalendarInterval, not StartInterval: launchd runs a missed calendar slot on wake,
+       while StartInterval stopped firing across sleep (one run from Sept 28 to Oct 13). -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Minute</key><integer>45</integer></dict>
+  </array>
   <key>RunAtLoad</key>
   <true/>
   <key>StandardErrorPath</key>
