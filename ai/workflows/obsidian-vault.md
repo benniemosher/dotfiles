@@ -67,6 +67,12 @@ credential: never paste it into a note, a shared terminal, or a repo.
 Regenerate it from Obsidian → Settings → Self-hosted LiveSync → Setup wizard → Copy setup
 URI, which is also where you set the passphrase.
 
+LiveSync only runs inside a running Obsidian. On battlestation, the `hours` and `standup`
+commands write vault files directly, and nothing pushes them until Obsidian is open. When the
+desktop session there ended on 2026-10-09, the Mac fell four days behind. On Linux personal
+machines, `~/.config/autostart/obsidian.desktop` starts Obsidian at login, but it still needs
+a desktop login after a reboot or logout.
+
 ## Snapshots
 
 LiveSync propagates deletions, and a first "fetch from remote" on a new device replaces the
@@ -88,7 +94,11 @@ before (2026-09-25 and 09-27). `bin/vault-snapshot` guards against that:
   drops local files can be undone.
 
 Check it: `systemctl --user list-timers vault-snapshot.timer` and
-`journalctl --user -u vault-snapshot` on Linux; `~/Library/Logs/vault-snapshot.log` on macOS.
+`journalctl --user -u vault-snapshot` on Linux. On macOS, `~/Library/Logs/vault-snapshot.log`
+and the `runs` count in `launchctl print gui/$(id -u)/com.local.vault-snapshot`. A healthy
+run logs nothing, so look at the backup branch's last commit too. The LaunchAgent uses
+`StartCalendarInterval`, because `StartInterval` stopped firing across sleep and the Mac went
+from Sept 28 to Oct 13 without a snapshot.
 
 ## Setting up a new machine
 
