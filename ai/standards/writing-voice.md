@@ -47,6 +47,8 @@ category, such as "SLIs, SLOs and Error Budgets".
   labels.
 - **Slack:** lead with the orienting sentence, then the detail. Keep the summary short and put
   the long version in the PR or issue, with a link.
+  In a short reply inside an ongoing thread, skip the thanks and the "we already have that"
+  preamble and open with the substance. Put code names in backticks (`watermark_age`).
 - **LinkedIn:** "I'm writing up what I learn along the way, and the first one is up", one
   concrete detail that gives a reason to click, the link, and a line on what's next.
 - **Blog:** the same voice, with diagrams and tables where they help, and the sources linked
@@ -55,5 +57,7 @@ category, such as "SLIs, SLOs and Error Budgets".
 ## Before sending
 
 - Show me the draft first. I post it unless I've said otherwise.
+- Tell me which lines are your inference rather than something read or tested, like a derived
+  number. I hedge those ("if I'm understanding this properly") or ask you to check them first.
 - Reread it as if I'm saying it out loud to the person. If a sentence sounds like a template
   or a press release, rewrite it.
