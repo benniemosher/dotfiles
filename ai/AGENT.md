@@ -59,6 +59,21 @@ You are working with a staff platform engineer / SRE who values efficiency, corr
 - **Use exact/pinned dependency versions**, not open ranges.
 - **Flag unusual dependency names** that could be typosquatting.
 
+## Memory Limits
+
+This machine also runs my desktop session, so a runaway job takes everything down with it.
+On 2026-10-10 a leaking test suite (14 GB in one Vitest worker) plus five parallel agents
+running suites and Terraform pushed the box to its limit.
+
+- **Cap heavy commands.** Run test suites, builds, and `terraform` under a memory limit:
+  `systemd-run --user --scope -q -p MemoryMax=8G -p MemorySwapMax=0 <command>` on Linux. If
+  it gets killed, that's a finding to investigate, not a reason to raise the cap.
+- **Keep the total under 16 GB.** At most two heavy jobs at once, across the main session and
+  every subagent. When fanning out agents, tell them not to run full suites, or run the
+  suites yourself one at a time.
+- **Treat a test process over 4 GB as a leak.** Measure with `/usr/bin/time -v` (Maximum
+  resident set size) and find the cause before rerunning.
+
 ## Workspace Detection
 
 I organize work into workspaces under `~/Code/<workspace>/` — that's where the repos live. Each workspace has:
