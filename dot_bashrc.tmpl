@@ -1,0 +1,119 @@
+{{- /* Deployed on Arch/Omarchy only; .chezmoiignore excludes it everywhere else, where
+       dot_zshrc.tmpl is still the shell config. The split is deliberate rather than a
+       port: Omarchy's aliases, functions, theming and omarchy-* helpers are all bash and
+       all sourced from here, so this file adds to them instead of replacing them. */ -}}
+# Omarchy environment (OMARCHY_PATH + PATH), needed even for non-interactive shells
+[[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] && source /usr/share/omarchy/default/bash/env-bootstrap
+
+# If not running interactively, don't do anything else (leave this above the rc source)
+[[ $- != *i* ]] && return
+
+# Omarchy's own defaults. Not edited in place -- overrides go below.
+[[ -r "$OMARCHY_PATH/default/bash/rc" ]] && source "$OMARCHY_PATH/default/bash/rc"
+
+# =================================================================================================================
+# Exports
+# =================================================================================================================
+# Preferred editor
+export EDITOR="nvim"
+
+# Terraform plugin cache
+export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
+mkdir -p "$TF_PLUGIN_CACHE_DIR" 2>/dev/null
+
+# GPG vars
+export LANG=en_US.UTF-8
+GPG_TTY=$(tty)
+export GPG_TTY
+
+# History configuration. The zsh setopt equivalents, in bash's spelling:
+# histappend for APPEND_HISTORY, ignoredups for HIST_IGNORE_DUPS, ignorespace for
+# HIST_IGNORE_SPACE. bash has no SHARE_HISTORY, so append-and-reread on each prompt is
+# the closest thing -- without it the last shell to exit wins and the rest is lost.
+export HISTFILE=~/.bash_history
+export HISTSIZE=1000000
+export HISTFILESIZE=1000000
+export HISTCONTROL=ignoredups:ignorespace
+shopt -s histappend
+PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND}"
+
+# =================================================================================================================
+# Additional aliases
+# =================================================================================================================
+alias be="bundle exec"
+alias doco="docker compose"
+alias e="nvim"
+alias ll="ls -al"
+alias tf="terraform"
+alias yamllint="docker run --rm -it -v \$(pwd):/data cytopia/yamllint"
+# macOS flushes mDNSResponder; systemd-resolved is the equivalent here.
+alias flushdns="sudo resolvectl flush-caches"
+# Plain name rather than $(which pinentry): same effect, and it resolves at use
+# instead of baking the path in at shell start.
+alias pinentryprogram=pinentry
+
+alias mise-update="mise upgrade --bump; mise reshim;"
+# No brew. `omarchy-update` is the distro's own updater and handles pacman, the AUR and
+# Omarchy itself in one pass; plain pacman is the fallback on a non-Omarchy Arch box.
+if command -v omarchy-update >/dev/null 2>&1; then
+  alias sys-update="omarchy-update"
+else
+  alias sys-update="sudo pacman -Syu"
+fi
+alias ups="sys-update; mise-update"
+
+orgclone() { gh repo list "$1" --limit 1000 --source --no-archived --json nameWithOwner -q '.[].nameWithOwner' | xargs -n1 gh repo clone; }
+
+alias k=kubectl
+alias kgp='kubectl get pods'
+alias kga='kubectl get all'
+alias kctx='kubectx'
+alias kns='kubens'
+
+# =================================================================================================================
+# Import local settings not meant to be checked into Git
+# =================================================================================================================
+
+local_profile="$HOME/.bashrc.local"
+if [ -f "$local_profile" ]; then
+    # shellcheck source=/dev/null
+    source "$local_profile"
+else
+    echo "404: $local_profile not found."
+fi
+
+export PATH=$HOME/.local/bin:$PATH
+export PATH=$HOME/bin:$PATH
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
+{{ if not (env "WORK_WORKSPACE") -}}
+export KUBECONFIG=$HOME/k3s.yaml
+{{ end -}}
+GH_PACKAGES_PAT=$(gh auth token 2>/dev/null)
+export GH_PACKAGES_PAT
+
+(figlet -w 100 -f doom "$(hostname -s)"; fortune | cowthink -f stegosaurus) | lolcat
+
+# Over SSH with a forwarded agent (the Mac's 1Password), point a stable symlink at it so
+# tmux panes and long-running tools keep working across reconnects. Otherwise use this
+# machine's own 1Password agent.
+# sshd puts forwarded sockets in ~/.ssh/agent/s.*.sshd.* (OpenSSH 10.1+) or
+# /tmp/ssh-*/agent.* (older).
+if [[ ( "$SSH_AUTH_SOCK" == "$HOME"/.ssh/agent/s.*.sshd.* || "$SSH_AUTH_SOCK" == /tmp/ssh-*/agent.* ) && -S "$SSH_AUTH_SOCK" ]]; then
+  ln -sfn "$SSH_AUTH_SOCK" "$HOME/.ssh/agent.sock"
+fi
+if [[ -S "$HOME/.ssh/agent.sock" ]]; then
+  export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+{{- if or (not (hasKey . "use_ssh_agent")) .use_ssh_agent }}
+else
+  export SSH_AUTH_SOCK=~/.1password/agent.sock
+{{- else }}
+else
+  # use_ssh_agent = false: no one unlocks this machine's 1Password, and a locked agent
+  # hangs, so use on-disk keys and let signing fail fast until an agent is forwarded.
+  unset SSH_AUTH_SOCK
+{{- end }}
+fi
+
+eval "$(mise activate bash)"
+eval "$(starship init bash)"

@@ -59,9 +59,102 @@ packages:
         - "grammarly-desktop"
         - "keybase"
         - "slack"
-  # Same split as darwin above: `work` installs everywhere,
-  # `personal` only on machines without `work_platform`, so a
-  # personal machine gets work + personal.
+  # Arch, and therefore Omarchy, which is Arch underneath. Same
+  # work/personal split as the lists above. The installer script picks
+  # this branch off osRelease.id, so a Debian/Ubuntu box still gets the
+  # apts/snaps lists below.
+  arch:
+    pacmans:
+      work:
+        - "aria2"
+        # Arch's equivalent of build-essential. mise compiles language runtimes
+        # from source and needs a toolchain present before it runs.
+        - "base-devel"
+        - "ca-certificates"
+        - "cowsay"
+        - "curl"
+        - "docker"
+        - "docker-compose"
+        - "figlet"
+        # Debian calls this `fortune`; Arch ships the same thing as fortune-mod.
+        - "fortune-mod"
+        - "fzf"
+        - "git"
+        # `gh` on Debian/snap, github-cli here.
+        - "github-cli"
+        - "glab"
+        - "gnupg"
+        - "jq"
+        - "kubectl"
+        - "kubectx"
+        - "kustomize"
+        - "lolcat"
+        - "lsb-release"
+        - "mailcap"
+        - "neovim"
+        # In `extra`, so no AUR build needed -- unlike the snap, which wanted
+        # --classic.
+        - "obsidian"
+        # Arch's pinentry package is the whole suite including the curses
+        # variant, so there is no separate pinentry-curses to name. gpg-
+        # agent.conf points at /usr/bin/pinentry and picks up whichever is
+        # configured.
+        - "pinentry"
+        - "pre-commit"
+        - "shellcheck"
+        - "starship"
+        - "tree"
+        - "unzip"
+        - "wget"
+        # mise builds runtimes from source; these are what those builds link
+        # against. Arch has no separate -dev packages -- headers ship with the
+        # library.
+        - "libffi"
+        - "libyaml"
+        - "openssl"
+        - "readline"
+        - "xz"
+        - "zlib"
+        # NOT "yq": in Arch's repos that name is the Python wrapper around jq.
+        # Mike Farah's Go implementation -- the one the Brewfile and the snap
+        # list install, and the one every script here is written against -- is
+        # packaged as go-yq.
+        - "go-yq"
+        # Installed, not just set: run_onchange_set-default-shell needs the
+        # shell present before chsh. On Arch the default stays bash (Omarchy's
+        # config assumes it), but zsh is still here so the shell is available if
+        # you want it per-terminal.
+        - "zsh"
+        - "zsh-autosuggestions"
+        - "zsh-syntax-highlighting"
+      personal:
+        - "tmux"
+    # Built from source by an AUR helper, so each one costs time on first apply.
+    # Anything available in the official repos belongs in pacmans above instead.
+    aurs:
+      work:
+        - "freelens-bin"
+        - "visual-studio-code-insiders-bin"
+      personal:
+        # The AUR package pulls 1Password's own official Linux build, which --
+        # unlike the snap and flatpak -- can expose the SSH agent socket and
+        # talk to the CLI. Same reasoning as the .deb on Debian; see
+        # run_onchange_linux-install-1password.
+        - "1password"
+        - "1password-cli"
+        - "brave-bin"
+        - "keybase-bin"
+        - "slack-desktop"
+        # Deliberately absent, with no Linux equivalent to swap in:
+        #   grammarly-desktop  -- browser extension only, no Linux app exists
+        #   sequel-ace         -- macOS only; dbeaver or beekeeper-studio
+        #   sourcetree         -- macOS only; lazygit, or the gh/glab CLIs
+        #   amethyst           -- Hyprland is the tiling WM on Omarchy
+        #   docker-desktop     -- native docker (in pacmans) instead
+        #   wezterm            -- Omarchy's terminal, so its theming applies
+  # Same split as darwin above: `work` installs everywhere, `personal` only on
+  # machines without `work_platform`, so a personal machine gets work +
+  # personal.
   linux:
     apts:
       work:

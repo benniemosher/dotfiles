@@ -11,7 +11,9 @@
 #
 # Not VNC. GNOME serves RDP, and the desktop is Wayland, so attaching x11vnc to the running
 # session does not work at all.
-{{ if and (eq .chezmoi.os "linux") (index . "enable_remote_desktop") -}}
+# GNOME only. Omarchy is Hyprland, which GNOME Remote Desktop knows nothing about, so
+# this stays off there rather than installing a service that cannot see the session.
+{{ if and (eq .chezmoi.os "linux") (ne .chezmoi.osRelease.id "arch") (index . "enable_remote_desktop") -}}
 
 if ! command -v grdctl >/dev/null 2>&1; then
   echo "remote-desktop: grdctl not found (install gnome-remote-desktop), skipping"
