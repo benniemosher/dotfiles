@@ -44,6 +44,70 @@ cask {{ . | quote }}
 {{ end -}}
 EOF
 {{ else if eq .chezmoi.os "linux" -}}
+{{ if eq .chezmoi.osRelease.id "arch" -}}
+# Arch, and so Omarchy. Split off from the apt/snap branch below rather than bolted onto it:
+# the two share no package names, no helper, and no failure modes worth reconciling.
+
+pacman_packages=(
+{{ range .packages.arch.pacmans.work }}  {{ . | quote }}
+{{ end -}}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.arch.pacmans.personal }}  {{ . | quote }}
+{{ end -}}
+{{ end -}}
+)
+
+# --needed so an already-installed package is not reinstalled on every apply, which matters
+# on Omarchy where it ships a good half of this list itself. Batch first for one dependency
+# resolution pass, then fall back one at a time: pacman aborts the whole transaction on a
+# single unknown name, and a package that moved repos should not stop the other forty.
+if ! sudo pacman -Syu --needed --noconfirm "${pacman_packages[@]}"; then
+  echo "batch install failed; retrying individually" >&2
+  for pkg in "${pacman_packages[@]}"; do
+    sudo pacman -S --needed --noconfirm "$pkg" || echo "SKIPPED (unavailable): $pkg" >&2
+  done
+fi
+
+aur_packages=(
+{{ range .packages.arch.aurs.work }}  {{ . | quote }}
+{{ end -}}
+{{ if not (index . "work_platform") -}}
+{{ range .packages.arch.aurs.personal }}  {{ . | quote }}
+{{ end -}}
+{{ end -}}
+)
+
+# Omarchy's own wrapper first, so its package bookkeeping stays accurate, then whichever
+# helper the machine happens to have. A plain Arch install (a VM used to test this file,
+# say) has none, so bootstrap yay from the AUR the long way rather than failing.
+aur_helper=""
+if command -v omarchy-pkg-aur-add >/dev/null 2>&1; then
+  aur_helper="omarchy"
+elif command -v yay >/dev/null 2>&1; then
+  aur_helper="yay"
+elif command -v paru >/dev/null 2>&1; then
+  aur_helper="paru"
+else
+  echo "no AUR helper found; bootstrapping yay" >&2
+  if sudo pacman -S --needed --noconfirm git base-devel; then
+    build_dir="$(mktemp -d)"
+    if git clone --depth 1 https://aur.archlinux.org/yay-bin.git "$build_dir/yay-bin" \
+      && (cd "$build_dir/yay-bin" && makepkg -si --noconfirm); then
+      aur_helper="yay"
+    fi
+    rm -rf "$build_dir"
+  fi
+fi
+
+# makepkg refuses to run as root, so this has to be the invoking user -- which it is, since
+# chezmoi apply is not run under sudo.
+case "$aur_helper" in
+  omarchy) for pkg in "${aur_packages[@]}"; do omarchy-pkg-aur-add "$pkg" || echo "SKIPPED: $pkg" >&2; done ;;
+  yay)     for pkg in "${aur_packages[@]}"; do yay -S --needed --noconfirm "$pkg" || echo "SKIPPED: $pkg" >&2; done ;;
+  paru)    for pkg in "${aur_packages[@]}"; do paru -S --needed --noconfirm "$pkg" || echo "SKIPPED: $pkg" >&2; done ;;
+  *)       echo "AUR packages skipped, no helper available: ${aur_packages[*]}" >&2 ;;
+esac
+{{ else -}}
 sudo snap set system experimental.user-daemons=true
 sudo apt-get update
 
@@ -74,6 +138,7 @@ sudo snap install {{ . }} || echo "SKIPPED: {{ . }}" >&2
 {{ if not (index . "work_platform") -}}
 {{ range .packages.linux.snaps.personal -}}
 sudo snap install {{ . }} || echo "SKIPPED: {{ . }}" >&2
+{{ end -}}
 {{ end -}}
 {{ end -}}
 {{ end -}}

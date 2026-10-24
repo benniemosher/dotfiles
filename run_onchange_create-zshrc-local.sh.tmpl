@@ -1,3 +1,7 @@
 #!/bin/bash
 
 touch ~/.zshrc.local
+{{ if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "arch") -}}
+# Arch runs bash (see run_onchange_set-default-shell), and dot_bashrc sources this one.
+touch ~/.bashrc.local
+{{ end -}}
