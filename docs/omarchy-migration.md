@@ -24,7 +24,9 @@ chose.
    [#12593](https://github.com/omacom/omarchy/issues/12593) is open as of 2026-10-23 and names
    `MacBookPro15,1` directly: after the first login the fans go to full, the screen goes
    black, and the machine powers off. There is no shipped fix — `force_igd` does not appear
-   anywhere in the Omarchy tree. Phase 5 applies the workaround **before** you ever log in.
+   anywhere in the Omarchy tree. The t2linux wiki independently lists hybrid graphics as
+   only partially supported — "dGPU power toggling doesn't work" — so this is two sources
+   agreeing, not one bug report. Phase 5 applies the workaround **before** you ever log in.
 2. **No Wi-Fi in the installer until firmware lands.** Have a USB-C hub with Ethernet, or a
    phone you can USB-tether. Omarchy pulls the Broadcom firmware from Apple's recovery image
    during install, but it needs a network to do it.
@@ -279,13 +281,15 @@ sensors
 |---|---|---|
 | Internal keyboard / trackpad | Works via `linux-t2` | Check `apple-bce` / `t2bce_vhci` loaded |
 | Wi-Fi | Works after firmware fetch | Re-run the fetcher; see the [t2linux Wi-Fi guide](https://wiki.t2linux.org/guides/wifi-bluetooth/) |
-| Bluetooth | Same firmware as Wi-Fi | Same |
+| Bluetooth | **Partial.** BCM4377 glitches on 2.4 GHz | Prefer 5 GHz devices; interference with Wi-Fi is expected |
 | Audio out | Works via `apple-t2-audio-config` | **Start quiet.** The T2 DSP can drive these speakers past safe excursion |
+| Internal microphone | Works, but **low input volume** is a known T2 quirk | Raise the gain in `wpctl`; test on a real call before you rely on it |
 | Touch Bar | Works via `tiny-dfr` | from the `arch-mact2` repo the T2 install configures, not the AUR; config at `/etc/tiny-dfr/config.toml` |
 | Brightness | Via `apple-gmux` | Merged upstream in 4.0.0 |
-| Webcam | **Likely broken.** FaceTime HD is not detected by default | Community `facetimehd` driver; treat as unsolved |
+| Webcam | **Works** via `t2bce` | Do not install `facetimehd-dkms` — that is the pre-T2 Broadcom 1570 camera, a different device, and the wrong driver here |
+| Thunderbolt / USB-C | Works | May need `pcie_ports=native` as a kernel parameter |
 | Suspend / lid close | **Flaky on T2.** Known unresolved | Set lid-close to lock, not suspend, in `/etc/systemd/logind.conf` |
-| Fingerprint / Touch ID | **Never going to work** | Accept it |
+| Touch ID | **Not available on this plan.** The sensor does work on T2 Macs, but only for fingers enrolled *in macOS*, and recovery after a panic or forced shutdown means booting macOS | No macOS means no enrolment and no recovery path. The `t2-touchid` package is Debian/Ubuntu-only as well. This is a consequence of the full wipe, not a hardware limit |
 
 Suspend is the one most likely to annoy you daily. The pragmatic setting:
 
@@ -492,6 +496,8 @@ The T2 means the usual Linux recovery tricks are not the whole story.
 - [t2linux wiki — basic post-install setup](https://wiki.t2linux.org/guides/postinstall/)
 - [t2linux wiki — Wi-Fi and Bluetooth firmware](https://wiki.t2linux.org/guides/wifi-bluetooth/)
 - [t2linux wiki — Arch installation](https://wiki.t2linux.org/distributions/arch/installation/)
+- [t2linux wiki — device support and state of features](https://wiki.t2linux.org/state/)
+- [t2linux wiki — Touch ID](https://wiki.t2linux.org/guides/touchid/)
 - [ArchWiki — Citrix](https://wiki.archlinux.org/title/Citrix)
 - [AUR — icaclient](https://aur.archlinux.org/packages/icaclient)
 - [ArchWiki — 1Password](https://wiki.archlinux.org/title/1Password)
