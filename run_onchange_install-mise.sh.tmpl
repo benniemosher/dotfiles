@@ -10,6 +10,11 @@ if command -v brew >/dev/null 2>&1 && brew list --formula mise &>/dev/null; then
 fi
 
 curl https://mise.run | sh
+{{ else if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "arch") -}}
+# Arch packages mise in the official repos, so packages.arch.pacmans installs it and
+# there is no third-party repository to wire up. mise's own installer would work too,
+# but then updates come from outside the package manager for no gain.
+:
 {{ else if eq .chezmoi.os "linux" -}}
 sudo apt update -y && sudo apt install -y gpg sudo wget curl
 sudo install -dm 755 /etc/apt/keyrings
