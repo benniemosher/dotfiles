@@ -61,10 +61,12 @@ pacman_packages=(
 # on Omarchy where it ships a good half of this list itself. Batch first for one dependency
 # resolution pass, then fall back one at a time: pacman aborts the whole transaction on a
 # single unknown name, and a package that moved repos should not stop the other forty.
+failed=()
+
 if ! sudo pacman -Syu --needed --noconfirm "${pacman_packages[@]}"; then
   echo "batch install failed; retrying individually" >&2
   for pkg in "${pacman_packages[@]}"; do
-    sudo pacman -S --needed --noconfirm "$pkg" || echo "SKIPPED (unavailable): $pkg" >&2
+    sudo pacman -S --needed --noconfirm "$pkg" || failed+=("$pkg")
   done
 fi
 
@@ -102,11 +104,22 @@ fi
 # makepkg refuses to run as root, so this has to be the invoking user -- which it is, since
 # chezmoi apply is not run under sudo.
 case "$aur_helper" in
-  omarchy) for pkg in "${aur_packages[@]}"; do omarchy-pkg-aur-add "$pkg" || echo "SKIPPED: $pkg" >&2; done ;;
-  yay)     for pkg in "${aur_packages[@]}"; do yay -S --needed --noconfirm "$pkg" || echo "SKIPPED: $pkg" >&2; done ;;
-  paru)    for pkg in "${aur_packages[@]}"; do paru -S --needed --noconfirm "$pkg" || echo "SKIPPED: $pkg" >&2; done ;;
-  *)       echo "AUR packages skipped, no helper available: ${aur_packages[*]}" >&2 ;;
+  omarchy) for pkg in "${aur_packages[@]}"; do omarchy-pkg-aur-add "$pkg" || failed+=("$pkg"); done ;;
+  yay)     for pkg in "${aur_packages[@]}"; do yay -S --needed --noconfirm "$pkg" || failed+=("$pkg"); done ;;
+  paru)    for pkg in "${aur_packages[@]}"; do paru -S --needed --noconfirm "$pkg" || failed+=("$pkg"); done ;;
+  *)       echo "no AUR helper available" >&2; failed+=("${aur_packages[@]}") ;;
 esac
+
+# Exit non-zero when anything failed, rather than reporting success having installed
+# nothing. run_onchange records a script as done once it exits 0 and will not run it
+# again until its content changes -- so swallowing failures here means a transient one
+# (a mirror down, sudo not yet usable, no network) is recorded as success and silently
+# never retried. Failing loudly makes the next `chezmoi apply` try again, and a name
+# that is permanently wrong gets fixed in packages.yaml instead of ignored forever.
+if (( ${#failed[@]} )); then
+  printf 'FAILED TO INSTALL (%d): %s\n' "${#failed[@]}" "${failed[*]}" >&2
+  exit 1
+fi
 {{ else -}}
 sudo snap set system experimental.user-daemons=true
 sudo apt-get update
