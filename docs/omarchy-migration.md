@@ -140,24 +140,65 @@ su - bennie
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source /src
 ```
 
-### Tier 2 — Omarchy in UTM, for the full desktop
+### Tier 2 — Omarchy in UTM, for the dotfiles end to end
 
-This machine is Intel, so x86_64 guests run accelerated under Hypervisor.framework. An Apple
-Silicon Mac could not do this nearly as well — use this one while you have it.
+This machine is Intel, so x86_64 guests virtualise natively under Hypervisor.framework. An
+Apple Silicon Mac has to emulate x86_64 and is far slower at it — use this one while it still
+boots.
 
 ```bash
 brew install --cask utm
+cd ~/Downloads
+curl -fLO https://iso.omarchy.org/omarchy-4.0.6.iso
+curl -fLO https://iso.omarchy.org/omarchy-4.0.6.iso.sha256
+shasum -a 256 -c omarchy-4.0.6.iso.sha256     # must print OK
 ```
 
-- [ ] New VM → Virtualize → Linux → point at the Omarchy ISO
-- [ ] 4 CPU, 8 GB RAM, 40 GB disk (sparse; you have 49 GB free, so keep an eye on it)
-- [ ] Enable hardware acceleration; set display to `virtio-gpu-gl`
+UTM → Create a New Virtual Machine:
 
-What the VM **will** tell you: the installer flow, whether the dotfiles apply cleanly, whether
-Brave / 1Password / Citrix / Obsidian install and launch, what the Hyprland defaults feel like.
+| Setting | Value |
+|---|---|
+| Mode | **Virtualize**, not Emulate |
+| OS | Linux |
+| "Use Apple Virtualization" | leave **unchecked** |
+| Boot ISO | `~/Downloads/omarchy-4.0.6.iso` |
+| Memory | 8192 MB |
+| CPU cores | 4 |
+| Storage | 60 GB (sparse) |
+| Network mode | **Bridged** — set this before first boot, so the VM gets a LAN IP and the host can ssh in |
 
-What it **will not** tell you: anything about T2 hardware — Wi-Fi, audio, Touch Bar, fans,
-suspend, or the hybrid-GPU problem. Those only show up on the metal.
+Two VM artefacts that look like failures and are not:
+
+- **Hyprland will render badly or not at all.** QEMU's virtio-gpu exposes OpenGL 2.1 and
+  Hyprland needs 3.0+, so expect lag, empty windows, or a black desktop. `Ctrl+Alt+F2` gets a
+  TTY; `export LIBGL_ALWAYS_SOFTWARE=1` makes it limp along. This says nothing about the real
+  hardware, which has a real Intel GPU.
+- **A black screen early in boot is usually the disk-encryption prompt rendering invisibly.**
+  Press Enter and type the passphrase blind.
+
+Neither matters, because the point of this tier is the dotfiles, and that work happens over
+ssh where the GPU is irrelevant. Once Omarchy is up:
+
+```bash
+sudo pacman -S --noconfirm openssh && sudo systemctl enable --now sshd
+ip -4 addr show | grep inet
+```
+
+Then from the Mac, against that IP:
+
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
+chezmoi init https://github.com/benniemosher/dotfiles.git --branch feature/arch-omarchy-support
+chezmoi diff          # read it before applying
+chezmoi apply
+```
+
+What this tier **will** tell you: whether `chezmoi apply` completes, whether the AUR packages
+build, whether `~/.bashrc` and Omarchy's own bash config coexist, and whether Brave,
+1Password, Obsidian and Citrix install and launch.
+
+What it **will not** tell you: anything about T2 hardware — Wi-Fi, Bluetooth, audio, the
+Touch Bar, fans, suspend, or the hybrid-GPU problem. Those only show up on the metal.
 
 ---
 
