@@ -11,10 +11,17 @@ fi
 
 curl https://mise.run | sh
 {{ else if (eq (includeTemplate "is-arch" .) "true") -}}
-# Arch packages mise in the official repos, so packages.arch.pacmans installs it and
-# there is no third-party repository to wire up. mise's own installer would work too,
-# but then updates come from outside the package manager for no gain.
-:
+# Arch has mise in the official repos, but it is deliberately NOT in
+# packages.arch.pacmans: Omarchy already ships mise-bin, and the two conflict over
+# /usr/bin/mise -- `pacman -S mise` there fails the whole transaction with
+# "unresolvable package conflicts". Omarchy's build is usually the newer of the two
+# anyway, so the right move is to leave whatever is already installed alone and only
+# install on a bare Arch box that has neither.
+if command -v mise >/dev/null 2>&1; then
+  echo "mise already provided by $(pacman -Qo "$(command -v mise)" 2>/dev/null | awk '{print $5}' || echo "something else"), leaving it alone"
+else
+  sudo pacman -S --needed --noconfirm mise
+fi
 {{ else if eq .chezmoi.os "linux" -}}
 sudo apt update -y && sudo apt install -y gpg sudo wget curl
 sudo install -dm 755 /etc/apt/keyrings

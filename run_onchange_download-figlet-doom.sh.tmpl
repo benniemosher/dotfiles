@@ -1,5 +1,23 @@
 #!/bin/bash
-
 {{ if eq .chezmoi.os "linux" -}}
-sudo curl https://raw.githubusercontent.com/xero/figlet-fonts/refs/heads/master/Doom.flf --output /usr/share/figlet/doom.flf
+# .bashrc/.zshrc run `figlet -f doom` on every shell start, so a font in the wrong
+# place means an error on every new terminal. Debian keeps figlet fonts directly in
+# /usr/share/figlet; Arch keeps them in /usr/share/figlet/fonts. Ask figlet where its
+# font directory is rather than guessing, and fall back to probing.
+fontdir="$(figlet -I2 2>/dev/null)"
+if [ -z "$fontdir" ] || [ ! -d "$fontdir" ]; then
+  if [ -d /usr/share/figlet/fonts ]; then
+    fontdir=/usr/share/figlet/fonts
+  else
+    fontdir=/usr/share/figlet
+  fi
+fi
+
+if [ -f "$fontdir/doom.flf" ]; then
+  echo "figlet doom font already present in $fontdir"
+else
+  sudo curl -fsSL \
+    https://raw.githubusercontent.com/xero/figlet-fonts/refs/heads/master/Doom.flf \
+    --create-dirs --output "$fontdir/doom.flf"
+fi
 {{ end -}}

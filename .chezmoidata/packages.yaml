@@ -91,9 +91,6 @@ packages:
         - "lolcat"
         - "lsb-release"
         - "mailcap"
-        # In the official repos, so run_onchange_install-mise skips its
-        # third-party-repo dance here.
-        - "mise"
         - "neovim"
         # In `extra`, so no AUR build needed -- unlike the snap, which wanted
         # --classic.
