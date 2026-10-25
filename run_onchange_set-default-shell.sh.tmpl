@@ -1,5 +1,5 @@
 #!/bin/bash
-{{ if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "arch") -}}
+{{ if (eq (includeTemplate "is-arch" .) "true") -}}
 # Omarchy's shell config -- aliases, functions, theming, the omarchy-* helpers -- is bash,
 # and ~/.bashrc sources it. Switching the login shell to zsh silently opts out of all of
 # that, so the default stays bash here and the customisations live in dot_bashrc.tmpl.

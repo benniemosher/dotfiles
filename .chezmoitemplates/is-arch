@@ -1,0 +1,16 @@
+{{- /* Arch-family detection, used by every template that branches on it.
+
+       Plain Arch reports ID=arch. Omarchy reports ID=omarchy with ID_LIKE=arch, so an
+       `eq .chezmoi.osRelease.id "arch"` test is false on the very machine this branch
+       exists for -- it silently falls through to the apt/snap path and fails. Any
+       future Arch derivative that sets ID_LIKE correctly is picked up too.
+
+       Guarded on the OS because .chezmoi.osRelease does not exist on darwin.
+
+       Returns the string "true", or nothing. Use as:
+         {{ if eq (includeTemplate "is-arch" .) "true" }} */ -}}
+{{- if eq .chezmoi.os "linux" -}}
+{{- if or (eq .chezmoi.osRelease.id "arch") (contains "arch" (.chezmoi.osRelease.idLike | default "")) -}}
+true
+{{- end -}}
+{{- end -}}

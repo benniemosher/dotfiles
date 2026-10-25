@@ -10,7 +10,7 @@ if command -v brew >/dev/null 2>&1 && brew list --formula mise &>/dev/null; then
 fi
 
 curl https://mise.run | sh
-{{ else if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "arch") -}}
+{{ else if (eq (includeTemplate "is-arch" .) "true") -}}
 # Arch packages mise in the official repos, so packages.arch.pacmans installs it and
 # there is no third-party repository to wire up. mise's own installer would work too,
 # but then updates come from outside the package manager for no gain.
