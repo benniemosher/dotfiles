@@ -1,4 +1,4 @@
-{{ if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "arch") -}}
+{{ if (eq (includeTemplate "is-arch" .) "true") -}}
 {{/* Omarchy ships ~/.config/git/config, which git ignores outright once ~/.gitconfig
      exists -- so its defaults would vanish without a word. Including it here, first,
      keeps them (rerere, diff.algorithm = histogram, branch.sort) while everything set

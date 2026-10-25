@@ -44,7 +44,7 @@ cask {{ . | quote }}
 {{ end -}}
 EOF
 {{ else if eq .chezmoi.os "linux" -}}
-{{ if eq .chezmoi.osRelease.id "arch" -}}
+{{ if (eq (includeTemplate "is-arch" .) "true") -}}
 # Arch, and so Omarchy. Split off from the apt/snap branch below rather than bolted onto it:
 # the two share no package names, no helper, and no failure modes worth reconciling.
 

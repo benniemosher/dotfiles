@@ -1,6 +1,6 @@
 #!/bin/bash
 # Arch installs starship from the official repos (packages.arch.pacmans), so this snap is
 # only for Debian/Ubuntu, where the packaged version lags far behind.
-{{ if and (eq .chezmoi.os "linux") (ne .chezmoi.osRelease.id "arch") -}}
+{{ if and (eq .chezmoi.os "linux") (not (eq (includeTemplate "is-arch" .) "true")) -}}
 sudo snap install starship --edge
 {{ end -}}

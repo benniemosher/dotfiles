@@ -49,7 +49,7 @@ docs
        Arch/Omarchy one (its defaults are bash and ~/.bashrc sources them), .zshrc is
        everywhere else. WezTerm and Amethyst go the same way -- Omarchy supplies its own
        terminal so its theme switcher drives it, and Hyprland is the tiling WM. */}}
-{{- if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "arch") }}
+{{- if (eq (includeTemplate "is-arch" .) "true") }}
 .zshrc
 .wezterm.lua
 {{- /* Omarchy ships these in its own config/ and drives them from its theme switcher
