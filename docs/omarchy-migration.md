@@ -89,6 +89,25 @@ git -C ~/Code/obsidian-vault-setup ls-remote backup | head -3
 - [ ] Anything in `~/Downloads`, `~/Desktop`, `~/Documents` you care about.
 - [ ] Browser profiles you have not synced.
 
+### Data that does not survive the move  **STOP**
+
+Different from backing up: Linux has no app that reads these, so the question is not "is it
+safe" but "can I still reach it afterward". Verified on 2026-10-24 — Messages and Photos are
+in iCloud and reach the phone and the other Macs, so neither needs action.
+
+- [ ] **Messages** (~14 GB here) — confirm Messages in iCloud is on: Messages → Settings →
+      iMessage → **Enable Messages in iCloud**. History then stays reachable from the phone
+      and other Macs. Nothing on Linux reads the local SQLite store.
+- [ ] **Photos** — confirm iCloud Photos is on. If it is not, this needs a full export before
+      the wipe, not a backup.
+- [ ] **Keychain** — Wi-Fi passwords, certificates, app credentials. Does not transfer, and
+      iCloud Keychain only reaches Apple devices. Anything not already in 1Password is gone.
+      Worth a pass through Passwords.app for logins that never made it over.
+- [ ] **Notes, Reminders, Calendar, Contacts** — iCloud-backed, so reachable from the web and
+      the phone, but not natively from Linux.
+- [ ] **Authenticator apps / 2FA seeds** — if any TOTP codes live only in a Mac app, move them
+      to 1Password first. This is the one that locks you out of accounts.
+
 ### Confirm you can get back in to everything
 
 - [ ] 1Password: you know the account password and have the Secret Key / Emergency Kit
@@ -146,15 +165,22 @@ suspend, or the hybrid-GPU problem. Those only show up on the metal.
 
 From this Mac, while it still boots:
 
-- [ ] Download the ISO from <https://omarchy.org> (4.0.5 or newer — 4.0.5 fixed T2 installs
-      missing the Broadcom firmware fetcher, so do not use anything older)
-- [ ] Verify the checksum against the one on the download page
+- [ ] Download the ISO from <https://omarchy.org>. 4.0.6 is current as of 2026-10-24; do not
+      use anything older than 4.0.5, which is the release that fixed T2 installs missing the
+      Broadcom firmware fetcher.
+- [ ] Verify it, rather than trusting the download:
+
+```bash
+cd ~/Downloads
+curl -fLO https://iso.omarchy.org/omarchy-4.0.6.iso.sha256
+shasum -a 256 -c omarchy-4.0.6.iso.sha256
+```
 - [ ] Write it with balenaEtcher, or:
 
 ```bash
 diskutil list                       # find your USB, e.g. /dev/disk4
 diskutil unmountDisk /dev/disk4
-sudo dd if=~/Downloads/omarchy.iso of=/dev/rdisk4 bs=4m status=progress
+sudo dd if=~/Downloads/omarchy-4.0.6.iso of=/dev/rdisk4 bs=4m status=progress
 sync
 ```
 
