@@ -115,5 +115,11 @@ else
 {{- end }}
 fi
 
-eval "$(mise activate bash)"
-eval "$(starship init bash)"
+# Omarchy's own default/bash/init -- sourced via the rc above -- already runs
+# `mise activate bash` and `starship init bash`. Doing it again here duplicates PATH
+# entries and initialises the prompt twice. Only do it when that did not happen, which
+# means a plain Arch box with no Omarchy.
+if [[ -z ${OMARCHY_PATH:-} ]]; then
+  command -v mise >/dev/null 2>&1 && eval "$(mise activate bash)"
+  command -v starship >/dev/null 2>&1 && eval "$(starship init bash)"
+fi
