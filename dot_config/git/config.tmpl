@@ -1,3 +1,12 @@
+{{ if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "arch") -}}
+{{/* Omarchy ships ~/.config/git/config, which git ignores outright once ~/.gitconfig
+     exists -- so its defaults would vanish without a word. Including it here, first,
+     keeps them (rerere, diff.algorithm = histogram, branch.sort) while everything set
+     below still wins: notably init.defaultBranch, which it sets to master. */}}
+[include]
+  path = ~/.config/git/config
+
+{{ end -}}
 [user]
   name = Bennie Mosher
   email = {{ if env "GIT_EMAIL" }}{{ env "GIT_EMAIL" }}{{ else }}{{ .git_email }}{{ end }}

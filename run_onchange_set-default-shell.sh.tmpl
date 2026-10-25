@@ -3,7 +3,30 @@
 # Omarchy's shell config -- aliases, functions, theming, the omarchy-* helpers -- is bash,
 # and ~/.bashrc sources it. Switching the login shell to zsh silently opts out of all of
 # that, so the default stays bash here and the customisations live in dot_bashrc.tmpl.
-chsh -s "$(which bash)"
+target="$(command -v bash)"
 {{ else -}}
-chsh -s "$(which zsh)"
+target="$(command -v zsh)"
 {{ end -}}
+
+# Only call chsh when the shell actually needs changing. chsh prompts for the account
+# password, which during an unattended `chezmoi apply` either hangs on the prompt or fails
+# outright -- and on Omarchy, where bash is already the login shell, it would be asking for
+# a password to make no change at all.
+current="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7)"
+if [ -z "$current" ]; then
+  # No getent (macOS); fall back to dscl.
+  current="$(dscl . -read "/Users/$(id -un)" UserShell 2>/dev/null | awk '{print $2}')"
+fi
+
+# Compare resolved paths, not strings. On Arch /bin, /usr/bin and /usr/sbin are the same
+# directory after the usr-merge, so `command -v bash` can say /usr/sbin/bash while passwd
+# says /bin/bash -- the same file under two names, which a string compare reads as a
+# difference and "fixes" with a password prompt.
+resolve() { readlink -f "$1" 2>/dev/null || echo "$1"; }
+
+if [ -n "$target" ] && [ "$(resolve "$current")" != "$(resolve "$target")" ]; then
+  echo "default shell: $current -> $target"
+  chsh -s "$target"
+else
+  echo "default shell already $current, leaving it alone"
+fi

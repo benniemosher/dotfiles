@@ -52,6 +52,15 @@ docs
 {{- if and (eq .chezmoi.os "linux") (eq .chezmoi.osRelease.id "arch") }}
 .zshrc
 .wezterm.lua
+{{- /* Omarchy ships these in its own config/ and drives them from its theme switcher
+       (omarchy-refresh-config, omarchy-theme-set-tmux). Ours would shadow them --
+       ~/.tmux.conf takes precedence over ~/.config/tmux/tmux.conf -- so the theming
+       would silently stop working. Adopting its defaults means not deploying ours. */}}
+.config/starship.toml
+.tmux.conf
+{{- /* zsh plugin clones from .chezmoiexternal: nothing sources them here, since .zshrc
+       is not deployed and the login shell is bash. */}}
+.zsh
 {{- else }}
 .bashrc
 {{- end }}
