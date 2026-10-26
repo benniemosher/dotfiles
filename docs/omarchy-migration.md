@@ -407,9 +407,14 @@ printf '%s %s\n' "you@example.com" "$(op read 'op://Private/<ssh item>/public ke
 
 ## Phase 8 — Dotfiles
 
-The Linux branch of these dotfiles currently assumes **apt and snap**. Arch needs a pacman +
-AUR branch, which is being added on a separate branch — use it rather than `main` until it is
-merged.
+Arch/Omarchy support lives on `feature/arch-omarchy-support` until it is merged. It was
+tested end to end against a real Omarchy 4.0.6 install on 2026-10-25: `chezmoi apply` exits
+0, 1,070 packages, all AUR apps built, the vault-snapshot timer enabled and active.
+
+Six bugs came out of that test, all invisible to an Arch container, all fixed on the branch.
+The one worth knowing about if you ever debug this again: Omarchy reports `ID=omarchy` with
+`ID_LIKE=arch`, so anything matching `ID` exactly against `arch` silently takes the wrong
+branch.
 
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
@@ -429,13 +434,22 @@ chezmoi apply
 | 1Password item for Obsidian LiveSync | `op://<vault>/<item id>` from the saved config |
 | Git remote for vault snapshots | `ssh://battlestation-ubuntu.local/data/backups/obsidian-vault.git` |
 
+Expect two prompts the test could not cover: the Obsidian LiveSync passphrase (Phase 9) and
+`chsh`, which asks for your password only if the login shell is not already bash — on Omarchy
+it is, so it should no-op.
+
 Things that change on Omarchy, by your own choice to adopt its defaults:
 
 - **Shell is bash**, not zsh. `dot_zshrc.tmpl`'s content needs a bash equivalent so Omarchy's
   aliases, theming, and `omarchy-*` tooling keep working.
 - **Terminal is Omarchy's**, not WezTerm, so the theme switcher drives it.
 - **Window manager is Hyprland**, so Amethyst is gone.
-- **Starship** is still there, from `pacman`, not a curl installer.
+- **Starship** is still there, but its config is Omarchy's, so the theme switcher restyles
+  the prompt. Same for tmux.
+- **mise** stays Omarchy's `mise-bin`. The repo package conflicts with it and fails the whole
+  pacman transaction, so the dotfiles deliberately do not install it here.
+- **git** keeps your identity and signing, and `[include]`s Omarchy's `~/.config/git/config`
+  first so its defaults (`rerere`, `diff.algorithm`) apply while yours still win.
 
 ---
 
