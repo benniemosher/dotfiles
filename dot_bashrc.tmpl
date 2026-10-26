@@ -82,9 +82,20 @@ else
     echo "404: $local_profile not found."
 fi
 
-export PATH=$HOME/.local/bin:$PATH
-export PATH=$HOME/bin:$PATH
-export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+# Prepend only what is not already there. Omarchy's env-bootstrap puts ~/.local/bin on
+# PATH before this file runs, so an unconditional prepend lists it twice -- harmless but
+# the same untidiness as initialising mise and starship twice, and it compounds every
+# time a shell re-sources this.
+prepend_path() {
+  case ":$PATH:" in
+    *":$1:"*) ;;
+    *) PATH="$1:$PATH" ;;
+  esac
+}
+prepend_path "$HOME/.local/bin"
+prepend_path "$HOME/bin"
+prepend_path "${KREW_ROOT:-$HOME/.krew}/bin"
+export PATH
 
 {{ if not (env "WORK_WORKSPACE") -}}
 export KUBECONFIG=$HOME/k3s.yaml
