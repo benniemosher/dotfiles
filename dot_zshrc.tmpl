@@ -125,3 +125,20 @@ eval "$(mise activate zsh)"
 {{ end }}
 
 eval "$(starship init zsh)"
+{{ if eq .chezmoi.os "darwin" -}}
+{{/* Docker Desktop appends this block itself when it is installed or updated, and checks for
+     the marker comment first. Keeping it here, verbatim, stops it re-appending and chezmoi
+     showing a diff that removes it. */ -}}
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=({{ .chezmoi.homeDir }}/.docker/completions $fpath)
+autoload -Uz compinit
+(( ${+_comps[docker]} )) || compinit
+# End of Docker CLI completions
+{{ end -}}
+{{ if index . "use_kiro" -}}
+{{/* The Kiro CLI installer appends this, guarded by the marker comment. ~/.local/bin is already
+     on PATH above, so the line is a no-op; it is here so the installer finds it and leaves
+     the file alone. */ -}}
+# Added by Kiro CLI
+case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="${PATH:+$PATH:}$HOME/.local/bin" ;; esac
+{{ end -}}

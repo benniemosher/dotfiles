@@ -4,7 +4,7 @@
 
 {{ if eq .chezmoi.os "darwin" -}}
 {{ if index . "work_platform" -}}
-  signingkey = {{ output "bash" "-c" "gpg --list-secret-keys --keyid-format LONG 2>/dev/null | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2" | trim }}
+  signingkey = {{ .chezmoi.homeDir }}/.ssh/id_ed25519.pub
 {{ else -}}
   signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHiLyzXgt7jnveA00YXLH5euotmhiTJPLsxcLMbL1Qk/
 {{ end -}}
@@ -15,6 +15,13 @@
 [includeIf "gitdir:~/Code/zcore/"]
   path = ~/.config/git/zcore.gitconfig
 
+{{ if index . "work_workspace" -}}
+{{/* Per-workspace identity (work email). The included file is machine-local and unmanaged,
+     like zcore.gitconfig: this repo is public and must not carry a work address. */ -}}
+[includeIf "gitdir:~/Code/{{ .work_workspace }}/"]
+  path = ~/.config/git/{{ .work_workspace }}.gitconfig
+
+{{ end -}}
 [alias]
   s = status
   co = checkout
@@ -46,7 +53,9 @@
 {{ if eq .chezmoi.os "darwin" -}}
 [gpg]
 {{ if index . "work_platform" -}}
-  format = openpgp
+{{/* The work Mac signs with its own on-disk SSH key (registered on GitHub as a signing key),
+     not 1Password, which is not installed on work machines. */ -}}
+  format = ssh
 {{ else -}}
   format = ssh
 [gpg "ssh"]
