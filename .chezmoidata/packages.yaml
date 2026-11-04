@@ -7,12 +7,12 @@ packages:
   darwin:
     taps:
       work:
-        - "alexnabokikh/tfsort"
+        # - "alexnabokikh/tfsort"
         - "hashicorp/tap"
       personal:
     brews:
       work:
-        - "alexnabokikh/tfsort/tfsort"
+        # - "alexnabokikh/tfsort/tfsort"
         - "aria2"
         - "chezmoi"
         - "cowsay"
