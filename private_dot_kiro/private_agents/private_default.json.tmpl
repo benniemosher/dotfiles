@@ -1,4 +1,10 @@
 {{/* From chezmoi data, not env: an apply from cron or a fresh shell has no WORK_WORKSPACE exported and would silently drop the workspace resources. */}}
+{{- /* This is the universal format `kiro-cli agent upgrade` writes, which both the classic and V3
+       engines load. It used to be the older V2 shape, which V3 rewrote in place at every launch and
+       left chezmoi showing a diff (and reverting Kiro's rewrite) on every apply. The generated
+       `kiroUpgrade` marker is left out on purpose: it is a hash of the rendered content, so it would
+       be wrong on any machine whose workspace differs, and Kiro treats the file as already upgraded
+       without it. Regenerate from the V2 shape with `kiro-cli agent upgrade --dry-run <dir>`. */ -}}
 {{- $workspace := default "" (index . "work_workspace") -}}
 {
   "name": "default",
@@ -16,48 +22,91 @@
   ],
   "toolsSettings": {
     "fs_write": {
-      "allowedPaths": ["~/Code/**"]
+      "allowedPaths": [
+        "~/Code/**"
+      ]
     },
     "fs_read": {
-      "allowedPaths": ["~/Code/**", "~/.config/ai/**"]
+      "allowedPaths": [
+        "~/Code/**",
+        "~/.config/ai/**"
+      ]
     },
     "execute_bash": {
       "autoAllowReadonly": true
     }
   },
-  "hooks": {
-    "agentSpawn": [
-      {
-        "command": "cat ~/.config/ai/AGENT.md",
-        "description": "Load universal agent instructions"
-      }{{ if $workspace }},
-      {
-        "command": "echo '--- TODAY: '$(date +%Y-%m-%d)' | Log work with: standup \"<entry>\" | Capture knowledge with: learning \"<tag>\" \"<entry>\" | Both write into the vault at ~/Code/obsidian-vault-setup ---'",
-        "description": "Show today's date and the standup/learning commands to use"
-      }{{ end }}
-    ]
-  },
+  "hooks": [
+    {
+      "name": "agentSpawn-0",
+      "trigger": "agentSpawn",
+      "action": {
+        "type": "command",
+        "command": "cat ~/.config/ai/AGENT.md"
+      },
+      "timeout": 10
+    }{{ if $workspace }},
+    {
+      "name": "agentSpawn-1",
+      "trigger": "agentSpawn",
+      "action": {
+        "type": "command",
+        "command": "echo '--- TODAY: '$(date +%Y-%m-%d)' | Log work with: standup \"<entry>\" | Capture knowledge with: learning \"<tag>\" \"<entry>\" | Both write into the vault at ~/Code/obsidian-vault-setup ---'"
+      },
+      "timeout": 10
+    }{{ end }}
+  ],
   "tools": [
-    "fs_read",
-    "fs_write",
-    "execute_bash",
-    "grep",
-    "glob",
     "code",
-    "use_aws",
-    "use_subagent",
     "delegate",
-    "report_issue",
+    "glob",
+    "grep",
     "introspect",
-    "web_search",
-    "web_fetch",
-    "search_documentation",
+    "read",
     "read_documentation",
     "read_sections",
     "recommend",
-    "session"
+    "report_issue",
+    "search_documentation",
+    "session",
+    "shell",
+    "subagent",
+    "use_aws",
+    "web",
+    "web_fetch",
+    "web_search",
+    "write"
   ],
   "mcpServers": {},
   "includeMcpJson": true,
-  "model": null
+  "model": null,
+  "permissions": {
+    "rules": [
+      {
+        "capability": "fs_read",
+        "match": [
+          "~/Code/**",
+          "~/.config/ai/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "~/Code/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "match": [
+          "./**"
+        ],
+        "effect": "allow"
+      }
+    ],
+    "policies": [
+      "read-only-shell"
+    ]
+  }
 }
