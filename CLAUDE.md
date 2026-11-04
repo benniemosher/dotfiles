@@ -56,8 +56,8 @@ dotfiles/
 │   ├── mise/                  # mise version manager config
 │   ├── nvim/                  # LazyVim configuration
 │   └── starship.toml          # Starship prompt config
-├── dot_kiro/                  # Kiro CLI config — only deployed when use_kiro is set
-│   └── agents/default.json.tmpl # Points to ai/ standards
+├── private_dot_kiro/          # Kiro CLI config (0700, agent file 0600) — only deployed when use_kiro is set
+│   └── private_agents/private_default.json.tmpl # Points to ai/ standards
 ├── dot_zshrc.tmpl             # Shell configuration (templated)
 ├── dot_gitconfig.tmpl         # Git configuration (templated)
 ├── dot_wezterm.lua            # WezTerm terminal config
