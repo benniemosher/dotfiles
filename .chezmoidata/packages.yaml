@@ -35,10 +35,10 @@ packages:
         - "pre-commit"
         - "shellcheck"
         - "starship"
+        - "tmux"
         - "tree"
         - "yq"
       personal:
-        - "tmux"
     casks:
       work:
         - "amethyst"
@@ -94,6 +94,7 @@ packages:
         - "neovim"
         - "pre-commit"
         - "shellcheck"
+        - "tmux"
         - "tree"
         - "unzip"
         - "wget"
@@ -103,7 +104,6 @@ packages:
         - "zsh-autosuggestions"
         - "zlib1g-dev"
       personal:
-        - "tmux"
     snaps:
       work:
         # awscli, checkov and k9s are absent from every list here on
