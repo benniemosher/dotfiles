@@ -1,0 +1,9 @@
+[Desktop Entry]
+# Starts Obsidian at login. The hours and standup commands write the vault on this machine,
+# and only a running Obsidian pushes those changes to LiveSync. With it closed, other devices
+# fell four days behind (2026-10-09 to 10-13).
+Type=Application
+Name=Obsidian
+Exec=/snap/bin/obsidian
+Icon=/snap/obsidian/current/meta/gui/icon.png
+X-GNOME-Autostart-enabled=true
