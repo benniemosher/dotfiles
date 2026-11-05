@@ -45,53 +45,22 @@ docs
 # Chezmoi's own config (machine-specific, has work_workspace/git_email overrides)
 .config/chezmoi/chezmoi.toml
 
-{{- /* Shell config is per-platform, and the two must never both land: .bashrc is the
-       Arch/Omarchy one (its defaults are bash and ~/.bashrc sources them), .zshrc is
-       everywhere else. WezTerm and Amethyst go the same way -- Omarchy supplies its own
-       terminal, themed by its own switcher, and Hyprland is the tiling WM. */}}
+{{- /* Omarchy owns these: its theme switcher and omarchy-update migrations rewrite them
+       in place, so deploying ours would fight those edits. It also supplies its own
+       terminal, and Hyprland is the tiling WM. */}}
 {{- if (eq (includeTemplate "is-arch" .) "true") }}
-.zshrc
-.config/wezterm/wezterm.lua
-{{- /* tmux: adopt Omarchy's config rather than ours. Its 4185-byte config already sets
-       everything ours did -- mouse, history-limit 50000, escape-time, base-index 1,
-       renumber-windows, truecolor (via terminal-overrides *:RGB), set-clipboard,
-       focus-events, vi copy mode, splits in the pane's cwd -- and adds a whole
-       keybinding scheme whose `-N` descriptions are what omarchy-menu-tmux-keybindings
-       prints. Its prefix is C-Space with C-b kept as prefix2, so muscle memory survives.
-
-       The reason not to deploy ours is not the theme switcher: omarchy-theme-set-tmux
-       only pushes vars into running sessions with `tmux set-environment` and never
-       touches the file. It is omarchy-update's migrations, which edit
-       ~/.config/tmux/tmux.conf in place with sed -i and >> (three of the 120 do). Ours
-       and Omarchy's are the same path since #81, so chezmoi and those migrations would
-       take turns overwriting each other.
-
-       What Arch gives up: `terminal-features ",xterm*:hyperlinks"` (OSC 8) and the
-       | and - split binds. Omarchy has neither. */}}
 .config/tmux/tmux.conf
-{{- /* LazyVim's three config stubs. Ours are empty on every machine -- the starter ships
-       them commented out and we never filled them in -- so deploying them here can only
-       destroy and never add. Omarchy does fill options.lua: it sets relativenumber and
-       autoformat, and calls require("config.remote_clipboard").setup(), which is what
-       makes nvim yanks reach the local clipboard over SSH and through tmux. Wiping that
-       call would leave remote_clipboard.lua on disk but never loaded.
-
-       All three are ignored, not just options.lua, so a future Omarchy release that puts
-       content in keymaps.lua or autocmds.lua does not get silently overwritten. Our own
-       nvim content is lua/config/lazy.lua and lua/plugins/*, which still deploy. */}}
+.config/wezterm/wezterm.lua
+{{- /* Our copies of LazyVim's three config stubs are empty; Omarchy fills options.lua,
+       including the remote_clipboard setup that carries nvim yanks over SSH. All three are
+       ignored so a future Omarchy release filling one is not overwritten. lua/config/lazy.lua
+       and lua/plugins/* still deploy. */}}
 .config/nvim/lua/config/options.lua
 .config/nvim/lua/config/autocmds.lua
 .config/nvim/lua/config/keymaps.lua
-{{- /* Fonts: Omarchy's terminal is configured for JetBrainsMono Nerd Font and Hack has
-       zero faces installed there. Our only Hack consumer is WezTerm, which is ignored
-       above. Deploying seven font files nothing references. */}}
+{{- /* Hack is unused here: the terminal is set to JetBrainsMono Nerd Font and WezTerm,
+       the only consumer, is ignored above. */}}
 .local/share/fonts
-{{- /* starship.toml is deliberately NOT ignored. Nothing in Omarchy rewrites it after
-       install -- no migration mentions it and no bin/ script writes it -- so chezmoi can
-       own it safely, and ours now carries Omarchy's prompt design plus the kubernetes
-       module. See dot_config/starship.toml. */}}
-{{- else }}
-.bashrc
 {{- end }}
 {{- if ne .chezmoi.os "darwin" }}
 .amethyst.yml

@@ -1,12 +1,5 @@
 #!/bin/bash
-{{ if (eq (includeTemplate "is-arch" .) "true") -}}
-# Omarchy's shell config -- aliases, functions, theming, the omarchy-* helpers -- is bash,
-# and ~/.bashrc sources it. Switching the login shell to zsh silently opts out of all of
-# that, so the default stays bash here and the customisations live in dot_bashrc.tmpl.
-target="$(command -v bash)"
-{{ else -}}
 target="$(command -v zsh)"
-{{ end -}}
 
 # Only call chsh when the shell actually needs changing. chsh prompts for the account
 # password, which during an unattended `chezmoi apply` either hangs on the prompt or fails

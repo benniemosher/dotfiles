@@ -1,485 +1,139 @@
-# Omarchy on the 2018 MacBook Pro — migration runbook
+# Omarchy on the 2018 MacBook Pro
 
-Read this on your phone while the laptop is being wiped. Work top to bottom and tick the
-boxes. Anything marked **STOP** will cost you real time if you skip it.
+Omarchy replaced macOS on this machine on 2026-11-04. No macOS, no dual boot. This records
+what the machine is, what needed doing by hand, and how to rebuild it.
+
+Reusable findings live in the vault instead of here:
+`T2-Mac-Linux-WiFi-Needs-Firmware-Extracted-From-macOS`,
+`dd-conv-fsync-Looks-Hung-At-The-End`, `Moving-Dotfiles-To-XDG-Paths-Needs-chezmoi-remove`.
 
 ## This machine
 
 | | |
 |---|---|
 | Model | `MacBookPro15,1` — 15-inch, 2018 |
-| CPU | 6-core Intel Core i7 @ 2.6 GHz, 16 GB RAM |
-| GPU | Intel UHD 630 **+ AMD Radeon Pro 555X** (hybrid — this matters, see Phase 5) |
-| Disk | 251 GB NVMe, single APFS container, FileVault **off** |
-| T2 | Yes (iBridge 24.16.6005) |
-| Activation Lock | **On** — Phase 0 turns this off |
+| CPU / RAM | 6-core Intel i7-9750H, 16 GB |
+| GPU | Intel UHD 630 + AMD Radeon Pro 555X (Baffin, `1002:67ef`) |
+| Wi-Fi | BCM4364 (`14e4:4464`) |
+| Disk | 234 GB NVMe, LUKS, btrfs root |
+| T2 | Yes |
+| Hostname | `omarchy-mbp-1`, fixed at 192.168.87.87 on the homelab VLAN |
 
-Plan: full wipe, Omarchy only, no macOS and no dual boot. Omarchy's installer takes the whole
-drive and macOS will not be bootable afterward. That is the supported path and the one you
-chose.
+Omarchy 4.0.6 ships the `linux-t2` kernel, so the T2 hardware works without the t2linux repo.
+Check `uname -r` for a `-t2` suffix before reaching for it.
 
-## The three things that will actually bite you
+## What needed doing by hand
 
-1. **Hybrid graphics.** Omarchy issue
-   [#12593](https://github.com/omacom/omarchy/issues/12593) is open as of 2026-10-23 and names
-   `MacBookPro15,1` directly: after the first login the fans go to full, the screen goes
-   black, and the machine powers off. There is no shipped fix — `force_igd` does not appear
-   anywhere in the Omarchy tree. The t2linux wiki independently lists hybrid graphics as
-   only partially supported — "dGPU power toggling doesn't work" — so this is two sources
-   agreeing, not one bug report. Phase 5 applies the workaround **before** you ever log in.
-2. **No Wi-Fi in the installer until firmware lands.** Have a USB-C hub with Ethernet, or a
-   phone you can USB-tether. Omarchy pulls the Broadcom firmware from Apple's recovery image
-   during install, but it needs a network to do it.
-3. **Activation Lock.** If you wipe without signing out of iCloud first, a future DFU revive
-   of the T2 can be blocked. Phase 0, step 1. Do not skip it.
+**Wi-Fi firmware.** This is the only thing that did not work after install. Apple's BCM4364
+firmware is not redistributable, so no package ships it — `apple-bcm-firmware-fetcher` did not
+produce a working adapter. Extract it from a Mac still running macOS with t2linux's
+`firmware.sh create_archive`, copy the tarball over, unpack into `/lib/firmware/brcm`, reload
+`brcmfmac`. Do this before wiping the only macOS machine you have, or you are downloading a
+recovery image to get a 12 MB file.
 
----
+**Secure Boot.** T2 Macs refuse external boot by default. Command-R into Recovery, Startup
+Security Utility, Secure Boot to **No Security**, allow booting from external media.
 
-## Phase 0 — Before you touch anything
+**Boot patience.** The installer USB sat on a black screen for two to three minutes before
+drawing anything, because archiso reads a large squashfs at USB 2.0 speed. Wait before
+reaching for `nomodeset`.
 
-### Sign out of Apple's services  **STOP**
+## Hardware status
 
-- [ ] System Settings → your name → **Sign Out** of iCloud
-- [ ] Confirm Find My Mac is off: System Settings → your name → iCloud → Find My Mac → Off
-- [ ] Verify: `Apple menu → About This Mac → More Info → System Report → Hardware` should now
-      read `Activation Lock Status: Disabled`
+Measured on 2026-11-04, not inferred.
 
-Check it from the terminal:
-
-```bash
-system_profiler SPHardwareDataType | grep -i "activation lock"
-```
-
-You want `Disabled`. If it still says `Enabled`, you are not signed out.
-
-### Back up what is not already in git or 1Password
-
-You have 149 GB on the data volume. Most of it recovers from somewhere; these do not:
-
-- [ ] `~/.config/chezmoi/chezmoi.toml` — not committed, holds `git_email`, `invoice_phone`,
-      `invoice_address`, the vault backup remote, and the 1Password refs for LiveSync. Copy it
-      to 1Password as a secure note, or just write the answers down — `chezmoi init` asks for
-      them again.
-- [ ] `~/.config/git/allowed_signers` — deliberately unmanaged, lists work email addresses.
-- [ ] `~/.zshrc.local` — machine-local shell overrides.
-- [ ] Every repo under `~/Code` with unpushed commits or uncommitted work. Check all of them
-      in one pass:
-
-```bash
-for d in ~/Code/*/; do
-  [ -d "$d/.git" ] || continue
-  dirty=$(git -C "$d" status --porcelain | wc -l | tr -d ' ')
-  ahead=$(git -C "$d" log --branches --not --remotes --oneline 2>/dev/null | wc -l | tr -d ' ')
-  [ "$dirty" != 0 ] || [ "$ahead" != 0 ] && echo "$(basename "$d"): $dirty dirty, $ahead unpushed"
-done
-```
-
-- [ ] The Obsidian vault. It syncs over LiveSync and snapshots to battlestation, but confirm
-      the snapshot actually landed before you wipe:
-
-```bash
-git -C ~/Code/obsidian-vault-setup status --porcelain
-vault-snapshot
-git -C ~/Code/obsidian-vault-setup log --oneline -1
-git -C ~/Code/obsidian-vault-setup ls-remote backup | head -3
-```
-
-- [ ] `~/Code/obsidian-vault-setup/zz-secrets/` — confirm it is in the snapshot, since it is
-      never in anything shared.
-- [ ] Anything in `~/Downloads`, `~/Desktop`, `~/Documents` you care about.
-- [ ] Browser profiles you have not synced.
-
-### Data that does not survive the move  **STOP**
-
-Different from backing up: Linux has no app that reads these, so the question is not "is it
-safe" but "can I still reach it afterward". Verified on 2026-10-24 — Messages and Photos are
-in iCloud and reach the phone and the other Macs, so neither needs action.
-
-- [ ] **Messages** (~14 GB here) — confirm Messages in iCloud is on: Messages → Settings →
-      iMessage → **Enable Messages in iCloud**. History then stays reachable from the phone
-      and other Macs. Nothing on Linux reads the local SQLite store.
-- [ ] **Photos** — confirm iCloud Photos is on. If it is not, this needs a full export before
-      the wipe, not a backup.
-- [ ] **Keychain** — Wi-Fi passwords, certificates, app credentials. Does not transfer, and
-      iCloud Keychain only reaches Apple devices. Anything not already in 1Password is gone.
-      Worth a pass through Passwords.app for logins that never made it over.
-- [ ] **Notes, Reminders, Calendar, Contacts** — iCloud-backed, so reachable from the web and
-      the phone, but not natively from Linux.
-- [ ] **Authenticator apps / 2FA seeds** — if any TOTP codes live only in a Mac app, move them
-      to 1Password first. This is the one that locks you out of accounts.
-
-### Confirm you can get back in to everything
-
-- [ ] 1Password: you know the account password and have the Secret Key / Emergency Kit
-      **somewhere that is not this laptop**. Everything downstream depends on this.
-- [ ] GitHub: 2FA recovery codes accessible from your phone.
-- [ ] Keybase paperkey, if you still use it for GPG.
-
----
-
-## Phase 1 — Rehearse in a VM (recommended, do it before the wipe)
-
-This is worth the hour. It lets you get the dotfiles working against a real Arch system while
-you still have a working machine. Two tiers, use both:
-
-### Tier 1 — Arch container, for the dotfiles loop
-
-Fast (seconds per iteration), no GUI, tests the package lists and the chezmoi templates.
-
-```bash
-open -a Docker            # the daemon is not running right now
-docker run -it --rm -v "$HOME/.local/share/chezmoi:/src:ro" archlinux:base bash
-```
-
-Inside it:
-
-```bash
-pacman -Syu --noconfirm git sudo base-devel
-useradd -m -G wheel bennie && echo '%wheel ALL=(ALL) NOPASSWD: ALL' >/etc/sudoers.d/wheel
-su - bennie
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --source /src
-```
-
-### Tier 2 — Omarchy in UTM, for the dotfiles end to end
-
-This machine is Intel, so x86_64 guests virtualise natively under Hypervisor.framework. An
-Apple Silicon Mac has to emulate x86_64 and is far slower at it — use this one while it still
-boots.
-
-```bash
-brew install --cask utm
-cd ~/Downloads
-curl -fLO https://iso.omarchy.org/omarchy-4.0.6.iso
-curl -fLO https://iso.omarchy.org/omarchy-4.0.6.iso.sha256
-shasum -a 256 -c omarchy-4.0.6.iso.sha256     # must print OK
-```
-
-UTM → Create a New Virtual Machine:
-
-| Setting | Value |
+| Thing | State |
 |---|---|
-| Mode | **Virtualize**, not Emulate |
-| OS | Linux |
-| "Use Apple Virtualization" | leave **unchecked** |
-| Boot ISO | `~/Downloads/omarchy-4.0.6.iso` |
-| Memory | 8192 MB |
-| CPU cores | 4 |
-| Storage | 60 GB (sparse) |
-| Network mode | **Bridged** — set this before first boot, so the VM gets a LAN IP and the host can ssh in |
-
-Two VM artefacts that look like failures and are not:
-
-- **Hyprland will render badly or not at all.** QEMU's virtio-gpu exposes OpenGL 2.1 and
-  Hyprland needs 3.0+, so expect lag, empty windows, or a black desktop. `Ctrl+Alt+F2` gets a
-  TTY; `export LIBGL_ALWAYS_SOFTWARE=1` makes it limp along. This says nothing about the real
-  hardware, which has a real Intel GPU.
-- **A black screen early in boot is usually the disk-encryption prompt rendering invisibly.**
-  Press Enter and type the passphrase blind.
-
-Neither matters, because the point of this tier is the dotfiles, and that work happens over
-ssh where the GPU is irrelevant. Once Omarchy is up:
-
-```bash
-sudo pacman -S --noconfirm openssh && sudo systemctl enable --now sshd
-ip -4 addr show | grep inet
-```
-
-Then from the Mac, against that IP:
-
-```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
-chezmoi init https://github.com/benniemosher/dotfiles.git --branch feature/arch-omarchy-support
-chezmoi diff          # read it before applying
-chezmoi apply
-```
-
-What this tier **will** tell you: whether `chezmoi apply` completes, whether the AUR packages
-build, whether `~/.bashrc` and Omarchy's own bash config coexist, and whether Brave,
-1Password, Obsidian and Citrix install and launch.
-
-What it **will not** tell you: anything about T2 hardware — Wi-Fi, Bluetooth, audio, the
-Touch Bar, fans, suspend, or the hybrid-GPU problem. Those only show up on the metal.
-
----
-
-## Phase 2 — Build the installer USB
-
-From this Mac, while it still boots:
-
-- [ ] Download the ISO from <https://omarchy.org>. 4.0.6 is current as of 2026-10-24; do not
-      use anything older than 4.0.5, which is the release that fixed T2 installs missing the
-      Broadcom firmware fetcher.
-- [ ] Verify it, rather than trusting the download:
-
-```bash
-cd ~/Downloads
-curl -fLO https://iso.omarchy.org/omarchy-4.0.6.iso.sha256
-shasum -a 256 -c omarchy-4.0.6.iso.sha256
-```
-- [ ] Write it with balenaEtcher, or:
-
-```bash
-diskutil list                       # find your USB, e.g. /dev/disk4
-diskutil unmountDisk /dev/disk4
-sudo dd if=~/Downloads/omarchy-4.0.6.iso of=/dev/rdisk4 bs=4m status=progress
-sync
-```
-
-Gather the hardware too:
-
-- [ ] USB-C hub **with Ethernet**, or a phone + cable for USB tethering
-- [ ] USB-A/USB-C keyboard as a fallback. The Omarchy ISO ships `linux-t2`, so the internal
-      keyboard and trackpad should work in the installer — but if they do not, you are stuck
-      without one.
-- [ ] Power adapter, plugged in, for the whole process
-
----
-
-## Phase 3 — Disable Secure Boot  **STOP**
-
-T2 Macs will not boot anything but macOS until you do this.
-
-- [ ] Shut down
-- [ ] Power on holding **Command-R** until the Apple logo appears, to enter Recovery
-- [ ] Menu bar → **Utilities → Startup Security Utility**
-- [ ] Authenticate with your admin password
-- [ ] Secure Boot → **No Security**
-- [ ] External Boot → **Allow booting from external or removable media**
-- [ ] Quit, shut down
-
----
-
-## Phase 4 — Install Omarchy
-
-- [ ] Insert the USB and Ethernet adapter
-- [ ] Power on holding **Option (⌥)** until the boot picker appears
-- [ ] Select the orange **EFI Boot** drive
-- [ ] Follow the installer. It will wipe the internal drive and set up full-disk encryption.
-
-Pick a **disk encryption passphrase you can type on a US layout at boot**, before any of your
-keymap settings exist. Write it down and put it in 1Password from your phone immediately.
-
-On T2 hardware the installer handles automatically:
-
-- the `linux-t2` kernel instead of Omarchy's default kernel
-- `apple-bcm-firmware-fetcher` for Broadcom Wi-Fi and Bluetooth
-- `apple-t2-audio-config`
-- `t2fanrd` for fan control
-- the NVMe suspend fix
-
-When it finishes, **do not reboot into the desktop yet.** Go to Phase 5.
-
----
-
-## Phase 5 — The hybrid graphics fix  **STOP — this model specifically**
-
-Issue [#12593](https://github.com/omacom/omarchy/issues/12593) is open and lists
-`MacBookPro15,1`. Symptom: you log in, the fans spin to maximum, the screen goes black, the
-machine powers off. Apply the fix before the first login.
-
-If you are already stuck in that loop: power on, and at the Limine boot menu press `e` to edit
-the entry, append the kernel parameter below, and boot once. Or switch to a TTY with
-**Ctrl+Alt+F2** and log in there.
-
-Three layers. The third one alone was enough for at least one reporter, but apply all three.
-
-**1. Kernel parameter** — Omarchy uses Limine:
-
-```bash
-sudo nano /boot/EFI/limine/limine.conf
-```
-
-Find the line with your kernel command line and append:
-
-```
-apple_gmux.force_igd=1
-```
-
-**2. Module option:**
-
-```bash
-echo 'options apple-gmux force_igd=y' | sudo tee /etc/modprobe.d/99-mbp-gmux.conf
-```
-
-**3. Hold the Radeon in low power** — this is the one that mattered most:
-
-```bash
-cat <<'EOF' | sudo tee /etc/udev/rules.d/99-amdgpu-lowpower.rules
-SUBSYSTEM=="drm", DRIVERS=="amdgpu", ATTR{device/power_dpm_force_performance_level}="low"
-EOF
-```
-
-Then:
-
-```bash
-sudo mkinitcpio -P
-sudo reboot
-```
-
-If it boots to the desktop, you are past the worst of it.
-
-> If a later Omarchy release ships this fix properly, these three files become redundant
-> rather than harmful. Check issue #12593 before assuming you still need them.
-
----
-
-## Phase 6 — Hardware checklist
-
-Work through these and note what fails. Expect one or two to.
-
-```bash
-# Wi-Fi — firmware should already be fetched
-sudo journalctl -k --grep=brcmfmac
-nmcli device wifi list
-
-# Audio (speakers are driven by a software DSP; start at low volume)
-wpctl status
-speaker-test -c2 -l1
-
-# Fans
-systemctl status t2fanrd
-
-# Battery / thermals
-cat /sys/class/power_supply/BAT0/capacity
-sensors
-```
-
-| Thing | Expected | If it fails |
-|---|---|---|
-| Internal keyboard / trackpad | Works via `linux-t2` | Check `apple-bce` / `t2bce_vhci` loaded |
-| Wi-Fi | Works after firmware fetch | Re-run the fetcher; see the [t2linux Wi-Fi guide](https://wiki.t2linux.org/guides/wifi-bluetooth/) |
-| Bluetooth | **Partial.** BCM4377 glitches on 2.4 GHz | Prefer 5 GHz devices; interference with Wi-Fi is expected |
-| Audio out | Works via `apple-t2-audio-config` | **Start quiet.** The T2 DSP can drive these speakers past safe excursion |
-| Internal microphone | Works, but **low input volume** is a known T2 quirk | Raise the gain in `wpctl`; test on a real call before you rely on it |
-| Touch Bar | Works via `tiny-dfr` | from the `arch-mact2` repo the T2 install configures, not the AUR; config at `/etc/tiny-dfr/config.toml` |
-| Brightness | Via `apple-gmux` | Merged upstream in 4.0.0 |
-| Webcam | **Works** via `t2bce` | Do not install `facetimehd-dkms` — that is the pre-T2 Broadcom 1570 camera, a different device, and the wrong driver here |
-| Thunderbolt / USB-C | Works | May need `pcie_ports=native` as a kernel parameter |
-| Suspend / lid close | **Flaky on T2.** Known unresolved | Set lid-close to lock, not suspend, in `/etc/systemd/logind.conf` |
-| Touch ID | **Not available on this plan.** The sensor does work on T2 Macs, but only for fingers enrolled *in macOS*, and recovery after a panic or forced shutdown means booting macOS | No macOS means no enrolment and no recovery path. The `t2-touchid` package is Debian/Ubuntu-only as well. This is a consequence of the full wipe, not a hardware limit |
-
-Suspend is the one most likely to annoy you daily. The pragmatic setting:
-
-```bash
-sudo sed -i 's/^#*HandleLidSwitch=.*/HandleLidSwitch=lock/' /etc/systemd/logind.conf
-sudo systemctl restart systemd-logind
-```
-
----
-
-## Phase 7 — Get your identity back
-
-Order matters — 1Password gates everything else.
-
-- [ ] Install 1Password and the CLI:
-
-```bash
-omarchy pkg aur add 1password 1password-cli
-```
-
-- [ ] Sign in. You will need the account password **and** the Secret Key from your Emergency
-      Kit.
-- [ ] Settings → Developer → enable **Use the SSH agent** and **Integrate with 1Password CLI**
-- [ ] Confirm the agent socket is at `~/.1password/agent.sock` (the Linux path — the dotfiles
-      already point there) and that keys show up:
-
-```bash
-ssh-add -l
-```
-
-- [ ] `op signin`, then test: `op read "op://Private/<item>/public key"`
-- [ ] Export the second GitHub account's public key, since the repo ships no key material:
-
-```bash
-op read "op://Private/<item>/public key" > ~/.ssh/github_<alias>.pub
-```
-
-- [ ] `gh auth login` for each GitHub account
-- [ ] Recreate `~/.config/git/allowed_signers` — one `<email> <keytype> <key>` per line:
-
-```bash
-mkdir -p ~/.config/git
-printf '%s %s\n' "you@example.com" "$(op read 'op://Private/<ssh item>/public key')" \
-  >> ~/.config/git/allowed_signers
-```
-
----
-
-## Phase 8 — Dotfiles
-
-Arch/Omarchy support lives on `feature/arch-omarchy-support` until it is merged. It was
-tested end to end against a real Omarchy 4.0.6 install on 2026-10-25: `chezmoi apply` exits
-0, 1,070 packages, all AUR apps built, the vault-snapshot timer enabled and active.
-
-Six bugs came out of that test, all invisible to an Arch container, all fixed on the branch.
-The one worth knowing about if you ever debug this again: Omarchy reports `ID=omarchy` with
-`ID_LIKE=arch`, so anything matching `ID` exactly against `arch` silently takes the wrong
-branch.
-
-```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
-chezmoi init https://github.com/benniemosher/dotfiles.git --branch feature/arch-omarchy-support
-chezmoi diff        # read this properly before applying
-chezmoi apply
-```
-
-`chezmoi init` will ask the questions from Phase 0's backup list again:
-
-| Question | Your answer |
-|---|---|
-| Git commit email | from the saved `chezmoi.toml` |
-| Is this a work machine | **no** — this is personal |
-| Use the 1Password SSH agent | **yes** |
-| Phone number / address for invoices | from the saved `chezmoi.toml` |
-| 1Password item for Obsidian LiveSync | `op://<vault>/<item id>` from the saved config |
-| Git remote for vault snapshots | `ssh://battlestation-ubuntu.local/data/backups/obsidian-vault.git` |
-
-Expect two prompts the test could not cover: the Obsidian LiveSync passphrase (Phase 9) and
-`chsh`, which asks for your password only if the login shell is not already bash — on Omarchy
-it is, so it should no-op.
-
-Things that change on Omarchy, by your own choice to adopt its defaults:
-
-- **Shell is bash**, not zsh. `dot_zshrc.tmpl`'s content needs a bash equivalent so Omarchy's
-  aliases, theming, and `omarchy-*` tooling keep working.
-- **Terminal is Omarchy's**, not WezTerm, so the theme switcher drives it.
-- **Window manager is Hyprland**, so Amethyst is gone.
-- **Starship** is still there, but its config is Omarchy's, so the theme switcher restyles
-  the prompt. Same for tmux.
-- **mise** stays Omarchy's `mise-bin`. The repo package conflicts with it and fails the whole
-  pacman transaction, so the dotfiles deliberately do not install it here.
-- **git** keeps your identity and signing, and `[include]`s Omarchy's `~/.config/git/config`
-  first so its defaults (`rerere`, `diff.algorithm`) apply while yours still win.
-
----
-
-## Phase 9 — Apps
-
-### Straight swaps
-
-```bash
-omarchy pkg aur add brave-bin obsidian slack-desktop keybase-bin \
-  visual-studio-code-insiders-bin wezterm
-sudo pacman -S docker docker-compose tmux neovim fzf jq tree yq \
-  kubectl kubectx kustomize github-cli shellcheck pre-commit
-sudo systemctl enable --now docker
-sudo usermod -aG docker "$USER"      # log out and back in
-```
-
-`mise` installs the rest (awscli, checkov, k9s, terraform, node, python) exactly as it does
-today — `dot_config/mise/config.toml.tmpl` is unchanged.
-
-### Citrix Workspace app
-
-AUR `icaclient`, version 26.04.10.1 as of September 2026, actively maintained.
-
-```bash
-omarchy pkg aur add icaclient
-```
-
-Two things will go wrong if you do not pre-empt them:
-
-**1. It crashes as a native Wayland client.** Force it onto XWayland:
+| Internal keyboard, trackpad | Works (`linux-t2`) |
+| Touch Bar | Works (`hid_appletb_kbd`, `hid_appletb_bl`) |
+| Audio out and microphone | Works. T2 codec is the default PipeWire sink. Start quiet — the DSP can drive these speakers hard |
+| Wi-Fi | Works once the firmware above is in place |
+| Bluetooth | Works. Controller present, service active. UART-attached on this model, so the PCIe `brcmbt` firmware missing from the tarball does not matter |
+| Fans | Works. `t2fanrd` active, ~2100 RPM idle, 47–50 °C |
+| Both GPUs | `i915` and `amdgpu` both bound; T2 bridge on `t2bce_core` |
+| Webcam | Works, `/dev/video0`. Do not install `facetimehd-dkms` — wrong device |
+| Suspend and resume | Works. Clean `suspend entry (deep)` / `suspend exit`. The panel needs a keypress to repaint, which looks like a hang and is not |
+| Brightness | Works (`apple-gmux`) |
+| Touch ID | Unavailable. The sensor needs fingers enrolled in macOS, and there is no macOS here |
+
+The log carries `brcmf_p2p` and `p2p-dev-wlp3s0` errors on every boot. That is Wi-Fi Direct,
+which this firmware does not support. Normal Wi-Fi is unaffected.
+
+## Hybrid graphics
+
+Omarchy issue [#12593](https://github.com/omacom/omarchy/issues/12593) reports full-speed
+fans, a black screen and shutdown after first login on T2 Macs, and is still open. **It did
+not happen on this machine.** 4.0.6 booted to the desktop with no workaround, and the original
+report is 4.0.4 while the second is a `MacBookPro16,1` with a different GPU.
+
+Treat the workaround as a contingency. If you hit that loop: at the Limine menu press `e` and
+append `apple_gmux.force_igd=1` for one boot, or reach a TTY with **Ctrl+Alt+F2**. Omarchy now
+has `omarchy toggle hybrid gpu`, which drives supergfx — try that before hand-editing
+`limine.conf`. Holding the Radeon at low power through a udev rule on
+`power_dpm_force_performance_level` is what helped the reporters most.
+
+## Where the dotfiles defer to Omarchy
+
+Omarchy owns these; the dotfiles do not deploy their own:
+
+- **tmux** — its config is a superset of ours, and `omarchy-update` migrations edit the file in
+  place, so deploying ours would fight them. Arch gives up OSC 8 hyperlinks and the `|` and `-`
+  split binds.
+- **nvim** `lua/config/{options,autocmds,keymaps}.lua` — ours are empty; Omarchy's `options.lua`
+  sets up `remote_clipboard`, which carries yanks over SSH.
+- **Terminal and window manager** — Omarchy's terminal, themed by its switcher, and Hyprland.
+  No WezTerm, no Amethyst.
+- **Hack fonts** — the terminal uses JetBrainsMono Nerd Font.
+- **mise the binary** — Omarchy's `mise-bin` conflicts with the repo package and fails the whole
+  pacman transaction. The dotfiles still own the tool list.
+
+And where Omarchy's opinions were adopted into the repo instead, so every machine shares them:
+
+- **Shell is zsh**, via Omarchy's own `omarchy-zsh` package. `dot_zshrc.tmpl` sources its
+  `zoptions` and `shell/all`, which bring the aliases, functions, envs and tool init. Do not run
+  `omarchy-setup-zsh` — it overwrites `~/.zshrc` and `~/.bashrc` from its templates, and chezmoi
+  owns those.
+- **starship** — Omarchy's prompt design, plus our kubernetes module.
+- **git** — nine of its defaults (`rerere`, histogram diffs, `push.autoSetupRemote`, branch and
+  tag sort, `commit.verbose`, `column.ui`) copied into the template rather than included on one
+  machine.
+- **mise settings** — `codex`, and `auto_prune` on upgrade.
+
+## Rebuilding this machine
+
+1. Sign out of iCloud first and confirm `Activation Lock Status: Disabled`. Skipping this can
+   block a later DFU revive.
+2. Extract the Wi-Fi firmware from a macOS machine while you still have one.
+3. Write the ISO: `sudo dd if=omarchy-X.Y.Z.iso of=/dev/sdX bs=4M status=progress oflag=direct
+   conv=fsync`. Never repartition a hybrid-ISO stick from macOS; `diskutil` cannot see the
+   ISO9660 partition and may drop it.
+4. Disable Secure Boot, hold Option at power-on, pick **EFI Boot**.
+5. Install. Choose a LUKS passphrase you can type on a US layout, before any keymap settings
+   exist, and put it in 1Password from your phone immediately.
+6. Install the Wi-Fi firmware. Ethernet or USB tethering until then.
+7. 1Password first — it gates everything else. `omarchy pkg aur add 1password 1password-cli`,
+   sign in with the Secret Key, enable the SSH agent and CLI integration under Developer,
+   confirm `ssh-add -l`. Then `gh auth login` per account, and recreate
+   `~/.config/git/allowed_signers`, which is deliberately unmanaged.
+8. `chezmoi init --apply`. The Arch path keys off `ID_LIKE`, because Omarchy reports
+   `ID=omarchy`.
+9. Obsidian and the vault: `run_once_setup-obsidian-vault.sh` builds the PARA skeleton and
+   feeds LiveSync the setup URI from 1Password. The passphrase prompt is attended — the script
+   puts it on your clipboard. Clear the clipboard afterwards. Then
+   `bin/install-obsidian-plugins.sh`, and confirm
+   `systemctl --user list-timers vault-snapshot.timer`.
+
+Worth keeping off this machine and in 1Password: `~/.config/chezmoi/chezmoi.toml` is not
+committed and holds the invoice and LiveSync answers `chezmoi init` asks for.
+
+Verify with `ssh -T git@github.com`, `git log --show-signature -1`, `mise current`, a
+`standup` write, and a suspend cycle.
+
+## Citrix Workspace
+
+AUR `icaclient`. Two things break without pre-empting them.
+
+It crashes as a native Wayland client, so force XWayland:
 
 ```bash
 mkdir -p ~/.local/share/applications
@@ -487,101 +141,46 @@ sed 's|^Exec=|Exec=env GDK_BACKEND=x11 |' \
   /usr/share/applications/wfica.desktop > ~/.local/share/applications/wfica.desktop
 ```
 
-If it still crashes, disable hardware acceleration — set `HwAcceleration=False` in
-`~/.ICAClient/wfclient.ini`.
+If it still crashes, set `HwAcceleration=False` in `~/.ICAClient/wfclient.ini`.
 
-**2. Certificates.** Since 13.1 Citrix wants root CAs as separate files in its own store, not
-the system bundle:
+Since 13.1 it wants root CAs as separate files in its own store, not the system bundle:
 
 ```bash
 sudo ln -s /etc/ca-certificates/extracted/cadir/* /opt/Citrix/ICAClient/keystore/cacerts/
 sudo /opt/Citrix/ICAClient/util/ctx_rehash
 ```
 
-**HiDPI warning:** this is a 2880×1800 panel and XWayland cannot scale per-window. Citrix will
-be either blurry or tiny. Options, in order of how well they work: set the session's DPI inside
-Citrix (`DPIMatchingEnabled`), run Citrix on a 1× external monitor, or fall back to the
-browser-based HTML5 receiver if your client offers one. Test this **before** you need it for
-real work.
+This is a 2880×1800 panel and XWayland cannot scale per-window, so Citrix will be blurry or
+tiny. Set the session DPI inside Citrix (`DPIMatchingEnabled`), use a 1× external monitor, or
+fall back to the HTML5 receiver. Test it before you need it.
 
-### Obsidian + the vault
+## No Linux equivalent
 
-- [ ] Install Obsidian (above)
-- [ ] `chezmoi apply` runs `run_once_setup-obsidian-vault.sh`, which builds the PARA skeleton,
-      installs the LiveSync plugin, and feeds it the setup URI from 1Password
-- [ ] The passphrase prompt is **attended** — the script puts it on your clipboard, you paste
-      it. Clear the clipboard after.
-- [ ] Accept the imported settings, let the first replication finish
-- [ ] Then `bin/install-obsidian-plugins.sh` for the remaining plugins, and pick the Minimal
-      theme
-- [ ] Confirm `vault-snapshot` is running: `systemctl --user list-timers vault-snapshot.timer`
-
-### No Linux equivalent — decide what to do
-
-| macOS app | Status |
+| macOS app | Replacement |
 |---|---|
-| Grammarly Desktop | **No Linux app exists.** Browser extension only |
-| Sequel Ace | Gone — use DBeaver or Beekeeper Studio |
-| SourceTree | Gone — use `lazygit`, or the `gh`/`glab` CLIs you already use |
-| Amethyst | Replaced by Hyprland |
-| Docker Desktop | Replaced by native Docker Engine, which is better here anyway |
-| `mas`, `defaultbrowser`, `pinentry-mac` | macOS-only, no equivalent needed |
+| Grammarly Desktop | Browser extension only |
+| Sequel Ace | DBeaver or Beekeeper Studio |
+| SourceTree | `lazygit`, or the `gh`/`glab` CLIs |
+| Amethyst | Hyprland |
+| Docker Desktop | Native Docker Engine |
+| `mas`, `defaultbrowser`, `pinentry-mac` | macOS-only, nothing needed |
 
----
+## If it will not boot
 
-## Phase 10 — Verify before you call it done
-
-```bash
-git -C ~/.local/share/chezmoi status      # dotfiles clone healthy
-ssh -T git@github.com                     # 1Password agent signing
-git log --show-signature -1               # commit signature verification
-mise current                              # runtimes installed
-standup "migrated to Omarchy"             # vault write path works
-hours 0.1 "test"                          # billing path works (then delete the row)
-```
-
-- [ ] Suspend / resume, twice
-- [ ] Close the lid, reopen
-- [ ] Reboot and unlock the encrypted disk
-- [ ] Audio out and mic
-- [ ] Wi-Fi survives a suspend cycle
-- [ ] Citrix connects to a real session
-- [ ] Battery life over a normal working hour — the Radeon is the main thing to watch
-
----
-
-## If it will not boot at all
-
-The T2 means the usual Linux recovery tricks are not the whole story.
-
-1. **Boot picker**: hold **Option (⌥)** at power-on. If Omarchy is listed, pick it and use the
-   Limine menu (`e`) to boot with modified parameters.
-2. **Limine fallback entry**: boot an older kernel from the menu.
-3. **Live USB**: boot the Omarchy ISO, unlock and `arch-chroot` into the install to fix config.
-4. **DFU revive from another Mac** — this is why Phase 0 matters. On one of your other Macs,
-   install Apple Configurator, connect via the correct USB-C port (the one nearest the
-   display on the left side), and **Revive** the device. Revive preserves data; Restore wipes
-   it. With Activation Lock signed out this is clean; with it on, you need the Apple ID.
-5. **Reinstall macOS**: Internet Recovery with **Command-Option-R**. Works even with the drive
-   wiped, as long as Secure Boot being off has not been changed — and it downloads from Apple
-   over the network.
-
----
+1. Hold **Option** at power-on. If Omarchy is listed, use the Limine menu (`e`) to boot with
+   modified parameters.
+2. Boot an older kernel from the Limine fallback entry.
+3. Boot the Omarchy ISO, unlock, and `arch-chroot` in to fix config.
+4. DFU revive from another Mac with Apple Configurator, via the USB-C port nearest the display
+   on the left. **Revive** preserves data; Restore wipes it. Clean if Activation Lock is off.
+5. Internet Recovery with **Command-Option-R** reinstalls macOS over the network, even with the
+   drive wiped.
 
 ## Sources
 
 - [Omarchy Mac support manual](https://omarchy.org/manual/mac-support/)
-- [Omarchy discussion #773 — Intel T2 MacBooks](https://github.com/omacom/omarchy/discussions/773)
 - [Omarchy issue #12593 — hybrid graphics black screen (open)](https://github.com/omacom/omarchy/issues/12593)
-- [t2linux wiki — pre-install](https://wiki.t2linux.org/guides/preinstall/)
-- [t2linux wiki — basic post-install setup](https://wiki.t2linux.org/guides/postinstall/)
-- [t2linux wiki — Wi-Fi and Bluetooth firmware](https://wiki.t2linux.org/guides/wifi-bluetooth/)
-- [t2linux wiki — Arch installation](https://wiki.t2linux.org/distributions/arch/installation/)
-- [t2linux wiki — device support and state of features](https://wiki.t2linux.org/state/)
-- [t2linux wiki — Touch ID](https://wiki.t2linux.org/guides/touchid/)
+- [omarchy-zsh](https://github.com/omacom-io/omarchy-zsh) and [omadots](https://github.com/omacom-io/omadots)
+- [t2linux — Wi-Fi and Bluetooth firmware](https://wiki.t2linux.org/guides/wifi-bluetooth/)
+- [t2linux — device support](https://wiki.t2linux.org/state/)
 - [ArchWiki — Citrix](https://wiki.archlinux.org/title/Citrix)
-- [AUR — icaclient](https://aur.archlinux.org/packages/icaclient)
-- [ArchWiki — 1Password](https://wiki.archlinux.org/title/1Password)
-
-Written 2026-10-23. Omarchy moves fast — re-check issue #12593 and the Mac support page before
-you start.

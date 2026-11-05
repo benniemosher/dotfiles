@@ -7,8 +7,6 @@
 [tools]
 awscli = "latest"
 checkov = "latest"
-# Adopted from Omarchy's own mise config rather than dropped when ours took over
-# that file. Kept globally, not Arch-only, so the tool list is the same everywhere.
 codex = "latest"
 deno = "latest"
 golang = "latest"
@@ -16,12 +14,7 @@ helm = "latest"
 infracost = "latest"
 java = "latest"
 k9s = "latest"
-# Pinned, which is a deliberate exception to ai/standards/tooling.md ("the global
-# config installs tools at latest -- it is about availability, not pinning").
-# Omarchy pins this exact version in its own mise config and its tooling may depend
-# on it, so ours matches rather than silently unpinning it when we take the file
-# over. Bump it when Omarchy does.
-node = "26.12.0"
+node = "latest"
 pipx = "latest"
 python = "latest"
 ruby = "latest"
@@ -74,7 +67,7 @@ supabase = "latest"
 idiomatic_version_file_enable_tools = ["terraform", "ruby", "node"]
 ruby.compile = false
 
-# Also Omarchy's. Keeps old tool versions after an upgrade so a bad bump can be rolled
-# back with `mise use <tool>@<old>` instead of a re-download.
 [settings.upgrade]
-auto_prune = false
+# Prune superseded tool versions on upgrade; re-downloading one is cheaper than
+# remembering to run `mise prune` by hand.
+auto_prune = true

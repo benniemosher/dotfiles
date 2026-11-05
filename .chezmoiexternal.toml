@@ -1,12 +1,3 @@
-{{- /* .chezmoiexternal.$FORMAT is itself a template, which is the only place this gate can
-       go: .chezmoiignore does NOT suppress externals. `.zsh` is listed there for Arch and
-       chezmoi still wanted to clone all three repos -- verified on Omarchy 4.0.6, where
-       is-arch resolves true and the rendered ignore file contains `.zsh`.
-
-       Nothing on Arch would source them: the login shell is bash and .zshrc is not
-       deployed, so cloning three git repos there is pure waste that `chezmoi apply` would
-       also re-pull every 168h. */ -}}
-{{ if ne (includeTemplate "is-arch" .) "true" -}}
 [".zsh/zsh-autosuggestions"]
     type = "git-repo"
     url = "https://github.com/zsh-users/zsh-autosuggestions.git"
@@ -27,4 +18,3 @@
     refreshPeriod = "168h"
     [".zsh/zsh-completions".pull]
         args = ["--ff-only"]
-{{ end -}}

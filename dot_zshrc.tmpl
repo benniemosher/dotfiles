@@ -89,7 +89,9 @@ export KUBECONFIG=$HOME/k3s.yaml
 export GH_PACKAGES_PAT=$( gh auth token )
 
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+{{ if ne (includeTemplate "is-arch" .) "true" -}}
 source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+{{ end -}}
 
 (figlet -w 100 -f doom $(hostname -s); fortune | cowthink -f stegosaurus) | lolcat
 
@@ -118,13 +120,19 @@ else
 fi
 {{ end }}
 
-{{ if eq .chezmoi.os "darwin" }}
+{{ if ne (includeTemplate "is-arch" .) "true" }}
 eval "$(mise activate zsh)"
-{{ else if eq .chezmoi.os "linux" }}
-eval "$(mise activate zsh)"
-{{ end }}
-
 eval "$(starship init zsh)"
+{{ else }}
+{{/* Omarchy's zsh support, from its omarchy-zsh package. zoptions carries the zsh options,
+     keybindings and completion setup (including the `omarchy` dispatcher's completions, and
+     zsh-syntax-highlighting, which it sources last on purpose). shell/all pulls in the
+     shared aliases, functions, envs and tool init -- the latter runs mise, starship, zoxide
+     and fzf for whichever shell is live, so ours must not run them again. */}}
+[[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] && source /usr/share/omarchy/default/bash/env-bootstrap
+[[ -f /usr/share/omarchy-zsh/shell/zoptions ]] && source /usr/share/omarchy-zsh/shell/zoptions
+[[ -f /usr/share/omarchy-zsh/shell/all ]] && source /usr/share/omarchy-zsh/shell/all
+{{ end }}
 {{ if eq .chezmoi.os "darwin" -}}
 {{/* Docker Desktop appends this block itself when it is installed or updated, and checks for
      the marker comment first. Keeping it here, verbatim, stops it re-appending and chezmoi

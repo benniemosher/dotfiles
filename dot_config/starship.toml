@@ -1,23 +1,17 @@
 # Get editor completions based on the config schema
 "$schema" = 'https://starship.rs/config-schema.json'
 
-# The prompt design below is Omarchy's (config/starship.toml), adopted here so every machine
-# gets it rather than only the Arch one. Ours adds the kubernetes module on top. Omarchy does
-# not rewrite this file after install -- no migration mentions it and no bin/ script writes
-# it -- so chezmoi owning it costs nothing there.
-
 # Inserts a blank line between shell prompts
 add_newline = true
 
-# Omarchy sets 200ms. The kubernetes module shells out to read the current context, which
-# does not reliably finish in that window, and a module that times out renders as nothing at
-# all -- so the prompt would silently lose the context rather than look slow.
+# The kubernetes module shells out to read the current context. A module that times out
+# renders as nothing at all, so too low a value silently drops the context from the prompt
+# rather than making it look slow.
 command_timeout = 5000
 
-# $kubernetes sits outside the [...]($style) group on purpose: inside it, the group's style
-# would override the module's own, and the cluster context is worth having its own colour.
-# Omarchy's format is explicit, so a module absent from this string renders nowhere no matter
-# how it is configured -- which is why enabling [kubernetes] alone is not enough.
+# This format string is explicit, so a module missing from it renders nowhere however it is
+# configured -- enabling a module is not enough, it has to be named here. $kubernetes sits
+# outside the [...]($style) group so the group's style does not override its own.
 format = "[$directory$git_branch$git_status]($style)$kubernetes$character"
 
 [character]
@@ -49,11 +43,10 @@ staged     = ""
 renamed    = ""
 deleted    = ""
 
-# Ours, not Omarchy's: the cluster context in the prompt is worth the shell-out.
 [kubernetes]
 disabled = false
-# Explicit format, because starship's default for this module carries a prefix word ("in")
-# that reads as dangling text when the module sits between the git group and the character.
+# Explicit format: the default carries a prefix word ("in") that reads as dangling text
+# where this module sits, between the git group and the character.
 format = '[$symbol$context]($style) '
 symbol = '☸ '
 style = 'bold cyan'

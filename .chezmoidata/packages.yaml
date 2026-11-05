@@ -131,13 +131,12 @@ packages:
         # list install, and the one every script here is written against -- is
         # packaged as go-yq.
         - "go-yq"
-        # Installed, not just set: run_onchange_set-default-shell needs the
-        # shell present before chsh. On Arch the default stays bash (Omarchy's
-        # config assumes it), but zsh is still here so the shell is available if
-        # you want it per-terminal.
-        - "zsh"
+        # Omarchy's own zsh support, from its package repo: the shared shell
+        # config (aliases, functions, envs, tool init) plus zsh options,
+        # keybindings and completions. dot_zshrc sources what this installs.
+        # Pulls zsh itself, which set-default-shell needs present before chsh.
+        - "omarchy-zsh"
         - "zsh-autosuggestions"
-        - "zsh-syntax-highlighting"
       personal:
         - "tmux"
     # Built from source by an AUR helper, so each one costs time on first apply.
