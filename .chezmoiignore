@@ -69,6 +69,19 @@ docs
        What Arch gives up: `terminal-features ",xterm*:hyperlinks"` (OSC 8) and the
        | and - split binds. Omarchy has neither. */}}
 .config/tmux/tmux.conf
+{{- /* LazyVim's three config stubs. Ours are empty on every machine -- the starter ships
+       them commented out and we never filled them in -- so deploying them here can only
+       destroy and never add. Omarchy does fill options.lua: it sets relativenumber and
+       autoformat, and calls require("config.remote_clipboard").setup(), which is what
+       makes nvim yanks reach the local clipboard over SSH and through tmux. Wiping that
+       call would leave remote_clipboard.lua on disk but never loaded.
+
+       All three are ignored, not just options.lua, so a future Omarchy release that puts
+       content in keymaps.lua or autocmds.lua does not get silently overwritten. Our own
+       nvim content is lua/config/lazy.lua and lua/plugins/*, which still deploy. */}}
+.config/nvim/lua/config/options.lua
+.config/nvim/lua/config/autocmds.lua
+.config/nvim/lua/config/keymaps.lua
 {{- /* Fonts: Omarchy's terminal is configured for JetBrainsMono Nerd Font and Hack has
        zero faces installed there. Our only Hack consumer is WezTerm, which is ignored
        above. Deploying seven font files nothing references. */}}
