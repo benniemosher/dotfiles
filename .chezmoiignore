@@ -48,17 +48,35 @@ docs
 {{- /* Shell config is per-platform, and the two must never both land: .bashrc is the
        Arch/Omarchy one (its defaults are bash and ~/.bashrc sources them), .zshrc is
        everywhere else. WezTerm and Amethyst go the same way -- Omarchy supplies its own
-       terminal so its theme switcher drives it, and Hyprland is the tiling WM. */}}
+       terminal, themed by its own switcher, and Hyprland is the tiling WM. */}}
 {{- if (eq (includeTemplate "is-arch" .) "true") }}
 .zshrc
 .config/wezterm/wezterm.lua
-{{- /* Omarchy ships these in its own config/ and drives them from its theme switcher
-       (omarchy-refresh-config, omarchy-theme-set-tmux). Since #81 moved ours to the XDG
-       paths, ours and Omarchy's are now the same file -- so deploying ours overwrites
-       its theme-managed copy outright rather than merely shadowing it, and the theming
-       stops working. Adopting its defaults means not deploying ours. */}}
-.config/starship.toml
+{{- /* tmux: adopt Omarchy's config rather than ours. Its 4185-byte config already sets
+       everything ours did -- mouse, history-limit 50000, escape-time, base-index 1,
+       renumber-windows, truecolor (via terminal-overrides *:RGB), set-clipboard,
+       focus-events, vi copy mode, splits in the pane's cwd -- and adds a whole
+       keybinding scheme whose `-N` descriptions are what omarchy-menu-tmux-keybindings
+       prints. Its prefix is C-Space with C-b kept as prefix2, so muscle memory survives.
+
+       The reason not to deploy ours is not the theme switcher: omarchy-theme-set-tmux
+       only pushes vars into running sessions with `tmux set-environment` and never
+       touches the file. It is omarchy-update's migrations, which edit
+       ~/.config/tmux/tmux.conf in place with sed -i and >> (three of the 120 do). Ours
+       and Omarchy's are the same path since #81, so chezmoi and those migrations would
+       take turns overwriting each other.
+
+       What Arch gives up: `terminal-features ",xterm*:hyperlinks"` (OSC 8) and the
+       | and - split binds. Omarchy has neither. */}}
 .config/tmux/tmux.conf
+{{- /* Fonts: Omarchy's terminal is configured for JetBrainsMono Nerd Font and Hack has
+       zero faces installed there. Our only Hack consumer is WezTerm, which is ignored
+       above. Deploying seven font files nothing references. */}}
+.local/share/fonts
+{{- /* starship.toml is deliberately NOT ignored. Nothing in Omarchy rewrites it after
+       install -- no migration mentions it and no bin/ script writes it -- so chezmoi can
+       own it safely, and ours now carries Omarchy's prompt design plus the kubernetes
+       module. See dot_config/starship.toml. */}}
 {{- /* zsh plugin clones from .chezmoiexternal: nothing sources them here, since .zshrc
        is not deployed and the login shell is bash. */}}
 .zsh
