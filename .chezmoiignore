@@ -77,9 +77,6 @@ docs
        install -- no migration mentions it and no bin/ script writes it -- so chezmoi can
        own it safely, and ours now carries Omarchy's prompt design plus the kubernetes
        module. See dot_config/starship.toml. */}}
-{{- /* zsh plugin clones from .chezmoiexternal: nothing sources them here, since .zshrc
-       is not deployed and the login shell is bash. */}}
-.zsh
 {{- else }}
 .bashrc
 {{- end }}
