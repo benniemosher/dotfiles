@@ -1,27 +1,24 @@
 #!/bin/bash
 {{ if eq .chezmoi.os "linux" -}}
-# .bashrc/.zshrc run `figlet -f doom` on every shell start, so a font in the wrong
-# place means an error on every new terminal. Debian keeps figlet fonts directly in
-# /usr/share/figlet; Arch keeps them in /usr/share/figlet/fonts. Ask figlet where its
-# font directory is rather than guessing, and fall back to probing.
-fontdir="$(figlet -I2 2>/dev/null)"
-if [ -z "$fontdir" ] || [ ! -d "$fontdir" ]; then
-  if [ -d /usr/share/figlet/fonts ]; then
-    fontdir=/usr/share/figlet/fonts
-  else
-    fontdir=/usr/share/figlet
+# Shell startup runs `figlet -f doom`, so a missing font means an error on every new
+# terminal. Debian keeps fonts in /usr/share/figlet, Arch in /usr/share/figlet/fonts, so
+# ask figlet where its own directory is and probe only if it will not say.
+fontdir=""
+for d in "$(figlet -I2 2>/dev/null)" /usr/share/figlet/fonts /usr/share/figlet; do
+  if [ -n "$d" ] && [ -d "$d" ]; then
+    fontdir="$d"
+    break
   fi
-fi
+done
 
 if [ -f "$fontdir/doom.flf" ]; then
   echo "figlet doom font already present in $fontdir"
   exit 0
 fi
 
-# Upstream renamed its default branch master -> main, so the old refs/heads/master URL
-# started 404ing. Download to a temp file and check it before installing it: curl
-# without -f happily writes a 404 page to disk, which is how a broken font sat here
-# looking installed. Every figlet font starts with the magic "flf2a".
+# -f matters: without it curl writes a 404 page to disk, which is how a broken font once
+# sat here looking installed. Upstream also renamed master -> main, so the old URL 404s.
+# Every figlet font starts with "flf2a", so check that before installing.
 tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
 
