@@ -51,13 +51,14 @@ docs
        terminal so its theme switcher drives it, and Hyprland is the tiling WM. */}}
 {{- if (eq (includeTemplate "is-arch" .) "true") }}
 .zshrc
-.wezterm.lua
+.config/wezterm/wezterm.lua
 {{- /* Omarchy ships these in its own config/ and drives them from its theme switcher
-       (omarchy-refresh-config, omarchy-theme-set-tmux). Ours would shadow them --
-       ~/.tmux.conf takes precedence over ~/.config/tmux/tmux.conf -- so the theming
-       would silently stop working. Adopting its defaults means not deploying ours. */}}
+       (omarchy-refresh-config, omarchy-theme-set-tmux). Since #81 moved ours to the XDG
+       paths, ours and Omarchy's are now the same file -- so deploying ours overwrites
+       its theme-managed copy outright rather than merely shadowing it, and the theming
+       stops working. Adopting its defaults means not deploying ours. */}}
 .config/starship.toml
-.tmux.conf
+.config/tmux/tmux.conf
 {{- /* zsh plugin clones from .chezmoiexternal: nothing sources them here, since .zshrc
        is not deployed and the login shell is bash. */}}
 .zsh
