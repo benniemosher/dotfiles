@@ -7,14 +7,18 @@ packages:
   darwin:
     taps:
       work:
-        # - "alexnabokikh/tfsort"
+        - "alexnabokikh/tfsort"
         - "hashicorp/tap"
       personal:
     brews:
       work:
-        # - "alexnabokikh/tfsort/tfsort"
         - "aria2"
-        - "chezmoi"
+        # chezmoi is deliberately absent, as it is on Linux: the README
+        # bootstrap installs it with Homebrew before the first apply.
+        # Listing it here let `brew bundle` upgrade chezmoi from inside
+        # the script that `chezmoi apply` was running, which unlinked the
+        # running binary and left no chezmoi on PATH. Upgrade it on its
+        # own with `brew upgrade chezmoi`.
         - "cowsay"
         - "defaultbrowser"
         - "figlet"
@@ -41,6 +45,13 @@ packages:
       personal:
     casks:
       work:
+        # A cask, not a formula: the tap donated its formula to homebrew-core
+        # (see its tap_migrations.json) and now ships only this cask. Under
+        # brews: it fails outright -- "No available formula with the name
+        # ... Found a cask ... instead" -- which is why it was dropped in #80.
+        # The core formula has no bottles on any platform, so it would compile
+        # with Go on every upgrade; the cask is a prebuilt binary.
+        - "alexnabokikh/tfsort/tfsort"
         - "amethyst"
         - "docker-desktop"
         - "freelens"
