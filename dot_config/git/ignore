@@ -18,4 +18,5 @@ id_*
 
 lazy-lock.json
 .infisical.json
+**/.claude/settings.local.json
 *auto.tfvars

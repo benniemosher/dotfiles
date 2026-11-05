@@ -24,12 +24,17 @@
 {{ end -}}
 [alias]
   s = status
+  st = status
   co = checkout
+  br = branch
+  ci = commit
 [credential]
   helper = cache --timeout=3600
 [core]
   editor = vim
-  excludesfile = ~/.gitignore_global
+  # No excludesfile: git falls back to $XDG_CONFIG_HOME/git/ignore, which is where
+  # this repo now puts it (.config/git/ignore). Naming it explicitly would just
+  # hardcode the same path.
   ignorecase = false
 
 {{ if or (eq .chezmoi.os "darwin") (not (index . "work_platform")) -}}
@@ -41,9 +46,34 @@
 
 [push]
   default = current
+  # Stop `git push` on a new branch needing --set-upstream.
+  autoSetupRemote = true
 [pull]
-  default = current
+  # ff = only refuses anything that is not a fast-forward, so rebasing or merging
+  # stays an explicit decision. Deliberately not pull.rebase = true.
   ff = only
+
+{{/* Adopted from Omarchy's config/git/config. These are not Omarchy-specific, so they
+     live here unconditionally rather than being pulled in with [include] on that one
+     machine -- otherwise git would behave differently depending on which machine you
+     were sitting at, which is the opposite of the point of this repo. */}}
+[rerere]
+  # Record conflict resolutions and replay them -- pays off on the repeated
+  # same-shape conflicts described in ai/standards/git.md.
+  enabled = true
+  autoupdate = true
+[diff]
+  algorithm = histogram   # clearer diffs on moved or edited lines
+  colorMoved = plain
+  mnemonicPrefix = true
+[commit]
+  verbose = true          # include the diff in the commit message template
+[column]
+  ui = auto
+[branch]
+  sort = -committerdate
+[tag]
+  sort = -version:refname
 [filter "lfs"]
   clean = git-lfs clean -- %f
   smudge = git-lfs smudge -- %f
