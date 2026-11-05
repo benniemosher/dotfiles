@@ -10,14 +10,14 @@ Personal dotfiles managed with [chezmoi](https://chezmoi.io/), featuring [Starsh
 - Terminal: `wezterm`, `starship`, `tmux`, `neovim`, `fzf`
 - DevOps: `awscli`, `argocd`, `kubernetes-cli`, `kubectx`, `kustomize`, `kubeseal`, `stern`, `docker-desktop`
 - Infrastructure: `checkov`, `tfsort`, `terraform` (via mise)
-- Tools: `gh`, `chezmoi`, `mise`, `pre-commit`, `gnupg`, `1password-cli`
+- Tools: `gh`, `mise`, `pre-commit`, `gnupg`, `1password-cli`
 - Apps: `1password`, `brave-browser`, `slack`, `notion`, `amethyst`, `grammarly-desktop`, `keybase`, `obsidian`
 
 **Linux (apt/snap):**
 - Terminal: `starship`, `neovim`, `fzf`, `zsh` with autosuggestions
 - DevOps: `kubectl`, `kubectx`, `k9s`, `docker`
 - Build: `build-essential`, `gcc`, and the `lib*-dev` headers mise needs to compile runtimes
-- Tools: `gh`, `chezmoi`, `mise`, `pre-commit`, `shellcheck`, `jq`, `gnupg`
+- Tools: `gh`, `mise`, `pre-commit`, `shellcheck`, `jq`, `gnupg`
 - Apps (snap): `brave`, `slack`, `keybase`, `obsidian`
 - 1Password desktop **and** CLI: from 1Password's apt repo, not snap
   (`run_onchange_linux-install-1password.sh`) — the snap and flatpak builds are sandboxed

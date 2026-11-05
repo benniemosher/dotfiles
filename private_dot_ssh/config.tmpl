@@ -16,7 +16,16 @@ not running at all.
 {{- if eq .chezmoi.os "darwin" -}}
 {{- $sock = "\"~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock\"" -}}
 {{- end -}}
-{{- if and (not $work) $useAgent -}}
+{{- /* The Omarchy laptop. Outside the profile branches because it needs no key handling of
+       its own -- whatever `Host *` sets below applies -- and because it is reachable from any
+       machine on the homelab VLAN, not just this Mac. Addressed by mDNS like battlestation
+       rather than by its UniFi-reserved IP: this repo is public, and a name survives
+       renumbering. */ -}}
+Host omarchy-mbp
+  HostName omarchy-mbp-1.local
+  User benniemosher
+
+{{ if and (not $work) $useAgent -}}
 {{- /* Keys live in 1Password and never touch disk. github_zcore.pub is not shipped by this
        repo -- export it from 1Password (see README); IdentitiesOnly needs it present to pick
        the right key, or ssh offers every key in the agent and can authenticate as the wrong
