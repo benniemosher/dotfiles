@@ -23,6 +23,13 @@ set -euo pipefail
 VAULT="$HOME/Code/obsidian-vault-setup"
 PLUGIN_ID="obsidian-livesync"
 PLUGIN_REPO="vrtmrz/obsidian-livesync"
+# Pinned, not `releases/latest`. Unpinned, each machine got whatever was newest on its own
+# setup day, and the fleet drifted to three different versions (1.0.21, 1.0.30, 1.0.45).
+# That is not cosmetic: LiveSync's Legacy database format changed in this range, and a
+# client newer than the remote wants a migration that needs every participating device
+# updated first -- so a freshly set-up machine could not join the existing sync at all.
+# Raise this only as a deliberate fleet-wide upgrade, never casually.
+PLUGIN_VER="1.0.30"
 OP_REF="{{ if index . "obsidian_livesync_op_ref" }}{{ .obsidian_livesync_op_ref }}{{ else }}{{ end }}"
 PASS_OP_REF="{{ if index . "obsidian_livesync_passphrase_op_ref" }}{{ .obsidian_livesync_passphrase_op_ref }}{{ else }}{{ end }}"
 
@@ -86,15 +93,17 @@ mkdir -p "$VAULT"
 make_skeleton
 
 plugin_dir="$VAULT/.obsidian/plugins/$PLUGIN_ID"
-if [[ -f "$plugin_dir/main.js" ]]; then
-  echo "obsidian-vault: $PLUGIN_ID already installed"
+installed_ver=""
+[[ -f "$plugin_dir/manifest.json" ]] && installed_ver="$(jq -r '.version // empty' "$plugin_dir/manifest.json" 2>/dev/null || true)"
+if [[ -f "$plugin_dir/main.js" && "$installed_ver" == "$PLUGIN_VER" ]]; then
+  echo "obsidian-vault: $PLUGIN_ID $PLUGIN_VER already installed"
 else
-  echo "obsidian-vault: installing $PLUGIN_ID"
+  echo "obsidian-vault: installing $PLUGIN_ID $PLUGIN_VER${installed_ver:+ (replacing $installed_ver)}"
   mkdir -p "$plugin_dir"
   curl_gh=(curl -fsSL -H "Accept: application/vnd.github+json")
   [[ -n "${GITHUB_TOKEN:-}" ]] && curl_gh+=(-H "Authorization: Bearer $GITHUB_TOKEN")
-  if ! release_json="$("${curl_gh[@]}" "https://api.github.com/repos/$PLUGIN_REPO/releases/latest")"; then
-    echo "obsidian-vault: could not fetch the latest $PLUGIN_ID release" >&2
+  if ! release_json="$("${curl_gh[@]}" "https://api.github.com/repos/$PLUGIN_REPO/releases/tags/$PLUGIN_VER")"; then
+    echo "obsidian-vault: could not fetch $PLUGIN_ID $PLUGIN_VER" >&2
     exit 0
   fi
   for asset in main.js manifest.json styles.css; do
