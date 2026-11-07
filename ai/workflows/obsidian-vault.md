@@ -28,8 +28,27 @@ machine's vault is local-only — no LiveSync, no remote — and billing doesn't
 | `03-Resources/Templates/` | Note templates, including the invoice layout |
 | `01-Projects`, `04-Archive`, `MOCs`, `00-Inbox` | PARA-style organization |
 | `Attachments/`, `Meta/`, `Dashboard.md` | Media, vault config notes, landing page |
-| `zz-secrets/` | Kept out of anything shared — never commit its contents elsewhere |
+| `zz-secrets/` | Secrets a vault note needs to read at runtime. In neither git (`.gitignore`) nor LiveSync (`syncIgnoreRegEx`), so it is per-machine and has no backup — see below |
 | `bin/` | Vault scripts (see below) |
+
+## zz-secrets is per-machine, and that is not a backup gap to fix
+
+`Dashboard.md` fetches a daily photo through the Pexels API, and reads the key with
+`app.vault.adapter.read("zz-secrets/pexels-api-key.md")`. That adapter only reads
+vault-relative paths, so the key has to be a file inside the vault — it cannot live only in
+1Password and be read from there.
+
+The folder is therefore excluded from both git and LiveSync on purpose. The consequence is
+that nothing in it reaches another machine or any backup, so:
+
+- **1Password is the source of truth.** The copy in the vault is a deployed artifact, like a
+  rendered dotfile, not the record.
+- **Keep nothing here you could not recreate from 1Password.** A wiped machine loses it.
+- Earlier versions of the migration runbook said to "confirm `zz-secrets/` is in the
+  snapshot" before a wipe. `.gitignore` makes that impossible; the instruction never worked.
+
+`Dashboard.md` degrades gracefully when the key is absent — it prints a line telling you to
+add one — so a new machine is not broken by it, just missing the photo.
 
 ## Scripts
 

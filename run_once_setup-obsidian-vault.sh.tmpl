@@ -76,6 +76,7 @@ register_vault_with_obsidian() {
   done
 }
 
+
 # PARA skeleton, per the vault standards.
 make_skeleton() {
   local d
@@ -130,6 +131,16 @@ fi
 mkdir -p "$VAULT"
 make_skeleton
 register_vault_with_obsidian
+
+# bin/vault-secrets writes zz-secrets/ from 1Password, and is re-runnable with --force when
+# a key is rotated -- which this run_once script is not. Keeping one implementation there
+# rather than a copy here. Everything it does is cosmetic (Dashboard.md degrades to an
+# "add a key" message), so a failure must not stop the rest of the setup.
+if [[ -x "$HOME/bin/vault-secrets" ]]; then
+  "$HOME/bin/vault-secrets" || echo "obsidian-vault: vault-secrets reported a problem, continuing"
+else
+  echo "obsidian-vault: ~/bin/vault-secrets not deployed yet; run it once chezmoi has"
+fi
 
 plugin_dir="$VAULT/.obsidian/plugins/$PLUGIN_ID"
 installed_ver=""
