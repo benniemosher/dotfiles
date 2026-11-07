@@ -30,12 +30,21 @@ system_profiler SPHardwareDataType | grep -i "activation lock"
 
 ### Save the things no sync or backup covers
 
-- **The Wi-Fi firmware tarball.** This is the last macOS machine, and the BCM4364 firmware
-  cannot be redistributed, so no distro ships it and there will be nothing left to extract
-  from. `firmware.tar` (12 MB) exists on all three machines, but every copy is in a home
-  directory on a machine that gets reinstalled. Put one in a 1Password **document** — not
-  git, since this repo is public and the firmware is Apple's. The fallback without it is
-  t2linux's `firmware.sh` option 5, which downloads a macOS recovery image to recover 12 MB.
+- **The Wi-Fi firmware tarball** — already saved, as the 1Password document
+  **`T2 Mac Wi-Fi Firmware (BCM4364)`**. Nothing to do here beyond knowing where it is.
+
+  Why it had to be saved: this is the last macOS machine, and Apple's BCM4364 firmware is not
+  redistributable, so no distro ships it and after the wipe there is nothing left to extract
+  from. It is not in git either — this repo is public and the firmware is Apple's. To use it:
+
+  ```bash
+  sudo tar -xf firmware.tar -C /lib/firmware/brcm
+  sudo modprobe -r brcmfmac_wcc; sudo modprobe -r brcmfmac; sudo modprobe brcmfmac
+  sudo journalctl -k --grep=brcmfmac    # want a firmware version line
+  ```
+
+  The fallback without it is t2linux's `firmware.sh` option 5, which downloads a macOS
+  recovery image to recover 12 MB.
 - **`~/.config/chezmoi/chezmoi.toml`** — never committed. Holds `git_email`,
   `invoice_phone`, `invoice_address`, the vault backup remote, and the `op://` references for
   LiveSync and the Pexels key. `chezmoi init` asks for all of it again, so either copy the
@@ -119,10 +128,10 @@ Check `uname -r` for a `-t2` suffix before reaching for it.
 
 **Wi-Fi firmware.** This is the only thing that did not work after install. Apple's BCM4364
 firmware is not redistributable, so no package ships it — `apple-bcm-firmware-fetcher` did not
-produce a working adapter. Extract it from a Mac still running macOS with t2linux's
-`firmware.sh create_archive`, copy the tarball over, unpack into `/lib/firmware/brcm`, reload
-`brcmfmac`. Do this before wiping the only macOS machine you have, or you are downloading a
-recovery image to get a 12 MB file.
+produce a working adapter. The tarball is in 1Password as
+**`T2 Mac Wi-Fi Firmware (BCM4364)`**; unpack it into `/lib/firmware/brcm` and reload
+`brcmfmac`. To regenerate it from a Mac still running macOS, use t2linux's
+`firmware.sh create_archive` — but there will not be one after this.
 
 **Secure Boot.** T2 Macs refuse external boot by default. Command-R into Recovery, Startup
 Security Utility, Secure Boot to **No Security**, allow booting from external media.
