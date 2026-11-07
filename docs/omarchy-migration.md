@@ -1,13 +1,106 @@
-# Omarchy on the 2018 MacBook Pro
+# Omarchy on a T2 MacBook Pro
 
-Omarchy replaced macOS on this machine on 2026-11-04. No macOS, no dual boot. This records
-what the machine is, what needed doing by hand, and how to rebuild it.
+Omarchy replaced macOS on the first of these machines on 2026-11-04 (`omarchy-mbp-1`). No
+macOS, no dual boot. This records what the machine is, what needed doing by hand, and how to
+do the next one.
+
+Both MacBook Pros here are `MacBookPro15,1`, so everything below applies to either.
 
 Reusable findings live in the vault instead of here:
 `T2-Mac-Linux-WiFi-Needs-Firmware-Extracted-From-macOS`,
 `dd-conv-fsync-Looks-Hung-At-The-End`, `Moving-Dotfiles-To-XDG-Paths-Needs-chezmoi-remove`.
 
-## This machine
+## Before wiping a Mac  **do not skip this**
+
+The second machine still runs macOS as of 2026-11-07, and is the last one that does. Work
+down this list before starting.
+
+### Sign out of Apple's services
+
+Activation Lock is **enabled** on it. Wipe without signing out and a future DFU revive of the
+T2 can be blocked.
+
+- System Settings → your name → **Sign Out** of iCloud
+- Confirm Find My Mac is off
+- Verify, which should now say `Disabled`:
+
+```bash
+system_profiler SPHardwareDataType | grep -i "activation lock"
+```
+
+### Save the things no sync or backup covers
+
+- **The Wi-Fi firmware tarball.** This is the last macOS machine, and the BCM4364 firmware
+  cannot be redistributed, so no distro ships it and there will be nothing left to extract
+  from. `firmware.tar` (12 MB) exists on all three machines, but every copy is in a home
+  directory on a machine that gets reinstalled. Put one in a 1Password **document** — not
+  git, since this repo is public and the firmware is Apple's. The fallback without it is
+  t2linux's `firmware.sh` option 5, which downloads a macOS recovery image to recover 12 MB.
+- **`~/.config/chezmoi/chezmoi.toml`** — never committed. Holds `git_email`,
+  `invoice_phone`, `invoice_address`, the vault backup remote, and the `op://` references for
+  LiveSync and the Pexels key. `chezmoi init` asks for all of it again, so either copy the
+  file or know the answers.
+- **`~/.config/git/allowed_signers`** — deliberately unmanaged; lists work addresses.
+- **`~/.zshrc.local`** — machine-local shell overrides.
+- **`zz-secrets/`** in the vault — in neither git nor LiveSync, so nothing carries it. Each
+  item needs to be in 1Password first; `vault-secrets` then redeploys it after. Earlier
+  versions of this runbook said to confirm it was "in the snapshot", which `.gitignore` makes
+  impossible.
+- **Unpushed work under `~/Code`:**
+
+```bash
+for d in ~/Code/*/; do
+  [ -d "$d/.git" ] || continue
+  dirty=$(git -C "$d" status --porcelain | wc -l | tr -d ' ')
+  ahead=$(git -C "$d" log --branches --not --remotes --oneline 2>/dev/null | wc -l | tr -d ' ')
+  [ "$dirty" != 0 ] || [ "$ahead" != 0 ] && echo "$(basename "$d"): $dirty dirty, $ahead unpushed"
+done
+```
+
+### Confirm the vault has nothing only on this machine
+
+battlestation is the vault's source of truth, not the Mac. LiveSync only runs inside a
+running Obsidian, so a Mac with Obsidian closed has been diverging for however long it has
+been closed. Open Obsidian, let it settle, then compare file lists rather than counts —
+`LC_ALL=C` because macOS and GNU `sort` disagree on collation and `comm` otherwise lies:
+
+```bash
+V=~/Code/obsidian-vault-setup
+(cd "$V" && find . -name '*.md' -not -path './.obsidian/*' | sed 's|^\./||' | LC_ALL=C sort) > /tmp/here.txt
+ssh battlestation-ubuntu.local "cd ~/Code/obsidian-vault-setup && find . -name '*.md' -not -path './.obsidian/*' | sed 's|^\./||' | LC_ALL=C sort" > /tmp/bs.txt
+LC_ALL=C comm -23 /tmp/here.txt /tmp/bs.txt
+```
+
+`zz-secrets/*` is the only acceptable output. Anything else is a note that exists nowhere
+else yet.
+
+### Data that does not survive the move
+
+Different from backing up: Linux has no app that reads these, so the question is whether you
+can still reach them afterwards.
+
+- **Messages** — confirm Messages in iCloud is on, so history stays reachable from the phone.
+  Nothing on Linux reads the local store.
+- **Photos** — confirm iCloud Photos is on. If not, this needs a full export, not a backup.
+- **Keychain** — Wi-Fi passwords, certificates, app credentials. Does not transfer, and
+  iCloud Keychain only reaches Apple devices. Anything not already in 1Password is gone.
+- **Notes, Reminders, Calendar, Contacts** — iCloud-backed, reachable from the web and the
+  phone, not natively from Linux.
+- **Authenticator apps and TOTP seeds** — if any live only in a Mac app, move them to
+  1Password first. This is the one that locks you out of accounts.
+
+### Confirm you can get back in
+
+- 1Password: you know the account password and have the Secret Key somewhere that is **not**
+  this laptop. Everything downstream depends on it.
+- GitHub: 2FA recovery codes reachable from your phone.
+- Keybase paperkey, if you still use it for GPG.
+
+## The hardware
+
+Both machines are the same model, which is why one runbook covers them. The table describes
+`omarchy-mbp-1`, already migrated; the second is identical apart from a 251 GB disk still
+holding macOS.
 
 | | |
 |---|---|
