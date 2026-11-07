@@ -50,6 +50,14 @@ that nothing in it reaches another machine or any backup, so:
 `Dashboard.md` degrades gracefully when the key is absent — it prints a line telling you to
 add one — so a new machine is not broken by it, just missing the photo.
 
+Deploy them with `vault-secrets`, or `vault-secrets --force` to roll out a rotated key.
+Placing a secret is deliberately a human step: `op` authenticates through the 1Password
+desktop app and so needs an unlocked app and a prompt. A Service Account token would make it
+unattended, and that was considered and rejected — a long-lived token that reads vaults
+without a prompt is worse than typing a password once per machine. Expect `chezmoi apply` on
+a fresh machine to say it is skipping the secrets, and run `vault-secrets` yourself after
+signing in.
+
 ## Scripts
 
 - `bin/generate-invoice.py` — builds an invoice note from a client's `Hours.md`. Generating
