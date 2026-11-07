@@ -91,11 +91,13 @@ packages:
         - "fortune-mod"
         - "fzf"
         - "git"
-        # github-cli is deliberately absent, like awscli and k9s above: mise
-        # installs gh (dot_config/mise/config.toml.tmpl). Naming it in both put
-        # three gh binaries on this machine -- /usr/bin/gh, ~/.local/bin/gh from
-        # the README bootstrap, and mise's shim -- and left which one git used
-        # depending on PATH ordering.
+        # `gh` on Debian/snap, github-cli here. Not left to mise: the mise
+        # config does not list gh, and the ~/.local/bin/gh seen on one machine
+        # is an on-demand shim (`mise use -g gh` then exec) that registered gh
+        # in mise's own config on first use -- not something this repo deploys.
+        # Which of several gh binaries git uses is settled in
+        # dot_config/git/config.tmpl, not by leaving one of them uninstalled.
+        - "github-cli"
         - "glab"
         - "gnupg"
         - "jq"

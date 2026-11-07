@@ -63,7 +63,13 @@ pacman_packages=(
 # single unknown name, and a package that moved repos should not stop the other forty.
 failed=()
 
-if ! sudo pacman -Syu --needed --noconfirm "${pacman_packages[@]}"; then
+# -S, not -Syu. -u makes this a full system upgrade, and Omarchy installs a
+# pre-transaction hook that refuses one ("This looks like a direct pacman system upgrade...
+# Omarchy updates should normally run through: omarchy update"). That failed the whole batch
+# and dropped into the per-package fallback below, which then printed forty lines of
+# "is up to date -- skipping / there is nothing to do" on every apply. Installing packages
+# is not this script's cue to upgrade the system; `omarchy update` owns that.
+if ! sudo pacman -Sy --needed --noconfirm "${pacman_packages[@]}"; then
   echo "batch install failed; retrying individually" >&2
   for pkg in "${pacman_packages[@]}"; do
     sudo pacman -S --needed --noconfirm "$pkg" || failed+=("$pkg")
