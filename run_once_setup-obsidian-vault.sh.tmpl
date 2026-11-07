@@ -38,6 +38,44 @@ PASS_OP_REF="{{ if index . "obsidian_livesync_passphrase_op_ref" }}{{ .obsidian_
 MODE="{{ if index . "work_platform" }}work{{ else }}personal{{ end }}"
 [[ -n "${WORK_WORKSPACE:-}" ]] && MODE=work
 
+# Tell Obsidian which vault to open. Without this, Obsidian starts its own vault at
+# ~/Documents/Obsidian Vault on a fresh machine and syncs into that instead -- which looks
+# like working sync into a directory nothing else reads, since standup, learning, hours,
+# vault-snapshot and the invoice scripts all hardcode ~/Code/obsidian-vault-setup.
+register_vault_with_obsidian() {
+  local cfg_dirs=() d id tmp
+  case "$(uname -s)" in
+    Darwin) cfg_dirs=("$HOME/Library/Application Support/obsidian") ;;
+    # The snap confines its own config; write both when both are present.
+    Linux)  cfg_dirs=("$HOME/.config/obsidian")
+            [[ -d "$HOME/snap/obsidian/current/.config/obsidian" ]] &&
+              cfg_dirs+=("$HOME/snap/obsidian/current/.config/obsidian") ;;
+    *) return 0 ;;
+  esac
+
+  if pgrep -f 'obsidian' >/dev/null 2>&1; then
+    echo "obsidian-vault: Obsidian is running; it rewrites obsidian.json on exit, so not"
+    echo "  registering the vault. Quit Obsidian and re-run, or open $VAULT by hand."
+    return 0
+  fi
+
+  for d in "${cfg_dirs[@]}"; do
+    mkdir -p "$d"
+    [[ -f "$d/obsidian.json" ]] || echo '{"vaults":{}}' > "$d/obsidian.json"
+    # Reuse an existing id for this path so re-runs do not create duplicate entries.
+    id="$(jq -r --arg p "$VAULT" 'first((.vaults // {}) | to_entries[] | select(.value.path == $p) | .key) // empty' "$d/obsidian.json")"
+    [[ -n "$id" ]] || id="$(od -An -tx1 -N8 /dev/urandom | tr -d ' \n')"
+    tmp="$d/obsidian.json.tmp"
+    # Ours becomes the open one; any other vault stays registered but closed.
+    jq --arg p "$VAULT" --arg id "$id" --argjson ts "$(date +%s)000" '
+      .vaults //= {}
+      | .vaults |= with_entries(.value.open = false)
+      | .vaults[$id] = {path: $p, ts: $ts, open: true}
+    ' "$d/obsidian.json" > "$tmp" && mv "$tmp" "$d/obsidian.json"
+    echo "obsidian-vault: registered $VAULT with Obsidian ($d)"
+  done
+}
+
 # PARA skeleton, per the vault standards.
 make_skeleton() {
   local d
@@ -91,6 +129,7 @@ fi
 
 mkdir -p "$VAULT"
 make_skeleton
+register_vault_with_obsidian
 
 plugin_dir="$VAULT/.obsidian/plugins/$PLUGIN_ID"
 installed_ver=""
