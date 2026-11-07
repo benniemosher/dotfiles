@@ -7,6 +7,7 @@
 [tools]
 awscli = "latest"
 checkov = "latest"
+codex = "latest"
 deno = "latest"
 golang = "latest"
 helm = "latest"
@@ -65,3 +66,8 @@ supabase = "latest"
 [settings]
 idiomatic_version_file_enable_tools = ["terraform", "ruby", "node"]
 ruby.compile = false
+
+[settings.upgrade]
+# Prune superseded tool versions on upgrade; re-downloading one is cheaper than
+# remembering to run `mise prune` by hand.
+auto_prune = true
