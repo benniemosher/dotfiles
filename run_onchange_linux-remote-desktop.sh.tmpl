@@ -61,5 +61,5 @@ if ! grdctl status 2>/dev/null | grep -qi "username"; then
   echo "  grdctl rdp set-credentials $(id -un) '<password>'"
 fi
 
-grdctl status 2>/dev/null || true
+echo "remote-desktop: RDP enabled; \`grdctl status\` for details"
 {{ end -}}

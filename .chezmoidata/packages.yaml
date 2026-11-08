@@ -180,7 +180,10 @@ packages:
         - "cowsay"
         - "curl"
         - "figlet"
-        - "fortune"
+        # The real package. `fortune` is a virtual name for it: apt
+        # resolves it, but dpkg never records it as installed, so the
+        # install script would treat it as always missing.
+        - "fortune-mod"
         - "fzf"
         - "gcc"
         - "git"

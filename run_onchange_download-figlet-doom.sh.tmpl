@@ -11,8 +11,8 @@ for d in "$(figlet -I2 2>/dev/null)" /usr/share/figlet/fonts /usr/share/figlet; 
   fi
 done
 
+# Silent when there is nothing to do; only an install or a failure is worth a line.
 if [ -f "$fontdir/doom.flf" ]; then
-  echo "figlet doom font already present in $fontdir"
   exit 0
 fi
 
