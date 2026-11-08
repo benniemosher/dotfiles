@@ -125,7 +125,20 @@
      same problem in reverse: a snap-installed gh is at /snap/bin/gh, not /usr/bin/gh.
      Falls back to bare `gh` so a machine that applies before installing gh still gets a
      helper that works once gh is on PATH. */ -}}
-{{- $gh := lookPath "gh" | default "gh" -}}
+{{- /* Not lookPath: that resolves against the PATH of whichever shell runs chezmoi, and
+       those differ on one machine. A login shell finds mise's shim; an SSH or cron shell
+       finds /usr/bin/gh. The rendered helper then flapped between them on every apply.
+       Fixed candidate order instead -- Homebrew on macOS, mise's shim on Linux where mise
+       owns gh, then the README bootstrap copy, then packaged, then snap. Falls back to bare
+       `gh` so a machine that applies before installing gh still gets a working helper. */ -}}
+{{- $gh := "" -}}
+{{- range (list "/opt/homebrew/bin/gh" "/usr/local/bin/gh"
+                (printf "%s/.local/share/mise/shims/gh" .chezmoi.homeDir)
+                (printf "%s/.local/bin/gh" .chezmoi.homeDir)
+                "/usr/bin/gh" "/snap/bin/gh") -}}
+{{-   if and (eq $gh "") (stat .) -}}{{- $gh = . -}}{{- end -}}
+{{- end -}}
+{{- $gh = $gh | default "gh" -}}
 {{/* Emitted through printf so the output is byte-identical to what `gh auth setup-git`
      writes: a tab indent, and `helper = ` with a trailing space. Git does not care, but
      chezmoi compares bytes -- with two-space indentation here, every `gh auth login` rewrote

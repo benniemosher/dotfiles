@@ -1,5 +1,37 @@
 #!/bin/bash
-
 {{ if eq .chezmoi.os "linux" -}}
-sudo curl https://raw.githubusercontent.com/xero/figlet-fonts/refs/heads/master/Doom.flf --output /usr/share/figlet/doom.flf
+# Shell startup runs `figlet -f doom`, so a missing font means an error on every new
+# terminal. Debian keeps fonts in /usr/share/figlet, Arch in /usr/share/figlet/fonts, so
+# ask figlet where its own directory is and probe only if it will not say.
+fontdir=""
+for d in "$(figlet -I2 2>/dev/null)" /usr/share/figlet/fonts /usr/share/figlet; do
+  if [ -n "$d" ] && [ -d "$d" ]; then
+    fontdir="$d"
+    break
+  fi
+done
+
+if [ -f "$fontdir/doom.flf" ]; then
+  echo "figlet doom font already present in $fontdir"
+  exit 0
+fi
+
+# -f matters: without it curl writes a 404 page to disk, which is how a broken font once
+# sat here looking installed. Upstream also renamed master -> main, so the old URL 404s.
+# Every figlet font starts with "flf2a", so check that before installing.
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+
+if ! curl -fsSL https://raw.githubusercontent.com/xero/figlet-fonts/main/Doom.flf -o "$tmp"; then
+  echo "figlet: could not download the doom font" >&2
+  exit 1
+fi
+
+if ! head -c 5 "$tmp" | grep -q '^flf2a'; then
+  echo "figlet: downloaded file is not a figlet font, refusing to install it" >&2
+  exit 1
+fi
+
+sudo install -D -m 0644 "$tmp" "$fontdir/doom.flf"
+echo "figlet doom font installed to $fontdir"
 {{ end -}}

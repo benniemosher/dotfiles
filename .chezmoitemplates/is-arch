@@ -1,0 +1,9 @@
+{{- /* Returns "true" on Arch and its derivatives, otherwise nothing. Use as:
+         {{ if eq (includeTemplate "is-arch" .) "true" }}
+
+       Matches ID_LIKE as well as ID: Omarchy reports ID=omarchy with ID_LIKE=arch, so an
+       exact ID test misses it and falls through to the apt path. Guarded on the OS because
+       .chezmoi.osRelease does not exist on darwin. */ -}}
+{{- if and (eq .chezmoi.os "linux") (or (eq .chezmoi.osRelease.id "arch") (contains "arch" (.chezmoi.osRelease.idLike | default ""))) -}}
+true
+{{- end -}}
