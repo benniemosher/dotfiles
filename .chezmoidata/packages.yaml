@@ -205,6 +205,9 @@ packages:
         - "neovim"
         - "pre-commit"
         - "shellcheck"
+        # From apt, not snap: the snap remaps $HOME into ~/snap, so it
+        # never reads ~/.config/starship.toml and shows the default prompt.
+        - "starship"
         - "tmux"
         - "tree"
         - "unzip"

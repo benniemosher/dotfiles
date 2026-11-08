@@ -12,7 +12,7 @@ command_timeout = 5000
 # This format string is explicit, so a module missing from it renders nowhere however it is
 # configured -- enabling a module is not enough, it has to be named here. $kubernetes sits
 # outside the [...]($style) group so the group's style does not override its own.
-format = "[$directory$git_branch$git_status]($style)$kubernetes$character"
+format = "$hostname[$directory$git_branch$git_status]($style)$kubernetes$character"
 
 [character]
 error_symbol = "[✗](bold cyan)"
@@ -23,6 +23,14 @@ truncation_length = 2
 truncation_symbol = "…/"
 repo_root_style = "bold cyan"
 repo_root_format = "[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
+
+# Always shown, not only over SSH, so every terminal says which machine it is on. The SSH
+# symbol still marks a remote session.
+[hostname]
+ssh_only = false
+ssh_symbol = "🌐 "
+format = "[$ssh_symbol$hostname]($style) "
+style = "bold dimmed cyan"
 
 [git_branch]
 format = "[$branch]($style) "
