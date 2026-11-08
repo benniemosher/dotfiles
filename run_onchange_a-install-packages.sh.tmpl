@@ -139,9 +139,6 @@ if (( ${#failed[@]} )); then
   exit 1
 fi
 {{ else -}}
-sudo snap set system experimental.user-daemons=true
-sudo apt-get update
-
 apt_packages=(
 {{ range .packages.linux.apts.work }}  {{ . | quote }}
 {{ end -}}
@@ -151,24 +148,54 @@ apt_packages=(
 {{ end -}}
 )
 
+# Install only what is missing, as on Arch. Handed installed packages, apt prints an "is
+# already the newest version" line for each, after an apt-get update it did not need.
+# dpkg-query reads the local database without sudo. A name it has never seen counts as
+# missing, so a typo still reaches apt and is reported -- which is also why packages.yaml
+# names real packages, not virtual ones like `fortune` that dpkg never records as installed.
+apt_missing=()
+for pkg in "${apt_packages[@]}"; do
+  # shellcheck disable=SC2016  # ${db:Status-Abbrev} is a dpkg-query field, not a shell variable
+  [ "$(dpkg-query -W -f='${db:Status-Abbrev}' "$pkg" 2>/dev/null)" = "ii " ] || apt_missing+=("$pkg")
+done
+
 # Batch first, so apt resolves dependencies in one pass. It aborts the whole transaction on a
 # single unknown name, though, so fall back to one at a time and say what was missing -- a
 # package renamed between Ubuntu releases should not stop the other thirty from installing.
 # -y throughout: this runs unattended from `chezmoi apply` and would otherwise sit on a prompt.
-if ! sudo apt-get install -y "${apt_packages[@]}"; then
-  echo "batch install failed; retrying individually" >&2
-  for pkg in "${apt_packages[@]}"; do
-    sudo apt-get install -y "$pkg" || echo "SKIPPED (unavailable): $pkg" >&2
-  done
+if (( ${#apt_missing[@]} )); then
+  sudo apt-get update
+  if ! sudo apt-get install -y "${apt_missing[@]}"; then
+    echo "batch install failed; retrying individually" >&2
+    for pkg in "${apt_missing[@]}"; do
+      sudo apt-get install -y "$pkg" || echo "SKIPPED (unavailable): $pkg" >&2
+    done
+  fi
 fi
+
+# snap prints "already installed" for each one it is handed, so check first. The first
+# argument is the snap's name; any after it are install flags.
+#
+# user-daemons is set lazily, before the first real install, because `snap get system`
+# needs root too: checking it up front would put a sudo prompt on every run. It persists
+# once set, so setting it only when a snap is about to be installed loses nothing.
+user_daemons_set=""
+snap_install() {
+  snap list "$1" >/dev/null 2>&1 && return 0
+  if [ -z "$user_daemons_set" ]; then
+    sudo snap set system experimental.user-daemons=true
+    user_daemons_set=1
+  fi
+  sudo snap install "$@" || echo "SKIPPED: $*" >&2
+}
 
 # Unquoted on purpose: an entry like "kubectl --classic" has to reach snap as two arguments.
 {{ range .packages.linux.snaps.work -}}
-sudo snap install {{ . }} || echo "SKIPPED: {{ . }}" >&2
+snap_install {{ . }}
 {{ end -}}
 {{ if not (index . "work_platform") -}}
 {{ range .packages.linux.snaps.personal -}}
-sudo snap install {{ . }} || echo "SKIPPED: {{ . }}" >&2
+snap_install {{ . }}
 {{ end -}}
 {{ end -}}
 {{ end -}}
