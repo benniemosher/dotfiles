@@ -17,9 +17,8 @@ fi
 # difference and "fixes" with a password prompt.
 resolve() { readlink -f "$1" 2>/dev/null || echo "$1"; }
 
+# Silent when the shell is already right; only a change is worth a line.
 if [ -n "$target" ] && [ "$(resolve "$current")" != "$(resolve "$target")" ]; then
   echo "default shell: $current -> $target"
   chsh -s "$target"
-else
-  echo "default shell already $current, leaving it alone"
 fi
