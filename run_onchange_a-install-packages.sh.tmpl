@@ -57,21 +57,26 @@ pacman_packages=(
 {{ end -}}
 )
 
-# --needed so an already-installed package is not reinstalled on every apply, which matters
-# on Omarchy where it ships a good half of this list itself. Batch first for one dependency
-# resolution pass, then fall back one at a time: pacman aborts the whole transaction on a
-# single unknown name, and a package that moved repos should not stop the other forty.
+# Install only what is missing. Omarchy ships a good half of this list itself, and handing
+# pacman installed packages, even with --needed, prints an "is up to date -- skipping" line
+# for each one plus a database sync. `pacman -T` checks the local database without sudo or
+# the network and prints just the names that are not installed (or provided by something
+# that is), so an up-to-date machine skips pacman entirely and prints nothing.
+mapfile -t pacman_missing < <(pacman -T "${pacman_packages[@]}")
 failed=()
 
+# Batch first for one dependency resolution pass, then fall back one at a time: pacman
+# aborts the whole transaction on a single unknown name, and a package that moved repos
+# should not stop the rest.
+#
 # -S, not -Syu. -u makes this a full system upgrade, and Omarchy installs a
 # pre-transaction hook that refuses one ("This looks like a direct pacman system upgrade...
-# Omarchy updates should normally run through: omarchy update"). That failed the whole batch
-# and dropped into the per-package fallback below, which then printed forty lines of
-# "is up to date -- skipping / there is nothing to do" on every apply. Installing packages
-# is not this script's cue to upgrade the system; `omarchy update` owns that.
-if ! sudo pacman -Sy --needed --noconfirm "${pacman_packages[@]}"; then
+# Omarchy updates should normally run through: omarchy update"). Installing packages is not
+# this script's cue to upgrade the system; `omarchy update` owns that.
+if (( ${#pacman_missing[@]} )) \
+  && ! sudo pacman -Sy --needed --noconfirm "${pacman_missing[@]}"; then
   echo "batch install failed; retrying individually" >&2
-  for pkg in "${pacman_packages[@]}"; do
+  for pkg in "${pacman_missing[@]}"; do
     sudo pacman -S --needed --noconfirm "$pkg" || failed+=("$pkg")
   done
 fi
@@ -85,11 +90,17 @@ aur_packages=(
 {{ end -}}
 )
 
+# Same filter as above: AUR packages land in the same local database once installed. With
+# nothing missing there is no helper to find or bootstrap.
+mapfile -t aur_missing < <(pacman -T "${aur_packages[@]}")
+
 # Omarchy's own wrapper first, so its package bookkeeping stays accurate, then whichever
 # helper the machine happens to have. A plain Arch install (a VM used to test this file,
 # say) has none, so bootstrap yay from the AUR the long way rather than failing.
 aur_helper=""
-if command -v omarchy-pkg-aur-add >/dev/null 2>&1; then
+if (( ! ${#aur_missing[@]} )); then
+  aur_helper="none-needed"
+elif command -v omarchy-pkg-aur-add >/dev/null 2>&1; then
   aur_helper="omarchy"
 elif command -v yay >/dev/null 2>&1; then
   aur_helper="yay"
@@ -110,10 +121,11 @@ fi
 # makepkg refuses to run as root, so this has to be the invoking user -- which it is, since
 # chezmoi apply is not run under sudo.
 case "$aur_helper" in
-  omarchy) for pkg in "${aur_packages[@]}"; do omarchy-pkg-aur-add "$pkg" || failed+=("$pkg"); done ;;
-  yay)     for pkg in "${aur_packages[@]}"; do yay -S --needed --noconfirm "$pkg" || failed+=("$pkg"); done ;;
-  paru)    for pkg in "${aur_packages[@]}"; do paru -S --needed --noconfirm "$pkg" || failed+=("$pkg"); done ;;
-  *)       echo "no AUR helper available" >&2; failed+=("${aur_packages[@]}") ;;
+  none-needed) ;;
+  omarchy) for pkg in "${aur_missing[@]}"; do omarchy-pkg-aur-add "$pkg" || failed+=("$pkg"); done ;;
+  yay)     for pkg in "${aur_missing[@]}"; do yay -S --needed --noconfirm "$pkg" || failed+=("$pkg"); done ;;
+  paru)    for pkg in "${aur_missing[@]}"; do paru -S --needed --noconfirm "$pkg" || failed+=("$pkg"); done ;;
+  *)       echo "no AUR helper available" >&2; failed+=("${aur_missing[@]}") ;;
 esac
 
 # Exit non-zero when anything failed, rather than reporting success having installed
