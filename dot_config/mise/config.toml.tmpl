@@ -7,7 +7,28 @@
 [tools]
 awscli = "latest"
 checkov = "latest"
+codex = "latest"
 deno = "latest"
+{{ if (eq (includeTemplate "is-arch" .) "true") -}}
+{{/* Arch only, and deliberately not everywhere. Omarchy's install/user/mise-work.sh and two
+     of its migrations drop ~15 lazy-install shims into ~/.local/bin -- three-line wrappers
+     that run `mise use -g <tool>` then exec it. So the first time you run gh there, mise
+     writes gh into this file and chezmoi finds a file it did not author, then offers to
+     remove the line on every apply. Declaring it keeps the two in agreement.
+
+     Not unconditional: mise's shims come first on PATH, so declaring gh on the Mac would
+     move the shell off Homebrew's gh to mise's, which is a behaviour change on a working
+     machine to silence a prompt on a different one. github-cli stays in the Arch package
+     list regardless -- the shim only works once mise does, so the package is what
+     guarantees gh exists on a fresh machine. Which gh git signs with is settled by the
+     candidate list in dot_config/git/config.tmpl, not by PATH.
+
+     Other shims (claude, codex, copilot, crush, cursor-agent, gemini, ghui, grok, hunk,
+     muse, omp, opencode, pi, playwright) will do the same thing on first use. Add them
+     here the same way if and when that becomes annoying; declaring ones you do not use
+     just makes mise install and update them for nothing. */}}
+gh = "latest"
+{{ end -}}
 golang = "latest"
 helm = "latest"
 infracost = "latest"
@@ -65,3 +86,8 @@ supabase = "latest"
 [settings]
 idiomatic_version_file_enable_tools = ["terraform", "ruby", "node"]
 ruby.compile = false
+
+[settings.upgrade]
+# Prune superseded tool versions on upgrade; re-downloading one is cheaper than
+# remembering to run `mise prune` by hand.
+auto_prune = true
