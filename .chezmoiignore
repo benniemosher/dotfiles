@@ -50,6 +50,7 @@ docs
        terminal, and Hyprland is the tiling WM. */}}
 {{- if (eq (includeTemplate "is-arch" .) "true") }}
 .config/tmux/tmux.conf
+.config/tmux/plugins
 .config/wezterm/wezterm.lua
 {{- /* Our copies of LazyVim's three config stubs are empty; Omarchy fills options.lua,
        including the remote_clipboard setup that carries nvim yanks over SSH. All three are

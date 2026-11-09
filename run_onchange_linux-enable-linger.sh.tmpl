@@ -1,0 +1,26 @@
+#!/bin/sh
+# Keep the user manager, and so tmux, running after the last login session ends.
+#
+# Without linger, systemd stops user@UID.service when the final session closes, and every
+# scope under it goes too -- including the tmux-spawn scope that holds the tmux server. A
+# machine reached over SSH loses its tmux sessions that way as soon as the last terminal
+# closes. battlestation had Linger=no while its server was killed on 2026-11-09; the journal
+# did not prove this was the cause, but it is the setting that decides whether the server can
+# outlive a logout, and it costs nothing to turn on.
+#
+# Needs no sudo: logind lets a user set linger for themselves. Idempotent.
+{{ if eq .chezmoi.os "linux" -}}
+
+if ! command -v loginctl >/dev/null 2>&1; then
+  echo "linger: loginctl not found, skipping"
+  exit 0
+fi
+
+if [ "$(loginctl show-user "$(id -un)" -p Linger --value 2>/dev/null)" = "yes" ]; then
+  exit 0
+fi
+
+loginctl enable-linger "$(id -un)" \
+  && echo "linger: enabled for $(id -un)" \
+  || echo "linger: could not enable (run: sudo loginctl enable-linger $(id -un))" >&2
+{{ end -}}

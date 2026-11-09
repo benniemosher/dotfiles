@@ -194,6 +194,10 @@ packages:
         # darwin installs pinentry + pinentry-mac; this is the Linux half, and
         # gpg-agent.conf points at /usr/bin/pinentry to reach whichever is set.
         - "pinentry-curses"
+        # Keeps a core dump when a process crashes, so `coredumpctl` can show
+        # why. When tmux's server vanished on 2026-11-09, an empty
+        # `coredumpctl list` is what ruled out a crash.
+        - "systemd-coredump"
         # mise builds language runtimes from source; these are
         # what those builds link against.
         - "libffi-dev"
