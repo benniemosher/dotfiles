@@ -169,7 +169,7 @@ the keys live under `/var/lib/bluetooth`, so it is a manual step on each machine
 | Thing | What chezmoi does |
 |---|---|
 | Trackpad | `dot_config/hypr/input.lua` sets `clickfinger_behavior = true`. The click type then depends on finger count, not position. By area, a click near the bottom middle is a middle click, and in a browser that closes the tab. |
-| Magic Mouse | `run_onchange_arch-magicmouse.sh.tmpl` writes `/etc/modprobe.d/hid-magicmouse.conf` with `emulate_3button=N` and sets the live value. By default a click in the middle of the mouse surface is a middle click. The script needs `sudo`, so run `chezmoi apply` from a terminal. |
+| Magic Mouse | `run_onchange_arch-magicmouse.sh.tmpl` writes `/etc/modprobe.d/hid-magicmouse.conf` with `emulate_3button=N` and sets the live value. By default a click in the middle of the mouse surface is a middle click. The script needs `sudo`, so run `chezmoi apply` from a terminal. Scrolling is slow at the default factor, so `input.lua` also sets `scroll_factor = 2.0` for the `magic-mouse` device. Raise or lower that number to taste. |
 | AirPods Pro | `dot_config/wireplumber/wireplumber.conf.d/bluetooth-no-headset-autoswitch.conf` turns off `bluetooth.autoswitch-to-headset-profile`. Without it, WirePlumber switches the AirPods to the low-quality headset profile whenever an app records. The microphone here is the MacBook mic or the Logitech webcam. |
 
 To pair, by hand:
