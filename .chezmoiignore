@@ -73,6 +73,12 @@ docs
 .config/hypr
 {{- end }}
 
+{{- /* WirePlumber drives audio on Omarchy. Ubuntu's own audio setup is not managed here, and
+       macOS has no WirePlumber, so only Arch gets these drop-ins. */}}
+{{- if ne (includeTemplate "is-arch" .) "true" }}
+.config/wireplumber
+{{- end }}
+
 {{- if ne .chezmoi.os "darwin" }}
 Brewfile
 Brewfile.lock.json
