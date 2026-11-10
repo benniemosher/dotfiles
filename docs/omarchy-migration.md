@@ -258,26 +258,69 @@ committed and holds the invoice and LiveSync answers `chezmoi init` asks for.
 Verify with `ssh -T git@github.com`, `git log --show-signature -1`, `mise current`, a
 `standup` write, and a suspend cycle.
 
-## Citrix Workspace
+## Citrix Workspace and a smart card
 
-AUR `icaclient`. Two things break without pre-empting them.
+**Status, 2026-11-10: not working on Linux, waiting on the gateway owner's documentation.**
+The card, the reader, the PIN, and the TLS client certificate all work here. Citrix's sign-in
+then fails before it opens a login page, and the cause is unknown. Keep the Mac that works
+until a desktop opens from this machine. The evidence, with the gateway hostnames, is in a
+private vault note about Citrix and smart cards. Hostnames stay out of this public repo.
 
-It crashes as a native Wayland client, so force XWayland:
-
-```bash
-mkdir -p ~/.local/share/applications
-sed 's|^Exec=|Exec=env GDK_BACKEND=x11 |' \
-  /usr/share/applications/wfica.desktop > ~/.local/share/applications/wfica.desktop
-```
-
-If it still crashes, set `HwAcceleration=False` in `~/.ICAClient/wfclient.ini`.
-
-Since 13.1 it wants root CAs as separate files in its own store, not the system bundle:
+**What chezmoi sets up.** The personal Arch packages `ccid`, `opensc`, `pcsc-tools`, and
+`pcsclite`, and `run_onchange_arch-pcscd.sh.tmpl`, which enables `pcscd.socket`. Check the
+card with no Citrix involved:
 
 ```bash
-sudo ln -s /etc/ca-certificates/extracted/cadir/* /opt/Citrix/ICAClient/keystore/cacerts/
-sudo /opt/Citrix/ICAClient/util/ctx_rehash
+pcsc_scan                                                          # reader, card, ATR
+pkcs11-tool --module /usr/lib/opensc-pkcs11.so --list-token-slots  # slot, "login required"
 ```
+
+If that works, the hardware side is done. It does not need the Citrix client.
+
+**The client is not tracked in the dotfiles.** `icaclient` (AUR) pins an older version than
+Citrix serves, so its build step finds no download and `makepkg` stops. Adding it to
+`packages.yaml` would break `chezmoi apply` on a fresh machine until the AUR package updates.
+What worked by hand: set `pkgver` and `sha256sums_x86_64` in a local copy of the PKGBUILD to
+the current release, taking the hash from the SHA-256 Citrix prints beside the download, and
+put the tarball in the build directory under the name the PKGBUILD expects.
+
+**Fixes the package needs on this machine.**
+
+- It crashes as a native Wayland client, so force XWayland. The `.ica` handler is
+  `citrix-wfica.desktop`, and its `Exec` line has no `%f`, so a session file is never passed
+  in. Override both launchers in `~/.local/share/applications/`:
+
+  ```bash
+  mkdir -p ~/.local/share/applications
+  sed 's|^Exec=|Exec=env GDK_BACKEND=x11 |' /usr/share/applications/citrix-workspace.desktop \
+    > ~/.local/share/applications/citrix-workspace.desktop
+  sed 's|^Exec=\(.*wfica.sh\)$|Exec=env GDK_BACKEND=x11 \1 %f|' /usr/share/applications/citrix-wfica.desktop \
+    > ~/.local/share/applications/citrix-wfica.desktop
+  ```
+
+- Create the per-user directory the package's install note asks for:
+  `mkdir -p ~/.ICAClient/cache`, then copy the `*.ini` files from
+  `/opt/Citrix/ICAClient/config/` into `~/.ICAClient/`.
+- Since 13.1 it wants root CAs as separate files in its own store, not the system bundle:
+
+  ```bash
+  sudo ln -s /etc/ca-certificates/extracted/cadir/* /opt/Citrix/ICAClient/keystore/cacerts/
+  sudo /opt/Citrix/ICAClient/util/ctx_rehash
+  ```
+
+- If it still crashes, set `HwAcceleration=False` in `~/.ICAClient/wfclient.ini`.
+- The package lists `webkit2gtk` 4.0 and `libsoup` 2.4 as optional dependencies. The current
+  build links webkit2gtk 4.1 and libsoup 3, which Arch ships. Check `ldd` on the binaries
+  before building anything.
+
+**Do not rely on these, which were tried and were not the problem.** Adding the card issuer's
+certificate authorities to Citrix's store changed nothing, because the Linux client does not
+check issuers. Missing web view libraries were not the cause either.
+
+**What differs from the Mac.** The Mac runs Citrix Endpoint Analysis and a Device Trust client,
+and uses Apple's built-in smart-card support with no extra card software. Whether the gateway
+runs a device check that a Linux machine cannot pass is unknown. Ask the gateway's owner
+before spending more time.
 
 This is a 2880×1800 panel and XWayland cannot scale per-window, so Citrix will be blurry or
 tiny. Set the session DPI inside Citrix (`DPIMatchingEnabled`), use a 1× external monitor, or
