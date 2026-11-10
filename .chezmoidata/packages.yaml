@@ -27,6 +27,7 @@ packages:
         - "gh"
         - "glab"
         - "gnupg"
+        - "herdr"
         - "krew"
         - "kubernetes-cli"
         - "kubectx"
@@ -101,6 +102,8 @@ packages:
         - "github-cli"
         - "glab"
         - "gnupg"
+        # In Omarchy's package repo (0.9.1 when checked), so no AUR build.
+        - "herdr"
         - "jq"
         - "kubectl"
         - "kubectx"
