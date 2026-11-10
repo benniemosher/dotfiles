@@ -69,6 +69,7 @@ packages:
         - "claude-code"
         - "grammarly-desktop"
         - "keybase"
+        - "microsoft-teams"
         - "slack"
   # Arch, and therefore Omarchy, which is Arch underneath. Same
   # work/personal split as the lists above. The installer script picks
@@ -160,6 +161,9 @@ packages:
         - "brave-bin"
         - "keybase-bin"
         - "slack-desktop"
+        # Microsoft ships no Linux Teams client; this is the community
+        # Electron wrapper around the Teams web app.
+        - "teams-for-linux-bin"
         # Deliberately absent, with no Linux equivalent to swap in:
         #   grammarly-desktop  -- browser extension only, no Linux app exists
         #   sequel-ace         -- macOS only; dbeaver or beekeeper-studio
@@ -254,3 +258,5 @@ packages:
         - "brave"
         - "keybase"
         - "slack"
+        # Community wrapper; Microsoft ships no Linux Teams client.
+        - "teams-for-linux"
