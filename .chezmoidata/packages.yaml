@@ -148,6 +148,15 @@ packages:
         - "omarchy-zsh"
         - "zsh-autosuggestions"
       personal:
+        # PIV smart-card reader support for client work. ccid is the USB
+        # reader driver, opensc the PKCS#11 module, pcsc-tools gives
+        # pcsc_scan. pcsclite ships with Omarchy; it is listed so a bare
+        # Arch box gets it too. run_onchange_arch-pcscd.sh enables the
+        # service.
+        - "ccid"
+        - "opensc"
+        - "pcsc-tools"
+        - "pcsclite"
         # In Omarchy's package repo, so no AUR build.
         - "spotify"
         - "tmux"
