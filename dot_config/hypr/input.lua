@@ -61,6 +61,10 @@ hl.config({
   },
 })
 
+-- Magic Mouse scrolls slowly at the default factor. Raise it for faster scrolling, lower it
+-- for slower. Matches the device name from `hyprctl devices`.
+hl.device({ name = "magic-mouse", scroll_factor = 2.0 })
+
 -- App-specific touchpad scroll speeds.
 -- o.window("(Alacritty|kitty|foot)", { scroll_touchpad = 1.5 })
 -- o.window("com.mitchellh.ghostty", { scroll_touchpad = 0.2 })
