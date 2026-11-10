@@ -72,6 +72,7 @@ packages:
         - "keybase"
         - "microsoft-teams"
         - "slack"
+        - "spotify"
   # Arch, and therefore Omarchy, which is Arch underneath. Same
   # work/personal split as the lists above. The installer script picks
   # this branch off osRelease.id, so a Debian/Ubuntu box still gets the
@@ -147,6 +148,8 @@ packages:
         - "omarchy-zsh"
         - "zsh-autosuggestions"
       personal:
+        # In Omarchy's package repo, so no AUR build.
+        - "spotify"
         - "tmux"
     # Built from source by an AUR helper, so each one costs time on first apply.
     # Anything available in the official repos belongs in pacmans above instead.
@@ -261,5 +264,6 @@ packages:
         - "brave"
         - "keybase"
         - "slack"
+        - "spotify"
         # Community wrapper; Microsoft ships no Linux Teams client.
         - "teams-for-linux"
