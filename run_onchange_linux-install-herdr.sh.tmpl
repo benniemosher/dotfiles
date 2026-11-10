@@ -1,0 +1,21 @@
+#!/bin/bash
+# herdr on Debian/Ubuntu, via herdr's own installer.
+#
+# Ubuntu has no herdr package. macOS gets it from Homebrew and Arch from Omarchy's repo
+# (see .chezmoidata/packages.yaml), so this runs only where neither applies. It is on every
+# profile, work machines included: herdr's remote mode needs it on both ends.
+{{ if and (eq .chezmoi.os "linux") (not (eq (includeTemplate "is-arch" .) "true")) -}}
+
+# Installs to ~/.local/bin, which dot_zshrc.tmpl already puts on PATH. The binary updates
+# itself (`herdr update`), so there is nothing to re-run here once it exists.
+if [ -x "$HOME/.local/bin/herdr" ] || command -v herdr >/dev/null 2>&1; then
+  exit 0
+fi
+
+echo "herdr: installing"
+if curl -fsSL https://herdr.dev/install.sh | sh; then
+  echo "herdr: installed"
+else
+  echo "herdr: install failed, skipping" >&2
+fi
+{{ end -}}
