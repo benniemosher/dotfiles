@@ -161,6 +161,30 @@ Measured on 2026-11-04, not inferred.
 The log carries `brcmf_p2p` and `p2p-dev-wlp3s0` errors on every boot. That is Wi-Fi Direct,
 which this firmware does not support. Normal Wi-Fi is unaffected.
 
+## Trackpad, mouse, and AirPods
+
+Added 2026-11-10. Chezmoi sets everything that can be set. Pairing cannot be tracked, because
+the keys live under `/var/lib/bluetooth`, so it is a manual step on each machine.
+
+| Thing | What chezmoi does |
+|---|---|
+| Trackpad | `dot_config/hypr/input.lua` sets `clickfinger_behavior = true`. The click type then depends on finger count, not position. By area, a click near the bottom middle is a middle click, and in a browser that closes the tab. |
+| Magic Mouse | `run_onchange_arch-magicmouse.sh.tmpl` writes `/etc/modprobe.d/hid-magicmouse.conf` with `emulate_3button=N` and sets the live value. By default a click in the middle of the mouse surface is a middle click. The script needs `sudo`, so run `chezmoi apply` from a terminal. |
+| AirPods Pro | `dot_config/wireplumber/wireplumber.conf.d/bluetooth-no-headset-autoswitch.conf` turns off `bluetooth.autoswitch-to-headset-profile`. Without it, WirePlumber switches the AirPods to the low-quality headset profile whenever an app records. The microphone here is the MacBook mic or the Logitech webcam. |
+
+To pair, by hand:
+
+1. Put the AirPods in the case, open the lid, and hold the button on the back until the light
+   flashes white. Disconnect them from the iPhone first, or they may jump back to it.
+2. Run `bluetoothctl --timeout 15 scan on`, then `bluetoothctl devices`. They appear as
+   `AirPods Pro - Find My`.
+3. `bluetoothctl pair <address>`, then `trust`, then `connect`.
+4. Check `pactl list cards | grep -A40 bluez_card | grep 'Active Profile'` says `a2dp-sink`.
+5. WirePlumber does not move the default output to them. Pick them in the audio menu.
+
+The Magic Mouse pairs the same way, without holding a button. After pairing it,
+`cat /sys/module/hid_magicmouse/parameters/emulate_3button` should print `N`.
+
 ## Hybrid graphics
 
 Omarchy issue [#12593](https://github.com/omacom/omarchy/issues/12593) reports full-speed
@@ -224,6 +248,9 @@ And where Omarchy's opinions were adopted into the repo instead, so every machin
    puts it on your clipboard. Clear the clipboard afterwards. Then
    `bin/install-obsidian-plugins.sh`, and confirm
    `systemctl --user list-timers vault-snapshot.timer`.
+
+10. Pair the Magic Mouse and the AirPods by hand (see Trackpad, mouse, and AirPods). Chezmoi
+    only sets how they behave once paired.
 
 Worth keeping off this machine and in 1Password: `~/.config/chezmoi/chezmoi.toml` is not
 committed and holds the invoice and LiveSync answers `chezmoi init` asks for.
