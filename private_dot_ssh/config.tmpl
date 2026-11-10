@@ -25,6 +25,18 @@ Host omarchy-mbp
   HostName omarchy-mbp-1.local
   User benniemosher
 
+{{/* Share one SSH connection to battlestation. herdr polls it for agent state every few
+       seconds and each poll is a new ssh, and with the 1Password agent every new ssh asks for
+       approval -- about once a minute in practice. With a shared connection only the first one
+       authenticates and the rest ride on it. Outside the profile branches because it applies
+       whichever key handling a machine uses; a Host block adds to the Host * ones below
+       rather than replacing them. %C is a hash, which keeps the socket path short enough. */ -}}
+Host battlestation-ubuntu battlestation-ubuntu.local
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-%C
+  ControlPersist 4h
+  ServerAliveInterval 30
+
 {{ if and (not $work) $useAgent -}}
 {{- /* Keys live in 1Password and never touch disk. github_zcore.pub is not shipped by this
        repo -- export it from 1Password (see README); IdentitiesOnly needs it present to pick

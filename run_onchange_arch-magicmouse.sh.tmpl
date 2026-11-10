@@ -1,0 +1,34 @@
+#!/bin/bash
+# Turn off the Magic Mouse's middle-button zone.
+#
+# The Magic Mouse has no buttons, only a touch surface. The hid_magicmouse driver defaults to
+# emulate_3button=Y, which makes a click in the middle of the surface a middle click. In a
+# browser that closes the tab under the cursor, so ordinary left clicks kept closing tabs.
+#
+# Two parts: the modprobe option so it survives a reboot, and the live sysfs value so it takes
+# effect now. Arch only, since the Omarchy laptops are the machines used with this mouse.
+# Needs root, so run `chezmoi apply` from a terminal where sudo can ask for a password.
+{{ if eq (includeTemplate "is-arch" .) "true" -}}
+
+conf=/etc/modprobe.d/hid-magicmouse.conf
+want='options hid_magicmouse emulate_3button=N'
+param=/sys/module/hid_magicmouse/parameters/emulate_3button
+
+if [ "$(cat "$conf" 2>/dev/null)" != "$want" ]; then
+  echo "magicmouse: writing $conf"
+  if echo "$want" | sudo tee "$conf" >/dev/null; then
+    echo "magicmouse: set emulate_3button=N for future boots"
+  else
+    echo "magicmouse: could not write $conf (needs sudo), skipping" >&2
+    exit 0
+  fi
+fi
+
+# The module is only loaded once a Magic Mouse has been connected, so a missing parameter
+# is normal and the modprobe option above covers it.
+if [ -w "$param" ] || [ -e "$param" ]; then
+  if [ "$(cat "$param")" != "N" ]; then
+    echo N | sudo tee "$param" >/dev/null && echo "magicmouse: emulate_3button=N now"
+  fi
+fi
+{{ end -}}

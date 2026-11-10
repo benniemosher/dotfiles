@@ -67,6 +67,12 @@ docs
 .amethyst.yml
 {{- end }}
 
+{{- /* Hyprland only exists on Arch/Omarchy here. The Mac uses Amethyst and Ubuntu has no
+       tiling WM, so neither should get a ~/.config/hypr. */}}
+{{- if ne (includeTemplate "is-arch" .) "true" }}
+.config/hypr
+{{- end }}
+
 {{- if ne .chezmoi.os "darwin" }}
 Brewfile
 Brewfile.lock.json
