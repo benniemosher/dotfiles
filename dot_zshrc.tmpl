@@ -60,6 +60,23 @@ alias ups="brew-update; mise-update; xcode-update"
 alias ups="brew-update; mise-update"
 {{ end -}}
 
+# When the connection drops (laptop sleep, Wi-Fi change), the remote tmux, herdr or nvim never
+# gets to switch off the terminal modes it turned on, so this terminal keeps mouse reporting
+# and focus events on: mouse movement prints as escape codes and stray bytes make the shell
+# beep. Reset those modes whenever ssh exits, then drop whatever input piled up meanwhile.
+ssh() {
+  command ssh "$@"
+  local rc=$?
+  if [[ -t 0 && -t 1 ]]; then
+    # mouse (1000-1006, 1015), focus events, alt screen, app cursor keys, bracketed paste,
+    # show cursor, then pop kitty keyboard modes and reset modifyOtherKeys
+    printf '\e[?1000l\e[?1001l\e[?1002l\e[?1003l\e[?1005l\e[?1006l\e[?1015l\e[?1004l'
+    printf '\e[?1049l\e[?1l\e[?2004l\e[?25h\e[<99u\e[>4;0m'
+    while read -rsk 1 -t 0.2 2>/dev/null; do :; done
+  fi
+  return $rc
+}
+
 orgclone() { gh repo list "$1" --limit 1000 --source --no-archived --json nameWithOwner -q '.[].nameWithOwner' | xargs -n1 gh repo clone }
 
 alias k=kubectl
