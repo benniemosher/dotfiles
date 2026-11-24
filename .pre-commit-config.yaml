@@ -20,3 +20,7 @@ repos:
     rev: cba56bcde1fdd01c1deb3f945e69764c291a6530  # frozen: v1.38.0
     hooks:
       - id: yamllint
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 4fb43823ef3d152d239e92d7d5cb04783b548062  # frozen: v8.28.0
+    hooks:
+      - id: gitleaks

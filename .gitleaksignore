@@ -1,0 +1,3 @@
+# Infracost API key committed in 43f6c07 (2024-10) and removed in a903b68. Infracost is no
+# longer used. Only this commit/file/line is ignored; the same key elsewhere is still flagged.
+43f6c076028c12339804eaa8813dd3ebea5b76bc:dot_config/private_infracost/private_credentials.yml:infracost-api-token:2
