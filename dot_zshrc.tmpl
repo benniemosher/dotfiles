@@ -103,7 +103,10 @@ export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 {{ if not (env "WORK_WORKSPACE") -}}
 export KUBECONFIG=$HOME/k3s.yaml
 {{ end -}}
-export GH_PACKAGES_PAT=$( gh auth token )
+# GitHub Packages token for a single command, e.g. `with-gh-pat npm install`. It used to be
+# exported in every shell, which put the token in the environment of every process started
+# here (and ran `gh auth token` on every shell start).
+with-gh-pat() { GH_PACKAGES_PAT=$(gh auth token) command "$@" }
 
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 {{ if ne (includeTemplate "is-arch" .) "true" -}}
