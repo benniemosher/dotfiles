@@ -63,7 +63,8 @@ if writing to `Hours.md` outside the script (e.g. fixing a row by hand), insert 
 
 `bin/generate-invoice.py` in the vault does all of this for the client it's set up for — it
 reads `Hours.md`,
-assigns each row a category from its own `RULES` table, and writes the note. Run
+assigns each row a category from its own `RULES` table and a project from `PROJECTS` (see
+Projects below), and writes the note. Run
 `bin/generate-invoice.py --dry-run` to see the rollup without writing. It refuses to write a
 partial invoice: any row it can't categorize is listed so you add a `RULES` entry and re-run,
 which is the maintenance point as new kinds of work get logged. Generating never writes
@@ -187,6 +188,25 @@ or ticket detail belongs in each row's description, not in the category:
 
 Don't add a sixth without asking. If one ever earns its place (Documentation is the likeliest
 split from Engineering), add it here so later invoices reuse the same label.
+
+## Projects
+
+One client can cover more than one contract, and the invoice then shows hours for each
+(user's request, 2026-11-16). It's still one invoice and one `Hours.md`. `generate-invoice.py`
+assigns each row a project from its `PROJECTS` list, matching the description against a
+case-insensitive pattern per project. A row that matches nothing goes to `DEFAULT_PROJECT`,
+and a row that matches two projects stops the invoice. The project names and patterns live in
+the script, in the vault, so client names stay out of this repo.
+
+- **Logging:** start a row's description with the project's keyword, e.g. `hours 1730 to 1930
+  "<Project>: alert rules"`. The `hours` command doesn't change.
+- **Invoice:** when a month has more than one project, page one opens with a "Summary by
+  Project" table (Project, Hours, Rate, Amount, plus the `EXTRAS` rows). The "Summary by
+  Category" table below it is grouped under a heading row for each project, with categories
+  ordered by hours inside each, and `EXTRAS` under an "Expenses" heading. Each detail row shows
+  its project under the category. A month with only one project renders exactly as it did
+  before the split.
+- Categories stay the five above. A project is a separate dimension, not a sixth category.
 
 ## Rules for AI Assistants
 
